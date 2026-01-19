@@ -81,3 +81,4 @@ assets/plugins/
 packages/flutter_torrent_server/go_src/.gradle/
 /coverage/
 plugins/
+keystore/
