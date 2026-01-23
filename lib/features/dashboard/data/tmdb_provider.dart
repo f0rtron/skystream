@@ -146,35 +146,40 @@ final dashboardHeroMovieProvider = FutureProvider<List<Map<String, dynamic>>>((
         .map((m) => Map<String, dynamic>.from(m))
         .toList();
     final service = ref.read(tmdbServiceProvider);
-    
-    // Fetch genres to map IDs
-    final allGenres = await ref.watch(genresProvider.future);
-    final genreMap = {for (var g in allGenres) g['id']: g['name']};
 
-    // Fetch logos and map genres for all 5 in parallel
+    // Fetch metadata + logos for top 5 (Consistent with Details Screen)
     await Future.wait(
       topMovies.map((movie) async {
+        final id = movie['id'];
         final mediaType = movie['media_type'] ?? 'movie';
-        
-        // 1. Fetch Logo
-        final logoUrl = await service.getBestLogo(
-          movie['id'],
-          language: lang,
-          mediaType: mediaType,
-        );
-        if (logoUrl != null) {
-          movie['logo_url'] = logoUrl;
-        }
 
-        // 2. Map Genres
-        final genreIds = List<int>.from(movie['genre_ids'] ?? []);
-        final genreNames = genreIds
-            .map((id) => genreMap[id])
-            .where((name) => name != null)
-            .take(3)
-            .join(' • ');
-        
-        movie['genres_str'] = genreNames;
+        // Fetch full details
+        final details = mediaType == 'tv'
+            ? await service.getTvDetails(id, language: lang)
+            : await service.getMovieDetails(id, language: lang);
+
+        if (details != null) {
+          movie.addAll(details);
+
+          // 1. Extract Logo from 'images' (via append_to_response)
+          if (movie['images'] != null) {
+            final logos = List<Map<String, dynamic>>.from(
+              movie['images']['logos'] ?? [],
+            );
+            final logoUrl = TmdbService.pickBestLogo(logos, lang);
+            if (logoUrl != null) {
+              movie['logo_url'] = logoUrl;
+            }
+          }
+
+          // 2. Map Genres from details directly
+          if (movie['genres'] != null) {
+            final genres = List<Map<String, dynamic>>.from(
+              movie['genres'],
+            ).take(3).map((g) => g['name']).join(' • ');
+            movie['genres_str'] = genres;
+          }
+        }
       }),
     );
 

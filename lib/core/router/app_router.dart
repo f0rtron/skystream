@@ -8,7 +8,6 @@ import 'package:skystream/features/library/presentation/library_screen.dart';
 import 'package:skystream/features/settings/presentation/settings_screen.dart';
 import '../../features/extensions/screens/extensions_screen.dart';
 import '../../features/settings/presentation/developer_options_screen.dart';
-import 'package:skystream/shared/widgets/custom_bottom_nav.dart';
 import '../../features/details/presentation/details_screen.dart';
 import '../../features/player/presentation/player_screen.dart';
 import '../domain/entity/multimedia_item.dart';

@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 class GithubRelease {
   final String tagName;
   final String htmlUrl;
@@ -23,10 +21,11 @@ class GithubRelease {
       htmlUrl: json['html_url'] as String? ?? '',
       body: json['body'] as String? ?? '',
       prerelease: json['prerelease'] as bool? ?? false,
-      publishedAt: json['published_at'] != null 
-          ? DateTime.tryParse(json['published_at']) 
+      publishedAt: json['published_at'] != null
+          ? DateTime.tryParse(json['published_at'])
           : null,
-      assets: (json['assets'] as List<dynamic>?)
+      assets:
+          (json['assets'] as List<dynamic>?)
               ?.map((e) => GithubAsset.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],

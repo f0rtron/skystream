@@ -13,7 +13,7 @@ class FlutterTorrentServerDesktop extends FlutterTorrentServerPlatform {
   }
 
   Process? _serverProcess;
-  int _port = 8090;
+  final int _port = 8090;
 
   @override
   Future<int> start() async {
@@ -22,15 +22,19 @@ class FlutterTorrentServerDesktop extends FlutterTorrentServerPlatform {
     // Forcefully cleanup any lingering instances to ensure a fresh start
     // This prevents "Connection closed" issues from zombie processes.
     try {
-       if (!Platform.isWindows) {
-          // pkill -f matches full command line
-          // Catch and ignore error (exit code 1 if no process found)
-          await Process.run('pkill', ['-f', 'TorrServer-']); 
-          await Future.delayed(const Duration(milliseconds: 500));
-       } else {
-          await Process.run('taskkill', ['/F', '/IM', 'TorrServer-windows-amd64.exe']);
-          await Future.delayed(const Duration(milliseconds: 500));
-       }
+      if (!Platform.isWindows) {
+        // pkill -f matches full command line
+        // Catch and ignore error (exit code 1 if no process found)
+        await Process.run('pkill', ['-f', 'TorrServer-']);
+        await Future.delayed(const Duration(milliseconds: 500));
+      } else {
+        await Process.run('taskkill', [
+          '/F',
+          '/IM',
+          'TorrServer-windows-amd64.exe',
+        ]);
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
     } catch (_) {}
 
     try {
@@ -45,16 +49,19 @@ class FlutterTorrentServerDesktop extends FlutterTorrentServerPlatform {
 
       // Always copy to ensure we have the latest or if it's missing
       // In production, might want to check version or existence to save time
-      final assetPath = 'packages/flutter_torrent_server/assets/torrserver/$binaryName';
+      final assetPath =
+          'packages/flutter_torrent_server/assets/torrserver/$binaryName';
       final byteData = await rootBundle.load(assetPath);
-      
+
       if (!await binaryFile.exists()) {
-         await binaryFile.create(recursive: true);
+        await binaryFile.create(recursive: true);
       }
-      await binaryFile.writeAsBytes(byteData.buffer.asUint8List(
-        byteData.offsetInBytes,
-        byteData.lengthInBytes,
-      ));
+      await binaryFile.writeAsBytes(
+        byteData.buffer.asUint8List(
+          byteData.offsetInBytes,
+          byteData.lengthInBytes,
+        ),
+      );
 
       if (!Platform.isWindows) {
         await Process.run('chmod', ['+x', binaryPath]);
@@ -63,8 +70,13 @@ class FlutterTorrentServerDesktop extends FlutterTorrentServerPlatform {
       // As we just killed everything, valid server start is handled below.
       // But just in case, let's proceed.
       print("Starting TorrServer: $binaryPath");
-      _serverProcess = await Process.start(binaryPath, ['-p', '$_port', '-d', appDir.path]);
-      
+      _serverProcess = await Process.start(binaryPath, [
+        '-p',
+        '$_port',
+        '-d',
+        appDir.path,
+      ]);
+
       _serverProcess!.stdout.transform(utf8.decoder).listen((data) {
         print("TorrServer: $data");
       });
@@ -74,16 +86,19 @@ class FlutterTorrentServerDesktop extends FlutterTorrentServerPlatform {
 
       // Wait for it to be ready
       bool isReady = false;
-      for (int i = 0; i < 20; i++) { // Increased retries to 10 seconds
+      for (int i = 0; i < 20; i++) {
+        // Increased retries to 10 seconds
         if (await _checkConnection()) {
           isReady = true;
           break;
         }
         await Future.delayed(const Duration(milliseconds: 500));
       }
-      
+
       if (!isReady) {
-        throw Exception("TorrServer failed to start or is not responding on port $_port");
+        throw Exception(
+          "TorrServer failed to start or is not responding on port $_port",
+        );
       }
 
       return _port;
@@ -95,15 +110,20 @@ class FlutterTorrentServerDesktop extends FlutterTorrentServerPlatform {
 
   Future<bool> _checkConnection() async {
     try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:$_port/echo'));
-      return response.statusCode == 200; // TorrServer usually replies to /echo or just /
+      final response = await http.get(
+        Uri.parse('http://127.0.0.1:$_port/echo'),
+      );
+      return response.statusCode ==
+          200; // TorrServer usually replies to /echo or just /
     } catch (_) {
       try {
-          // Fallback check
-          final response = await http.get(Uri.parse('http://127.0.0.1:$_port/settings')); 
-          return response.statusCode == 200;
-      } catch(__) {
-          return false;
+        // Fallback check
+        final response = await http.get(
+          Uri.parse('http://127.0.0.1:$_port/settings'),
+        );
+        return response.statusCode == 200;
+      } catch (__) {
+        return false;
       }
     }
   }
@@ -131,7 +151,7 @@ class FlutterTorrentServerDesktop extends FlutterTorrentServerPlatform {
       if (response.statusCode != 200) {
         throw Exception("Failed to add torrent: ${response.body}");
       }
-      
+
       // TorrServer usually returns the array of requested torrents or just the one added?
       // Or simply the status object.
       // Assuming it returns a JSON where we can find the hash.
@@ -141,9 +161,9 @@ class FlutterTorrentServerDesktop extends FlutterTorrentServerPlatform {
       // Use dynamic decoding to be safe.
       final decoded = jsonDecode(response.body);
       if (decoded is List && decoded.isNotEmpty) {
-         return decoded[0]['hash'] as String?;
+        return decoded[0]['hash'] as String?;
       } else if (decoded is Map) {
-         return decoded['hash'] as String?;
+        return decoded['hash'] as String?;
       }
       return null;
     } catch (e) {
@@ -158,14 +178,11 @@ class FlutterTorrentServerDesktop extends FlutterTorrentServerPlatform {
       final response = await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'action': 'get',
-          'hash': hash,
-        }),
+        body: jsonEncode({'action': 'get', 'hash': hash}),
       );
 
       if (response.statusCode == 200) {
-         return jsonDecode(response.body) as Map<String, dynamic>;
+        return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
         throw Exception("Failed to get status: ${response.statusCode}");
       }
@@ -176,18 +193,18 @@ class FlutterTorrentServerDesktop extends FlutterTorrentServerPlatform {
 
   String? _getBinaryName() {
     if (Platform.isMacOS) {
-       // Quick hack: most macs running Flutter dev are likely okay with amd64 (Rosetta) or native
-       // But let's try to be correct.
-       // We can run `uname -m` synchronously? No.
-       // We will set this in `start()` dynamically.
-       // For now, return a placeholder that `start` logic handles better?
-       // OR: use a standard property.
-       // SysInfo is not in standard IO.
-       // Let's rely on string check of Platform.version which usually includes kernel info.
-       if (Platform.version.toLowerCase().contains("arm64")) {
-          return "TorrServer-darwin-arm64";
-       }
-       return "TorrServer-darwin-amd64"; 
+      // Quick hack: most macs running Flutter dev are likely okay with amd64 (Rosetta) or native
+      // But let's try to be correct.
+      // We can run `uname -m` synchronously? No.
+      // We will set this in `start()` dynamically.
+      // For now, return a placeholder that `start` logic handles better?
+      // OR: use a standard property.
+      // SysInfo is not in standard IO.
+      // Let's rely on string check of Platform.version which usually includes kernel info.
+      if (Platform.version.toLowerCase().contains("arm64")) {
+        return "TorrServer-darwin-arm64";
+      }
+      return "TorrServer-darwin-amd64";
     }
     if (Platform.isWindows) return 'TorrServer-windows-amd64.exe';
     if (Platform.isLinux) return 'TorrServer-linux-amd64';

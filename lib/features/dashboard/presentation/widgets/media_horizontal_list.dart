@@ -60,7 +60,9 @@ class MediaHorizontalList extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -68,7 +70,9 @@ class MediaHorizontalList extends StatelessWidget {
                       Text(
                         "View All",
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -77,7 +81,9 @@ class MediaHorizontalList extends StatelessWidget {
                       Icon(
                         Icons.arrow_forward_ios,
                         size: 10,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ],
                   ),
@@ -102,8 +108,11 @@ class MediaHorizontalList extends StatelessWidget {
                   ? '${TmdbConfig.imageBaseUrl}$posterPath'
                   : 'https://via.placeholder.com/150x225';
               final itemTitle = item['title'] ?? item['name'] ?? 'Unknown';
-              final uniqueTag = 'list_${this.title}_${item['id']}_${itemTitle.hashCode}';
-              final mediaType = item['media_type'] ?? (item['title'] != null ? 'movie' : 'tv');
+              final uniqueTag =
+                  'list_${title}_${item['id']}_${itemTitle.hashCode}';
+              final mediaType =
+                  item['media_type'] ??
+                  (item['title'] != null ? 'movie' : 'tv');
 
               return GestureDetector(
                 onTap: () {
@@ -112,7 +121,7 @@ class MediaHorizontalList extends StatelessWidget {
                       builder: (context) => TmdbMovieDetailsScreen(
                         movieId: item['id'],
                         mediaType: mediaType,
-                        heroTag: uniqueTag, 
+                        heroTag: uniqueTag,
                         placeholderPoster: imageUrl,
                       ),
                     ),
@@ -134,16 +143,24 @@ class MediaHorizontalList extends StatelessWidget {
                               fit: BoxFit.cover,
                               width: double.infinity,
                               placeholder: (context, url) => Container(
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
                                 child: const Center(
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 ),
                               ),
                               errorWidget: (context, url, error) => Container(
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
                                 child: Icon(
                                   Icons.error_outline,
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.2),
                                 ),
                               ),
                             ),
@@ -157,7 +174,9 @@ class MediaHorizontalList extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.8),
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),

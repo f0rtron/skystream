@@ -5,10 +5,7 @@ import '../../../../core/widgets/marquee_widget.dart'; // Added
 class TorrentInfoWidget extends StatelessWidget {
   final TorrentStatus? status;
 
-  const TorrentInfoWidget({
-    Key? key, 
-    required this.status, 
-  }) : super(key: key);
+  const TorrentInfoWidget({super.key, required this.status});
 
   @override
   Widget build(BuildContext context) {
@@ -28,31 +25,39 @@ class TorrentInfoWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 20, // constrain height for marquee
-                    child: MarqueeWidget(
-                      child: Text(
-                        status!.title,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+              Expanded(
+                child: SizedBox(
+                  height: 20, // constrain height for marquee
+                  child: MarqueeWidget(
+                    child: Text(
+                      status!.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
                   ),
                 ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          
+
           // Speed and Progress
           Row(
             children: [
               _buildStat("Speed", status!.speedString, Icons.download),
               const SizedBox(width: 16),
-              _buildStat("Seeds", "${status!.seeds} (${status!.peers})", Icons.people),
+              _buildStat(
+                "Seeds",
+                "${status!.seeds} (${status!.peers})",
+                Icons.people,
+              ),
             ],
           ),
           const SizedBox(height: 8),
-           
+
           // Progress Bar
           LinearProgressIndicator(
             value: status!.progress,
@@ -66,8 +71,8 @@ class TorrentInfoWidget extends StatelessWidget {
           ),
           Text(
             "State: ${status!.status}",
-             style: const TextStyle(color: Colors.white70, fontSize: 10),
-          )
+            style: const TextStyle(color: Colors.white70, fontSize: 10),
+          ),
         ],
       ),
     );
@@ -81,8 +86,18 @@ class TorrentInfoWidget extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(value, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-            Text(label, style: const TextStyle(color: Colors.white54, fontSize: 10)),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white54, fontSize: 10),
+            ),
           ],
         ),
       ],

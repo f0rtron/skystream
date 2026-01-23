@@ -1,11 +1,7 @@
 import 'package:skystream/core/providers/device_info_provider.dart';
-import 'package:skystream/shared/widgets/focusable_item.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'search_provider.dart';
-import 'package:skystream/core/extensions/extension_manager.dart';
 import 'widgets/search_result_section.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -40,7 +36,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     // Matches HomeSection card size
     final double width = isLarge ? 170 : 110;
-    final double posterHeight = width * 1.5; 
+    final double posterHeight = width * 1.5;
     final double totalHeight = posterHeight + 100;
 
     return Scaffold(
@@ -75,9 +71,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 // fillColor inherited from AppTheme (0xFF22222E)
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                prefixIconConstraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                hintStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                prefixIconConstraints: const BoxConstraints(
+                  minWidth: 48,
+                  minHeight: 48,
+                ),
                 suffixIcon: _controller.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
@@ -89,7 +93,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     : null,
               ),
               onChanged: (val) {
-                 ref.read(searchQueryProvider.notifier).set(val);
+                ref.read(searchQueryProvider.notifier).set(val);
               },
             ),
           ),
@@ -99,9 +103,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         data: (providerResults) {
           // Flatten to check for any results
           final allResults = providerResults.expand((e) => e.results).toList();
-          
+
           if (allResults.isEmpty) {
-             return _buildEmptyState(context);
+            return _buildEmptyState(context);
           }
 
           return ListView.builder(
@@ -124,6 +128,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ),
     );
   }
+
   Widget _buildEmptyState(BuildContext context) {
     final query = ref.read(searchQueryProvider);
     if (query.length < 2) {
@@ -131,7 +136,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.movie_filter_rounded, size: 64, color: Theme.of(context).dividerColor),
+            Icon(
+              Icons.movie_filter_rounded,
+              size: 64,
+              color: Theme.of(context).dividerColor,
+            ),
             const SizedBox(height: 16),
             Text(
               'Search for your favorite content',

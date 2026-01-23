@@ -89,7 +89,9 @@ class ExtensionsController extends Notifier<ExtensionsState> {
       // Load Asset Plugins if enabled
       if (ref.read(storageServiceProvider).getDevLoadAssets()) {
         final assetPlugins = await _loadAssetPlugins();
-        debugPrint("ExtensionsController: Loaded ${assetPlugins.length} asset plugins");
+        debugPrint(
+          "ExtensionsController: Loaded ${assetPlugins.length} asset plugins",
+        );
         plugins.addAll(assetPlugins);
       } else {
         debugPrint("ExtensionsController: Asset loading disabled");
@@ -144,10 +146,10 @@ class ExtensionsController extends Notifier<ExtensionsState> {
         // Apply .debug suffix for asset plugins to allow coexistence with release versions
         // and for easy identification in UI
         if (filePath.startsWith('assets/')) {
-           final originalId = json['id'];
-           if (!originalId.toString().endsWith('.debug')) {
-              json['id'] = "$originalId.debug";
-           }
+          final originalId = json['id'];
+          if (!originalId.toString().endsWith('.debug')) {
+            json['id'] = "$originalId.debug";
+          }
         }
 
         // Inject sourceUrl (filePath) so it is picked up by fromJson
@@ -210,7 +212,9 @@ class ExtensionsController extends Notifier<ExtensionsState> {
       if (repo != null) {
         // Handle Recursive Repositories (Megarepo)
         if (repo.includedRepos.isNotEmpty) {
-          debugPrint("Repo ${repo.name} contains ${repo.includedRepos.length} included repos");
+          debugPrint(
+            "Repo ${repo.name} contains ${repo.includedRepos.length} included repos",
+          );
           for (final subRepoUrl in repo.includedRepos) {
             await addRepository(subRepoUrl, visitedUrls: visitedUrls);
           }
@@ -248,15 +252,16 @@ class ExtensionsController extends Notifier<ExtensionsState> {
           isLoading: false,
         );
       } else {
-         // ... (Keep existing error logic, or simplify?)
-         // Simplify: don't error out the whole state for one bad sub-repo
-         debugPrint("Failed to parse repository at $url");
-         if (visitedUrls.length == 1) { // Only show error if it's the root call
-            state = state.copyWith(
-              isLoading: false,
-              error: "Failed to parse repository",
-            );
-         }
+        // ... (Keep existing error logic, or simplify?)
+        // Simplify: don't error out the whole state for one bad sub-repo
+        debugPrint("Failed to parse repository at $url");
+        if (visitedUrls.length == 1) {
+          // Only show error if it's the root call
+          state = state.copyWith(
+            isLoading: false,
+            error: "Failed to parse repository",
+          );
+        }
       }
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -306,7 +311,7 @@ class ExtensionsController extends Notifier<ExtensionsState> {
               orElse: () => null,
             );
         if (match != null) {
-          pluginsToDelete.add(match!);
+          pluginsToDelete.add(match);
         }
       }
 

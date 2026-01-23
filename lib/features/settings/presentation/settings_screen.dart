@@ -238,7 +238,8 @@ class SettingsScreen extends ConsumerWidget {
                                     .clearPreferences();
 
                                 // Restart App
-                                if (context.mounted) await AppUtils.restartApp(context);
+                                if (context.mounted)
+                                  await AppUtils.restartApp(context);
                               },
                               style: TextButton.styleFrom(
                                 foregroundColor: Colors.orange,
@@ -285,7 +286,8 @@ class SettingsScreen extends ConsumerWidget {
                                     .deleteAllData();
 
                                 // Restart App
-                                if (context.mounted) await AppUtils.restartApp(context);
+                                if (context.mounted)
+                                  await AppUtils.restartApp(context);
                               },
                               style: TextButton.styleFrom(
                                 foregroundColor: Colors.red,
@@ -376,14 +378,15 @@ class SettingsScreen extends ConsumerWidget {
               groupValue: current,
               onChanged: (val) {
                 if (val != null) {
-                  if (isLeft)
+                  if (isLeft) {
                     ref
                         .read(playerSettingsProvider.notifier)
                         .setLeftGesture(val);
-                  else
+                  } else {
                     ref
                         .read(playerSettingsProvider.notifier)
                         .setRightGesture(val);
+                  }
                   Navigator.pop(context);
                 }
               },

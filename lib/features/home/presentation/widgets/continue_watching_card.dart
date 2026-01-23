@@ -1,12 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:skystream/core/domain/entity/multimedia_item.dart';
 import 'package:skystream/features/library/presentation/history_provider.dart';
 import 'package:skystream/shared/widgets/focusable_item.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added import
 
-class ContinueWatchingCard extends ConsumerWidget { // Changed to ConsumerWidget
+class ContinueWatchingCard extends ConsumerWidget {
+  // Changed to ConsumerWidget
   final HistoryItem historyItem;
   final double width;
   final bool isLarge;
@@ -19,7 +19,8 @@ class ContinueWatchingCard extends ConsumerWidget { // Changed to ConsumerWidget
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) { // Added ref
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Added ref
     final item = historyItem.item;
     // Calculate progress (0.0 to 1.0)
     final double progress = (historyItem.duration > 0)
@@ -27,13 +28,8 @@ class ContinueWatchingCard extends ConsumerWidget { // Changed to ConsumerWidget
         : 0.0;
 
     return FocusableItem(
-      onTap: () => context.push(
-        '/details',
-        extra: {
-          'item': item,
-          'autoPlay': true,
-        },
-      ),
+      onTap: () =>
+          context.push('/details', extra: {'item': item, 'autoPlay': true}),
       // Android-like behaviour: Long press to show metadata/action
       onLongPress: () {
         showModalBottomSheet(
@@ -44,35 +40,45 @@ class ContinueWatchingCard extends ConsumerWidget { // Changed to ConsumerWidget
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                 Text(item.title, style: Theme.of(context).textTheme.titleLarge),
-                 const SizedBox(height: 8),
-                 // Basic Actions
-                 ListTile(
-                    leading: const Icon(Icons.info_outline),
-                    title: const Text('View Details'),
-                    onTap: () {
-                        Navigator.pop(context);
-                        context.push('/details', extra: item); // Standard view
-                    },
-                 ),
-                 ListTile(
-                    leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                    title: const Text('Remove from History', style: TextStyle(color: Colors.redAccent)),
-                    onTap: () {
-                        // ref is available here because we capture it from build
-                        ref.read(watchHistoryProvider.notifier).removeFromHistory(item.url);
-                        Navigator.pop(context);
-                        
-                        ScaffoldMessenger.of(context).showSnackBar(
-                           SnackBar(content: Text('Removed ${item.title} from history')),
-                        );
-                    },
-                 ),
-                 ListTile(
-                    leading: const Icon(Icons.close),
-                    title: const Text('Cancel'),
-                    onTap: () => Navigator.pop(context),
-                 ),
+                Text(item.title, style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 8),
+                // Basic Actions
+                ListTile(
+                  leading: const Icon(Icons.info_outline),
+                  title: const Text('View Details'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/details', extra: item); // Standard view
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.redAccent,
+                  ),
+                  title: const Text(
+                    'Remove from History',
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
+                  onTap: () {
+                    // ref is available here because we capture it from build
+                    ref
+                        .read(watchHistoryProvider.notifier)
+                        .removeFromHistory(item.url);
+                    Navigator.pop(context);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Removed ${item.title} from history'),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.close),
+                  title: const Text('Cancel'),
+                  onTap: () => Navigator.pop(context),
+                ),
               ],
             ),
           ),
@@ -148,9 +154,9 @@ class ContinueWatchingCard extends ConsumerWidget { // Changed to ConsumerWidget
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    fontSize: isLarge ? 15 : null,
-                  ),
+                fontWeight: FontWeight.w500,
+                fontSize: isLarge ? 15 : null,
+              ),
             ),
           ],
         ),

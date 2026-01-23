@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart'; // Contains ChangeNotifier
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'base_provider.dart';
 
 // Import providers (Eventually this will be dynamic)
-import 'dart:convert';
 import 'dart:io';
-import 'dart:isolate';
 import 'engine/js_engine.dart';
 import 'models/extension_plugin.dart';
 import 'providers/js_based_provider.dart';
@@ -64,40 +61,38 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
       });
     }
 
-
-    
     // Batch load background providers to avoid UI stutter
     final newProviders = <SkyStreamProvider>[];
-    
-    for (final plugin in sortedPlugins) {
-       final existingList = state.where((p) => p.id == plugin.id);
-       final existing = existingList.isNotEmpty ? existingList.first : null;
-       
-       bool needsLoad = existing == null;
-       if (existing != null) {
-            final newVersion = plugin.version.toString();
-            final oldVersion = existing.version;
-            if (newVersion != oldVersion) {
-                // Version changed, reload
-                state = state.where((p) => p.id != plugin.id).toList();
-                needsLoad = true;
-            }
-       }
 
-       if (needsLoad) {
-           if (plugin.id == activeId) {
-               await _loadPlugin(plugin, addToState: true); 
-           } else {
-               // Stagger loading slightly to not freeze UI
-               await Future.delayed(const Duration(milliseconds: 10));
-               final p = await _loadPlugin(plugin, addToState: false);
-               if (p != null) newProviders.add(p);
-           }
-       }
+    for (final plugin in sortedPlugins) {
+      final existingList = state.where((p) => p.id == plugin.id);
+      final existing = existingList.isNotEmpty ? existingList.first : null;
+
+      bool needsLoad = existing == null;
+      if (existing != null) {
+        final newVersion = plugin.version.toString();
+        final oldVersion = existing.version;
+        if (newVersion != oldVersion) {
+          // Version changed, reload
+          state = state.where((p) => p.id != plugin.id).toList();
+          needsLoad = true;
+        }
+      }
+
+      if (needsLoad) {
+        if (plugin.id == activeId) {
+          await _loadPlugin(plugin, addToState: true);
+        } else {
+          // Stagger loading slightly to not freeze UI
+          await Future.delayed(const Duration(milliseconds: 10));
+          final p = await _loadPlugin(plugin, addToState: false);
+          if (p != null) newProviders.add(p);
+        }
+      }
     }
 
     if (newProviders.isNotEmpty) {
-       state = [...state, ...newProviders];
+      state = [...state, ...newProviders];
     }
 
     // Unload Removed Plugins
@@ -128,7 +123,10 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
     }
   }
 
-  Future<SkyStreamProvider?> _loadPlugin(ExtensionPlugin plugin, {bool addToState = true}) async {
+  Future<SkyStreamProvider?> _loadPlugin(
+    ExtensionPlugin plugin, {
+    bool addToState = true,
+  }) async {
     if (_engine == null || _storageService == null) return null;
     try {
       final path = await _storageService!.getPluginJsPath(plugin);
@@ -247,10 +245,14 @@ class ActiveProviderNotifier extends Notifier<SkyStreamProvider?> {
           // Present -> Check for instance update
           final match = found.first;
           if (match != state) {
-            debugPrint("ActiveProviderNotifier: Refreshed active provider instance. Match: ${match.hashCode}, State: ${state.hashCode}");
+            debugPrint(
+              "ActiveProviderNotifier: Refreshed active provider instance. Match: ${match.hashCode}, State: ${state.hashCode}",
+            );
             state = match;
           } else {
-             debugPrint("ActiveProviderNotifier: Match found (${match.hashCode}) == State (${state.hashCode}), NO UPDATE.");
+            debugPrint(
+              "ActiveProviderNotifier: Match found (${match.hashCode}) == State (${state.hashCode}), NO UPDATE.",
+            );
           }
         }
       }

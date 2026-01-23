@@ -84,14 +84,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             padding: const EdgeInsets.only(left: 12),
                             child: Builder(
                               builder: (context) {
-                                final active = ref.watch(activeProviderStateProvider);
+                                final active = ref.watch(
+                                  activeProviderStateProvider,
+                                );
                                 final isDebug = active?.isDebug ?? false;
                                 return Row(
-                                   children: [
-                                     Text(
+                                  children: [
+                                    Text(
                                       active?.name ?? 'None',
                                       style: TextStyle(
-                                        color: Theme.of(context).colorScheme.onSurface,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
                                         fontWeight: FontWeight.w500,
                                       ),
                                       maxLines: 1,
@@ -101,10 +105,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     if (isDebug) ...[
                                       const SizedBox(width: 8),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                          vertical: 2,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: Colors.red,
-                                          borderRadius: BorderRadius.circular(4),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
                                         ),
                                         child: const Text(
                                           'DEBUG',
@@ -116,9 +125,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         ),
                                       ),
                                     ],
-                                   ],
+                                  ],
                                 );
-                              }
+                              },
                             ),
                           )
                         : const SizedBox.shrink(),
@@ -175,8 +184,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return homeDataAsync.when(
       data: (data) {
         if (data.containsKey('Error')) {
-           final errorItem = data['Error']!.first as MultimediaItem;
-           return _buildErrorState(context, errorItem.description ?? "Unknown Error", ref);
+          final errorItem = data['Error']!.first as MultimediaItem;
+          return _buildErrorState(
+            context,
+            errorItem.description ?? "Unknown Error",
+            ref,
+          );
         }
 
         return RefreshIndicator(
@@ -221,54 +234,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildErrorState(BuildContext context, String error, WidgetRef ref) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.cloud_off,
-                size: 64,
-                color: Theme.of(context).colorScheme.error,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.cloud_off,
+              size: 64,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Site Not Reachable',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Please try accessing the site with a VPN or checking your internet connection.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'Site Not Reachable',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Please try accessing the site with a VPN or checking your internet connection.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
-                  borderRadius: BorderRadius.circular(8),
+              child: SelectableText(
+                'Error Details: $error',
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
-                child: SelectableText(
-                  'Error Details: $error',
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
               ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: () => ref.refresh(homeDataProvider),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () => ref.refresh(homeDataProvider),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
         ),
-      );
+      ),
+    );
   }
 
   void _showProviderSelector(BuildContext context, WidgetRef ref) {
@@ -301,7 +314,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     if (isDebug) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.red,
                           borderRadius: BorderRadius.circular(4),
@@ -326,7 +342,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ref.refresh(homeDataProvider);
                 },
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

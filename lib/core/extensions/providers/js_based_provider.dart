@@ -77,7 +77,7 @@ class JsBasedProvider extends SkyStreamProvider {
       }
 
       try {
-        await _jsEngine.loadScript(script!);
+        await _jsEngine.loadScript(script);
 
         try {
           final funcName = _namespace != null
@@ -89,14 +89,18 @@ class JsBasedProvider extends SkyStreamProvider {
             _manifest = Map<String, dynamic>.from(manifest);
           } else {
             if (kDebugMode) {
-               String msg = manifest.toString();
-               if (msg.length > 500) msg = "${msg.substring(0, 500)}... [Truncated]";
-               debugPrint("Error: getManifest returned non-Map: $msg for $_scriptPath");
+              String msg = manifest.toString();
+              if (msg.length > 500)
+                msg = "${msg.substring(0, 500)}... [Truncated]";
+              debugPrint(
+                "Error: getManifest returned non-Map: $msg for $_scriptPath",
+              );
             }
             _error = "Manifest type err";
           }
         } catch (e) {
-          if (kDebugMode) debugPrint("Error loading manifest for $_scriptPath: $e");
+          if (kDebugMode)
+            debugPrint("Error loading manifest for $_scriptPath: $e");
           _error = "Manifest: $e";
         }
       } catch (e) {
@@ -141,9 +145,7 @@ class JsBasedProvider extends SkyStreamProvider {
       result.forEach((key, value) {
         if (value is List) {
           map[key] = value
-              .map(
-                (e) => MultimediaItem.fromJson(Map<String, dynamic>.from(e)),
-              )
+              .map((e) => MultimediaItem.fromJson(Map<String, dynamic>.from(e)))
               .toList();
         }
       });
@@ -188,8 +190,7 @@ class JsBasedProvider extends SkyStreamProvider {
     );
   }
 
-
-
+  @override
   Future<List<StreamResult>> loadStreams(String url) async {
     await _initFuture;
     await LocalProxyService.instance.startServer();
@@ -198,74 +199,73 @@ class JsBasedProvider extends SkyStreamProvider {
       final result = await _jsEngine.invokeAsync(_fn('loadStreams'), [url]);
       if (result is List) {
         return result.map((e) {
-            final map = Map<String, dynamic>.from(e);
-            String finalUrl = map['url'];
+          final map = Map<String, dynamic>.from(e);
+          String finalUrl = map['url'];
 
-            // MAGIC M3U8 HANDLING
-            if (finalUrl.startsWith("magic_m3u8:")) {
-              try {
-                final base64Content = finalUrl.substring("magic_m3u8:".length);
-                final bytes = base64Decode(base64Content);
-                var m3u8Content = utf8.decode(bytes);
-                
-                // M3U8 Rewriting is now done by LocalProxyService recursively if we serve it,
-                // BUT the JS might have pre-encoded "MAGIC_PROXY_v1" placeholders.
-                // We should probably strip those or let the Proxy Service handle them?
-                // Actually, the new ProxyService doesn't know about "MAGIC_PROXY_v1".
-                // We need to keep the placeholder replacement OR rely on the JS to produce clean URLs.
-                // The current JS produces "MAGIC_PROXY_v1".
-                
-                // Compatibility: Replace MAGIC_PROXY_v1 with real local proxy URLs
-                 m3u8Content = m3u8Content.replaceAllMapped(
-                  RegExp(r'MAGIC_PROXY_v1([A-Za-z0-9+/=]+)'),
-                  (match) {
-                    final b64Url = match.group(1)!;
-                    try {
-                      final realUrlBytes = base64Decode(b64Url);
-                      final realUrl = utf8.decode(realUrlBytes);
-                      return LocalProxyService.instance.getProxyUrl(realUrl);
-                    } catch (e) {
-                      return match.group(0)!;
-                    }
-                  },
-                );
+          // MAGIC M3U8 HANDLING
+          if (finalUrl.startsWith("magic_m3u8:")) {
+            try {
+              final base64Content = finalUrl.substring("magic_m3u8:".length);
+              final bytes = base64Decode(base64Content);
+              var m3u8Content = utf8.decode(bytes);
 
-                finalUrl = LocalProxyService.instance.serveM3u8(m3u8Content);
-                
-              } catch (err) {
-                if (kDebugMode) debugPrint("Magic M3U8 Error: $err");
-              }
+              // M3U8 Rewriting is now done by LocalProxyService recursively if we serve it,
+              // BUT the JS might have pre-encoded "MAGIC_PROXY_v1" placeholders.
+              // We should probably strip those or let the Proxy Service handle them?
+              // Actually, the new ProxyService doesn't know about "MAGIC_PROXY_v1".
+              // We need to keep the placeholder replacement OR rely on the JS to produce clean URLs.
+              // The current JS produces "MAGIC_PROXY_v1".
+
+              // Compatibility: Replace MAGIC_PROXY_v1 with real local proxy URLs
+              m3u8Content = m3u8Content.replaceAllMapped(
+                RegExp(r'MAGIC_PROXY_v1([A-Za-z0-9+/=]+)'),
+                (match) {
+                  final b64Url = match.group(1)!;
+                  try {
+                    final realUrlBytes = base64Decode(b64Url);
+                    final realUrl = utf8.decode(realUrlBytes);
+                    return LocalProxyService.instance.getProxyUrl(realUrl);
+                  } catch (e) {
+                    return match.group(0)!;
+                  }
+                },
+              );
+
+              finalUrl = LocalProxyService.instance.serveM3u8(m3u8Content);
+            } catch (err) {
+              if (kDebugMode) debugPrint("Magic M3U8 Error: $err");
             }
-            // DIRECT PROXY URL HANDLING
-            else if (finalUrl.startsWith("MAGIC_PROXY_v1")) {
-              try {
-                // Strip prefix
-                final b64Url = finalUrl.substring("MAGIC_PROXY_v1".length);
-                final realUrlBytes = base64Decode(b64Url);
-                final realUrl = utf8.decode(realUrlBytes);
-                finalUrl = LocalProxyService.instance.getProxyUrl(realUrl);
-              } catch (e) {
-                if (kDebugMode) debugPrint("Error decoding MAGIC_PROXY_v1 url: $e");
-              }
+          }
+          // DIRECT PROXY URL HANDLING
+          else if (finalUrl.startsWith("MAGIC_PROXY_v1")) {
+            try {
+              // Strip prefix
+              final b64Url = finalUrl.substring("MAGIC_PROXY_v1".length);
+              final realUrlBytes = base64Decode(b64Url);
+              final realUrl = utf8.decode(realUrlBytes);
+              finalUrl = LocalProxyService.instance.getProxyUrl(realUrl);
+            } catch (e) {
+              if (kDebugMode)
+                debugPrint("Error decoding MAGIC_PROXY_v1 url: $e");
             }
+          }
 
-            return StreamResult(
-              url: finalUrl,
-              quality: map['quality'] ?? "Auto",
-              headers: map['headers'] != null
-                  ? Map<String, String>.from(map['headers'])
-                  : null,
-              subtitles: map['subtitles'] != null
-                  ? (map['subtitles'] as List)
-                        .map(
-                          (s) => SubtitleFile.fromJson(
-                            Map<String, dynamic>.from(s),
-                          ),
-                        )
-                        .toList()
-                  : null,
-            );
-          }).toList();
+          return StreamResult(
+            url: finalUrl,
+            quality: map['quality'] ?? "Auto",
+            headers: map['headers'] != null
+                ? Map<String, String>.from(map['headers'])
+                : null,
+            subtitles: map['subtitles'] != null
+                ? (map['subtitles'] as List)
+                      .map(
+                        (s) =>
+                            SubtitleFile.fromJson(Map<String, dynamic>.from(s)),
+                      )
+                      .toList()
+                : null,
+          );
+        }).toList();
       }
     } catch (e) {
       if (kDebugMode) debugPrint("Error in loadStreams: $e");

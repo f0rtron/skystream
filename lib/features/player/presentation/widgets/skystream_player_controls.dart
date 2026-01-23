@@ -160,12 +160,13 @@ class SkyStreamPlayerControlsState
   late Duration _position;
   late Duration _duration;
 
-  List<StreamSubscription> _subscriptions = [];
+  final List<StreamSubscription> _subscriptions = [];
 
   String _getLanguageName(String code) {
     final normalized = code.toLowerCase().trim();
-    if (normalized == 'no' || normalized == 'off' || normalized == 'none')
+    if (normalized == 'no' || normalized == 'off' || normalized == 'none') {
       return 'Off';
+    }
     if (normalized == 'auto') return 'Auto';
     // Original app logic fallback for unmapped
     return _isoLanguages[normalized] ?? code;
@@ -204,10 +205,11 @@ class SkyStreamPlayerControlsState
     _subscriptions.addAll([
       widget.player.stream.playing.listen((val) {
         if (mounted) setState(() => _isPlaying = val);
-        if (val)
+        if (val) {
           _startHideTimer();
-        else
+        } else {
           _cancelHideTimer();
+        }
 
         // Sync PiP state with Android
         if (Platform.isAndroid) {
@@ -285,7 +287,9 @@ class SkyStreamPlayerControlsState
 
   @override
   void dispose() {
-    for (var s in _subscriptions) s.cancel();
+    for (var s in _subscriptions) {
+      s.cancel();
+    }
     _hideTimer?.cancel();
     _seekAnimController.dispose();
     _osdTimer?.cancel();
@@ -353,19 +357,19 @@ class SkyStreamPlayerControlsState
       if (!isFull) {
         // Going Custom Fullscreen (Hide TitleBar)
         if (Platform.isWindows || Platform.isLinux) {
-             // Explicitly hide title bar to remove borders on Windows
-             await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
+          // Explicitly hide title bar to remove borders on Windows
+          await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
         }
         await windowManager.setFullScreen(true);
       } else {
         // Exiting Fullscreen
         await windowManager.setFullScreen(false);
         if (Platform.isWindows || Platform.isLinux) {
-             // Restore title bar
-             await windowManager.setTitleBarStyle(TitleBarStyle.normal);
+          // Restore title bar
+          await windowManager.setTitleBarStyle(TitleBarStyle.normal);
         }
       }
-      
+
       if (mounted) {
         setState(() {
           _isFullscreen = !isFull;
@@ -461,10 +465,11 @@ class SkyStreamPlayerControlsState
       _isLocked = !_isLocked;
       _isVisible = true;
     });
-    if (!_isLocked)
+    if (!_isLocked) {
       _startHideTimer();
-    else
+    } else {
       _hideTimer?.cancel();
+    }
   }
 
   // Keyboard shortcut handlers
@@ -984,8 +989,9 @@ class SkyStreamPlayerControlsState
   }
 
   void _handleDragUpdate(DragUpdateDetails details) {
-    if (_currentGesture == null || _currentGesture == PlayerGesture.none)
+    if (_currentGesture == null || _currentGesture == PlayerGesture.none) {
       return;
+    }
 
     final delta = -details.primaryDelta! / 300;
 
@@ -1822,7 +1828,9 @@ class SkyStreamPlayerControlsState
                                 inactiveTrackColor: Colors.grey,
                                 trackShape: const RoundedRectSliderTrackShape(),
                                 thumbColor: Colors.white,
-                                overlayColor: Colors.white.withValues(alpha: 0.2),
+                                overlayColor: Colors.white.withValues(
+                                  alpha: 0.2,
+                                ),
                               ),
                               child: Slider(
                                 value:

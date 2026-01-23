@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:app_restarter/app_restarter.dart';
-import 'package:flutter/foundation.dart';
-import 'dart:io';
 import '../../../../main.dart' as app_main;
 
 class AppUtils {

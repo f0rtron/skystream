@@ -68,30 +68,30 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     // Resolve Episode Title if Series
     if (widget.item.episodes != null && widget.item.episodes!.isNotEmpty) {
       if (widget.item.episodes!.length > 1) {
-          try {
-            final ep = widget.item.episodes!.firstWhere(
-              (e) => e.url == widget.videoUrl,
-              orElse: () => widget.item.episodes!.first,
-            );
-            
-            if (ep.url == widget.videoUrl) {
-                String epTitle = "";
-                if (ep.season > 0 && ep.episode > 0) {
-                    epTitle = "S${ep.season}:E${ep.episode}";
-                } else if (ep.episode > 0) {
-                    epTitle = "E${ep.episode}";
-                }
-                
-                if (ep.name.isNotEmpty && ep.name != "Episode ${ep.episode}") {
-                    epTitle = "$epTitle - ${ep.name}";
-                }
-                
-                if (epTitle.isNotEmpty) {
-                    if (epTitle.startsWith(" - ")) epTitle = epTitle.substring(3);
-                    _playerTitle = "${widget.item.title} $epTitle";
-                }
+        try {
+          final ep = widget.item.episodes!.firstWhere(
+            (e) => e.url == widget.videoUrl,
+            orElse: () => widget.item.episodes!.first,
+          );
+
+          if (ep.url == widget.videoUrl) {
+            String epTitle = "";
+            if (ep.season > 0 && ep.episode > 0) {
+              epTitle = "S${ep.season}:E${ep.episode}";
+            } else if (ep.episode > 0) {
+              epTitle = "E${ep.episode}";
             }
-          } catch (_) {}
+
+            if (ep.name.isNotEmpty && ep.name != "Episode ${ep.episode}") {
+              epTitle = "$epTitle - ${ep.name}";
+            }
+
+            if (epTitle.isNotEmpty) {
+              if (epTitle.startsWith(" - ")) epTitle = epTitle.substring(3);
+              _playerTitle = "${widget.item.title} $epTitle";
+            }
+          }
+        } catch (_) {}
       }
     }
 
@@ -110,9 +110,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     _videoController = VideoController(_player);
 
     final settings = ref.read(playerSettingsProvider);
-    if (settings.defaultResizeMode == "Zoom")
+    if (settings.defaultResizeMode == "Zoom") {
       _videoFit = BoxFit.cover;
-    else if (settings.defaultResizeMode == "Stretch")
+    } else if (settings.defaultResizeMode == "Stretch")
       _videoFit = BoxFit.fill;
 
     _initPlayer();
@@ -205,11 +205,12 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     // Resolve Active Provider
     final activeProvider = _resolveProvider();
     if (activeProvider == null) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _errorMessage = "No provider selected.";
           _isLoading = false;
         });
+      }
       return;
     }
 
@@ -279,11 +280,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         widget.videoUrl.endsWith(".torrent")) {
       // Treated as torrent
       if (mounted) {
-         // Update state directly, _loadStreamAtIndex will trigger the UI rebuild via setState
-          _streams = [
-            StreamResult(url: widget.videoUrl, quality: "Torrent", headers: {}),
-          ];
-          _currentStreamIndex = 0;
+        // Update state directly, _loadStreamAtIndex will trigger the UI rebuild via setState
+        _streams = [
+          StreamResult(url: widget.videoUrl, quality: "Torrent", headers: {}),
+        ];
+        _currentStreamIndex = 0;
         _loadStreamAtIndex(0);
       }
       return true;
@@ -322,7 +323,6 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     }
     return initialIndex;
   }
-
 
   Future<void> _applyPlaybackProperties(Map<String, String> headers) async {
     if (_player.platform is! NativePlayer) {
@@ -365,8 +365,6 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         break;
       }
     }
-
-
   }
 
   Future<String?> _resolveStreamUrl(StreamResult stream) async {
@@ -663,7 +661,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       final double progress = (pos / dur) * 100;
 
       // Mark as Watched logic
-      bool isSeries = widget.item.episodes != null && widget.item.episodes!.length > 1;
+      bool isSeries =
+          widget.item.episodes != null && widget.item.episodes!.length > 1;
 
       // Only remove from history if it's a Movie (or single episode) and finished
       if (progress >= 95 && !isSeries) {
@@ -708,7 +707,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       try {
         windowManager.setFullScreen(false);
         if (Platform.isWindows || Platform.isLinux) {
-             windowManager.setTitleBarStyle(TitleBarStyle.normal);
+          windowManager.setTitleBarStyle(TitleBarStyle.normal);
         }
       } catch (_) {}
     }
@@ -837,7 +836,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     return Scaffold(
       // backgroundColor: Colors.black, // Inherit from Theme (Scaffold is Black)
       body: MouseRegion(
-        cursor: _controlsVisible ? SystemMouseCursors.basic : SystemMouseCursors.none,
+        cursor: _controlsVisible
+            ? SystemMouseCursors.basic
+            : SystemMouseCursors.none,
         onHover: (_) {
           if (!_controlsVisible) {
             setState(() => _controlsVisible = true);
@@ -874,7 +875,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                         ref.watch(playerSettingsProvider).subtitleColor,
                       ),
                       backgroundColor: Color(
-                        ref.watch(playerSettingsProvider).subtitleBackgroundColor,
+                        ref
+                            .watch(playerSettingsProvider)
+                            .subtitleBackgroundColor,
                       ),
                       shadows: [
                         const Shadow(

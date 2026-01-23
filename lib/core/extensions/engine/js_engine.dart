@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart'; // For kDebugMode
 import 'package:flutter_js/flutter_js.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -346,7 +345,10 @@ class JsEngineService {
   String _sanitizeLog(dynamic args) {
     String msg = args.toString();
     // Detect HTML-like content (checking for common tags/doctypes)
-    if (msg.length > 500 && (msg.toLowerCase().contains("<!doctype html>") || msg.toLowerCase().contains("<html") || msg.contains("</div>"))) {
+    if (msg.length > 500 &&
+        (msg.toLowerCase().contains("<!doctype html>") ||
+            msg.toLowerCase().contains("<html") ||
+            msg.contains("</div>"))) {
       return "[HTML Content Omitted - Length: ${msg.length}]";
     }
     // Truncate very long logs

@@ -3,10 +3,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/config/tmdb_config.dart';
 import '../../../core/services/tmdb_service.dart';
 import '../../dashboard/data/tmdb_provider.dart';
 import '../../dashboard/data/language_provider.dart';
+import 'widgets/provider_search_section.dart';
 
 // ignore: camel_case_types
 class MovieDetailsParams {
@@ -63,11 +65,33 @@ class _TmdbMovieDetailsScreenState
   late ScrollController _scrollController;
   final ValueNotifier<bool> _showAppBarTitle = ValueNotifier<bool>(false);
 
+  // Season Selection State
+  int _selectedSeason = 1;
+  Future<Map<String, dynamic>?>? _episodesFuture;
+
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
+    if (widget.mediaType == 'tv') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _fetchEpisodes(1);
+      });
+    }
+  }
+
+  void _fetchEpisodes(int season) {
+    setState(() {
+      _selectedSeason = season;
+      _episodesFuture = ref
+          .read(tmdbServiceProvider)
+          .getTvSeasonDetails(
+            widget.movieId,
+            season,
+            language: ref.read(languageProvider),
+          );
+    });
   }
 
   @override
@@ -95,7 +119,7 @@ class _TmdbMovieDetailsScreenState
       // Background color comes from Theme (Black in Dark, White/Grey in Light)
       body: detailsAsync.when(
         data: (data) {
-          if (data == null)
+          if (data == null) {
             return Center(
               child: Text(
                 "Content not found",
@@ -104,6 +128,7 @@ class _TmdbMovieDetailsScreenState
                 ),
               ),
             );
+          }
           return _buildBody(data);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -123,8 +148,9 @@ class _TmdbMovieDetailsScreenState
     final posterPath = data['poster_path'];
     final backdropPath = data['backdrop_path'];
     var title = data['title'] ?? data['name'] ?? '';
+    var overview = data['overview'] ?? '';
 
-    // Check for English translation to fix foreign titles
+    // Check for English translation to fix foreign titles and overviews
     if (data['translations'] != null) {
       final translations = List<Map<String, dynamic>>.from(
         data['translations']['translations'] ?? [],
@@ -138,11 +164,14 @@ class _TmdbMovieDetailsScreenState
         if (enTitle != null && enTitle.toString().isNotEmpty) {
           title = enTitle;
         }
+        final enOverview = enTrans['data']['overview'];
+        if (enOverview != null && enOverview.toString().isNotEmpty) {
+          overview = enOverview;
+        }
       }
     }
 
     final tagline = data['tagline'] ?? '';
-    final overview = data['overview'] ?? '';
     final runtime = isMovie
         ? (data['runtime'] ?? 0)
         : ((data['episode_run_time'] as List?)?.isNotEmpty == true
@@ -169,6 +198,7 @@ class _TmdbMovieDetailsScreenState
     final minutes = runtime % 60;
     final durationText = hours > 0 ? '${hours}H ${minutes}M' : '${minutes}M';
     final year = releaseDate.isNotEmpty ? releaseDate.split('-')[0] : '';
+    final rating = (data['vote_average'] as num?)?.toStringAsFixed(1) ?? '0.0';
 
     // Find Certification
     String certification = isMovie ? "PG-13" : "TV-14";
@@ -240,7 +270,9 @@ class _TmdbMovieDetailsScreenState
           leading: Padding(
             padding: const EdgeInsets.all(8.0),
             child: CircleAvatar(
-              backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.onSurface.withOpacity(0.1),
               radius: 18,
               child: IconButton(
                 icon: Icon(
@@ -253,210 +285,169 @@ class _TmdbMovieDetailsScreenState
               ),
             ),
           ),
-          title: ValueListenableBuilder<bool>(
-            valueListenable: _showAppBarTitle,
-            builder: (context, showTitle, child) {
-              if (!showTitle) return const SizedBox.shrink();
-              return Text(
-                title.toUpperCase(),
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  letterSpacing: 1.0,
+          title: AnimatedBuilder(
+            animation: _scrollController,
+            builder: (context, child) {
+              double offset = 0;
+              if (_scrollController.hasClients)
+                offset = _scrollController.offset;
+              // Fade in as the main logo fades out (Main logo fully hidden at 300)
+              final double opacity = ((offset - 300) / 100).clamp(0.0, 1.0);
+
+              if (opacity <= 0) return const SizedBox.shrink();
+
+              return Opacity(
+                opacity: opacity,
+                child: Text(
+                  title.toUpperCase(),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    letterSpacing: 1.0,
+                  ),
                 ),
               );
             },
           ),
           centerTitle: false,
           flexibleSpace: FlexibleSpaceBar(
-            background: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Backdrop Image
-                if (backdropPath != null)
-                  CachedNetworkImage(
-                    imageUrl: '${TmdbConfig.imageBaseUrl}$backdropPath',
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
-                    ),
-                  ),
+            background: AnimatedBuilder(
+              animation: _scrollController,
+              builder: (context, child) {
+                double offset = 0.0;
+                if (_scrollController.hasClients) {
+                  offset = _scrollController.offset;
+                }
+                final opacity = (1.0 - (offset / 300)).clamp(0.0, 1.0);
+                final contentOffset = -offset * 0.4;
+                final parallaxOffset = -offset * 0.1;
 
-                // Gradient Overlay
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Theme.of(context).scaffoldBackgroundColor.withOpacity(
-                          0.0,
-                        ), // Top transparent
-                        Theme.of(
-                          context,
-                        ).scaffoldBackgroundColor.withOpacity(0.0),
-                        Theme.of(
-                          context,
-                        ).scaffoldBackgroundColor.withOpacity(0.8), // Fog
-                        Theme.of(
-                          context,
-                        ).scaffoldBackgroundColor, // Bottom solid
-                      ],
-                      stops: const [0.0, 0.4, 0.8, 1.0],
-                    ),
-                  ),
-                ),
-
-                // Content Overlay (Title, Genre, Buttons) -> CENTERED
-                Positioned(
-                  left: 20,
-                  right: 20,
-                  bottom: 20,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center, // Centered
-                    children: [
-                      // Movie Logo or Text Title
-                      if (logoUrl != null) ...[
-                        if (logoUrl.toLowerCase().endsWith('.svg'))
-                          SvgPicture.network(
-                            logoUrl,
-                            width: 280,
-                            height: 120,
-                            fit: BoxFit.contain,
-                            // If logo is black in light mode, it works. If white, it disappears on white bg.
-                            // However, we fixed logo priority to be Color/PNG.
-                            // If we have a White text logo on White background -> Invisible.
-                            // We might need a shadow or auto-color?
-                            // But usually logos are color.
-                          )
-                        else
-                          CachedNetworkImage(
-                            imageUrl: logoUrl,
-                            width: 280,
-                            height: 120,
-                            fit: BoxFit.contain,
-                            alignment: Alignment.center, // Centered
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Backdrop Image
+                    if (backdropPath != null)
+                      Transform.translate(
+                        offset: Offset(0, parallaxOffset),
+                        child: CachedNetworkImage(
+                          imageUrl: '${TmdbConfig.imageBaseUrl}$backdropPath',
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                           ),
-                      ] else
-                        Text(
-                          title.toUpperCase(),
-                          textAlign: TextAlign.center, // Centered
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 40,
-                            fontFamily: 'RobotoCondensed',
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.0,
+                          errorWidget: (context, url, error) => Container(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                           ),
-                        ),
-
-                      const SizedBox(height: 8),
-                      // Genre
-                      Text(
-                        genres.isNotEmpty
-                            ? genres.take(3).map((g) => g['name']).join(' • ')
-                            : (isMovie ? 'Movie' : 'TV Show'),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
                         ),
                       ),
 
-                      const SizedBox(height: 24),
-
-                      // Action Buttons (Play / Save) -> Centered
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center, // Centered
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () {},
-                              icon: Icon(
-                                Icons.play_arrow,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                size: 28,
-                              ),
-                              label: Text(
-                                "Play",
-                                style: TextStyle(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onPrimary,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.primary,
-                                foregroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.onPrimary,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                elevation: 2,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () {},
-                              icon: Icon(
-                                Icons.bookmark_border,
-                                color: Theme.of(context).colorScheme.onSurface,
-                                size: 28,
-                              ),
-                              label: Text(
-                                "Save",
-                                style: TextStyle(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.surface.withOpacity(0.5),
-                                foregroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface,
-                                side: BorderSide(
-                                  color: Theme.of(context).colorScheme.outline,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                    // Gradient Overlay
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Theme.of(context).scaffoldBackgroundColor
+                                .withOpacity(0.0), // Top transparent
+                            Theme.of(
+                              context,
+                            ).scaffoldBackgroundColor.withOpacity(0.0),
+                            Theme.of(
+                              context,
+                            ).scaffoldBackgroundColor.withOpacity(0.8), // Fog
+                            Theme.of(
+                              context,
+                            ).scaffoldBackgroundColor, // Bottom solid
+                          ],
+                          stops: const [0.0, 0.4, 0.8, 1.0],
+                        ),
                       ),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+
+                    // Content Overlay (Title, Genre, Buttons) -> CENTERED
+                    Positioned(
+                      left: 20,
+                      right: 20,
+                      bottom: 20,
+                      child: Transform.translate(
+                        offset: Offset(0, contentOffset),
+                        child: Opacity(
+                          opacity: opacity,
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.center, // Centered
+                            children: [
+                              // Movie Logo or Text Title
+                              if (logoUrl != null) ...[
+                                if (logoUrl.toLowerCase().endsWith('.svg'))
+                                  SvgPicture.network(
+                                    logoUrl,
+                                    width: 280,
+                                    height: 120,
+                                    fit: BoxFit.contain,
+                                    // If logo is black in light mode, it works. If white, it disappears on white bg.
+                                    // However, we fixed logo priority to be Color/PNG.
+                                    // If we have a White text logo on White background -> Invisible.
+                                    // We might need a shadow or auto-color?
+                                    // But usually logos are color.
+                                  )
+                                else
+                                  CachedNetworkImage(
+                                    imageUrl: logoUrl,
+                                    width: 280,
+                                    height: 120,
+                                    fit: BoxFit.contain,
+                                    alignment: Alignment.center, // Centered
+                                  ),
+                              ] else
+                                Text(
+                                  title.toUpperCase(),
+                                  textAlign: TextAlign.center, // Centered
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                    fontSize: 40,
+                                    fontFamily: 'RobotoCondensed',
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 1.0,
+                                  ),
+                                ),
+
+                              const SizedBox(height: 8),
+                              // Genre
+                              Text(
+                                genres.isNotEmpty
+                                    ? genres
+                                          .take(3)
+                                          .map((g) => g['name'])
+                                          .join(' • ')
+                                    : (isMovie ? 'Movie' : 'TV Show'),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.7),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+
+                              const SizedBox(height: 24),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -468,11 +459,26 @@ class _TmdbMovieDetailsScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Source Search (Provider Integration)
+                ProviderSearchSection(query: title),
+                const SizedBox(height: 24),
+
                 // Metadata Row: 2026  1H 56M  [PG-13]
                 Row(
                   children: [
                     Text(
                       year,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    _buildTmdbLogo(),
+                    const SizedBox(width: 8),
+                    Text(
+                      rating,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 16,
@@ -532,13 +538,18 @@ class _TmdbMovieDetailsScreenState
                 // Director / Creator
                 RichText(
                   text: TextSpan(
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 15),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 15,
+                    ),
                     children: [
                       TextSpan(
                         text: isMovie ? "Director: " : "Creator: ",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
                         ),
                       ),
                       TextSpan(text: director),
@@ -583,7 +594,9 @@ class _TmdbMovieDetailsScreenState
                                       ? "Show Less"
                                       : "Show More",
                                   style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -591,7 +604,9 @@ class _TmdbMovieDetailsScreenState
                                   _isDescriptionExpanded
                                       ? Icons.keyboard_arrow_up
                                       : Icons.keyboard_arrow_down,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                   size: 18,
                                 ),
                               ],
@@ -640,7 +655,9 @@ class _TmdbMovieDetailsScreenState
                                     ? Text(
                                         member['name'][0],
                                         style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onSurface,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
                                         ),
                                       )
                                     : null,
@@ -665,7 +682,9 @@ class _TmdbMovieDetailsScreenState
                                 textAlign: TextAlign.center,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.6),
                                   fontSize: 11,
                                 ),
                               ),
@@ -740,7 +759,11 @@ class _TmdbMovieDetailsScreenState
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
+                          border: Border.all(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.3),
+                          ),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
@@ -773,55 +796,332 @@ class _TmdbMovieDetailsScreenState
                         final videoKey = video['key'];
                         final thumbUrl =
                             'https://img.youtube.com/vi/$videoKey/0.jpg';
-                        return Container(
-                          width: 200,
-                          margin: const EdgeInsets.only(right: 16),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            image: DecorationImage(
-                              image: NetworkImage(thumbUrl),
-                              fit: BoxFit.cover,
+                        return GestureDetector(
+                          onTap: () async {
+                            final uri = Uri.parse(
+                              'https://www.youtube.com/watch?v=$videoKey',
+                            );
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(
+                                uri,
+                                mode: LaunchMode.externalApplication,
+                              );
+                            }
+                          },
+                          child: Container(
+                            width: 200,
+                            margin: const EdgeInsets.only(right: 16),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              image: DecorationImage(
+                                image: NetworkImage(thumbUrl),
+                                fit: BoxFit.cover,
+                              ),
                             ),
-                          ),
-                          child: Stack(
-                            children: [
-                              Center(
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.black54,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.play_arrow,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                bottom: 8,
-                                left: 8,
-                                child: Text(
-                                  video['name'] ?? 'Trailer',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black,
-                                        blurRadius: 4,
-                                      ),
-                                    ],
+                            child: Stack(
+                              children: [
+                                Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.black54,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.play_arrow,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                                Positioned(
+                                  bottom: 8,
+                                  left: 8,
+                                  child: Text(
+                                    video['name'] ?? 'Trailer',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      shadows: [
+                                        Shadow(
+                                          color: Colors.black,
+                                          blurRadius: 4,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       },
                     ),
                   ),
+                  const SizedBox(height: 32),
+                ],
+
+                // Seasons & Episodes
+                if (!isMovie && data['seasons'] != null) ...[
+                  // Seasons List
+                  Text(
+                    "Seasons",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 180,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: (data['seasons'] as List).length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (context, index) {
+                        final season = (data['seasons'] as List)[index];
+                        final posterPath = season['poster_path'];
+                        final seasonNum = season['season_number'];
+                        final isSelected = _selectedSeason == seasonNum;
+
+                        return GestureDetector(
+                          onTap: () => _fetchEpisodes(seasonNum),
+                          child: Container(
+                            width: 120,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.grey[900],
+                              border: isSelected
+                                  ? Border.all(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                      width: 2,
+                                    )
+                                  : null,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: posterPath != null
+                                        ? CachedNetworkImage(
+                                            imageUrl:
+                                                '${TmdbConfig.imageBaseUrl}$posterPath',
+                                            fit: BoxFit.cover,
+                                            width: double.infinity,
+                                            errorWidget: (_, __, ___) =>
+                                                const Icon(Icons.tv),
+                                          )
+                                        : const Center(child: Icon(Icons.tv)),
+                                  ),
+                                  Container(
+                                    width: double.infinity,
+                                    color: isSelected
+                                        ? Theme.of(
+                                            context,
+                                          ).colorScheme.primary.withOpacity(0.2)
+                                        : Colors.transparent,
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      seasonNum > 0
+                                          ? 'Season $seasonNum'
+                                          : (season['name'] ?? 'Specials'),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Episodes List
+                  if (_episodesFuture != null)
+                    FutureBuilder<Map<String, dynamic>?>(
+                      future: _episodesFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        if (snapshot.hasError || !snapshot.hasData) {
+                          return const SizedBox.shrink();
+                        }
+                        final episodes = List<Map<String, dynamic>>.from(
+                          snapshot.data!['episodes'] ?? [],
+                        );
+                        if (episodes.isEmpty) return const SizedBox.shrink();
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Episodes",
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ListView.separated(
+                              padding: EdgeInsets.zero,
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: episodes.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final ep = episodes[index];
+                                final epImg = ep['still_path'];
+                                final voteAverage =
+                                    (ep['vote_average'] as num?)?.toDouble() ??
+                                    0.0;
+                                final runtime = ep['runtime'] as int? ?? 0;
+                                final hours = runtime ~/ 60;
+                                final minutes = runtime % 60;
+                                final runtimeText = hours > 0
+                                    ? '${hours}h ${minutes}m'
+                                    : '${minutes}m';
+
+                                return GestureDetector(
+                                  onTap: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          "Please select a source from 'Available Sources' above to play.",
+                                          style: TextStyle(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        behavior: SnackBarBehavior.floating,
+                                        backgroundColor: Theme.of(
+                                          context,
+                                        ).colorScheme.surfaceContainerHighest,
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 120,
+                                          height: 68,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            image: epImg != null
+                                                ? DecorationImage(
+                                                    image: NetworkImage(
+                                                      '${TmdbConfig.imageBaseUrl}$epImg',
+                                                    ),
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                : null,
+                                            color: Colors.grey[800],
+                                          ),
+                                          child: epImg == null
+                                              ? const Icon(
+                                                  Icons.movie,
+                                                  color: Colors.white54,
+                                                )
+                                              : null,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                "${ep['episode_number']}. ${ep['name']}",
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).colorScheme.onSurface,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  _buildTmdbLogo(),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    voteAverage.toStringAsFixed(
+                                                      1,
+                                                    ),
+                                                    style: TextStyle(
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).colorScheme.onSurface,
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  if (runtime > 0)
+                                                    Text(
+                                                      runtimeText,
+                                                      style: TextStyle(
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurface
+                                                            .withOpacity(0.7),
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                ep['overview'] ?? '',
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                   const SizedBox(height: 32),
                 ],
 
@@ -864,36 +1164,7 @@ class _TmdbMovieDetailsScreenState
 
                 const SizedBox(height: 32),
 
-                // Backdrop Gallery Button (Footer)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 20,
-                    horizontal: 20,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Backdrop Gallery",
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        size: 16,
-                      ),
-                    ],
-                  ),
-                ),
+                // Safe Area padding
 
                 // Safe Area padding
                 const SizedBox(height: 40),
@@ -905,18 +1176,43 @@ class _TmdbMovieDetailsScreenState
     );
   }
 
+  Widget _buildTmdbLogo() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFF01B4E4), // TMDB Blue
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Text(
+        "TMDB",
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w900,
+          fontSize: 10,
+        ),
+      ),
+    );
+  }
+
   Widget _buildDetailRow(String label, String value) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.2))),
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withOpacity(0.2),
+          ),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 14),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              fontSize: 14,
+            ),
           ),
           Flexible(
             child: Text(
