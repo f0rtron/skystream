@@ -155,8 +155,10 @@ jobs:
         include:
           - arch: arm64
             torrserver_binary: TorrServer-darwin-arm64
+            xcode_arch: arm64
           - arch: x64
             torrserver_binary: TorrServer-darwin-amd64
+            xcode_arch: x86_64
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -177,8 +179,22 @@ jobs:
           find . -type f ! -name "${{ matrix.torrserver_binary }}" -delete
           ls -la
           
+      # Build for a single architecture to reduce app size from ~430MB (universal) to ~270MB
       - name: Build macOS (${{ matrix.arch }})
-        run: flutter build macos --release
+        run: |
+          # First, generate the Xcode project with flutter
+          flutter build macos --release --config-only
+          
+          # Build using xcodebuild with single architecture
+          cd macos
+          xcodebuild -workspace Runner.xcworkspace \
+            -configuration Release \
+            -scheme Runner \
+            -derivedDataPath ../build/macos \
+            ARCHS="${{ matrix.xcode_arch }}" \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
       
       # Re-sign all frameworks to fix media_kit MPV crash (Issue #830)
       # The frameworks built in CI have code signing issues that cause
@@ -206,11 +222,15 @@ jobs:
           
           echo "Done re-signing."
         
+      # CRITICAL: Use -y flag to preserve symlinks!
+      # macOS frameworks contain symlinks (e.g., Mpv.framework/Mpv -> Versions/A/Mpv)
+      # Without -y, zip stores the file content instead of the symlink,
+      # causing MPV's internal config to fail with assertion errors.
       - name: Zip Bundle
         run: |
           VERSION="${{ needs.version.outputs.version }}"
           cd build/macos/Build/Products/Release
-          zip -r "../../../../../skystream-macos-${{ matrix.arch }}-${VERSION}.zip" skystream.app
+          zip -ry "../../../../../skystream-macos-${{ matrix.arch }}-${VERSION}.zip" skystream.app
 
       - name: Upload Release Assets
         uses: ncipollo/release-action@v1

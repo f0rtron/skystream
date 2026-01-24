@@ -117,8 +117,10 @@ jobs:
         include:
           - arch: arm64
             torrserver_binary: TorrServer-darwin-arm64
+            xcode_arch: arm64
           - arch: x64
             torrserver_binary: TorrServer-darwin-amd64
+            xcode_arch: x86_64
     steps:
       - uses: actions/checkout@v4
         with:
@@ -137,8 +139,19 @@ jobs:
           cd packages/flutter_torrent_server/assets/torrserver
           find . -type f ! -name "${{ matrix.torrserver_binary }}" -delete
           
+      # Build for a single architecture to reduce app size from ~430MB (universal) to ~270MB
       - name: Build macOS
-        run: flutter build macos --release
+        run: |
+          flutter build macos --release --config-only
+          cd macos
+          xcodebuild -workspace Runner.xcworkspace \
+            -configuration Release \
+            -scheme Runner \
+            -derivedDataPath ../build/macos \
+            ARCHS="${{ matrix.xcode_arch }}" \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
       
       # Re-sign all frameworks to fix media_kit MPV crash (Issue #830)
       - name: Re-sign Frameworks
@@ -160,10 +173,11 @@ jobs:
           echo "Signing app..."
           codesign --force --deep --sign - "$APP_PATH"
         
+      # CRITICAL: Use -y flag to preserve symlinks (required for macOS frameworks)
       - name: Zip Bundle
         run: |
           cd build/macos/Build/Products/Release
-          zip -r "../../../../../skystream-macos-${{ matrix.arch }}.zip" skystream.app
+          zip -ry "../../../../../skystream-macos-${{ matrix.arch }}.zip" skystream.app
 
       - name: Upload macOS Build
         uses: actions/upload-artifact@v4
