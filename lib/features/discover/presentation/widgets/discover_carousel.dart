@@ -200,11 +200,19 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
     final releaseDate = movie['release_date'] ?? movie['first_air_date'] ?? '';
     final year = releaseDate.isNotEmpty ? releaseDate.split('-')[0] : '';
     final isMovie = movie['title'] != null;
-    final type = isMovie ? "Movie" : "TV Show";
+
+    String? type;
+    if (movie['media_type'] == 'movie') {
+      type = "Movie";
+    } else if (movie['media_type'] == 'tv') {
+      type = "TV Show";
+    }
+    // If media_type is null or unknown, type remains null
+
     final genres = movie['genres_str'] as String? ?? '';
 
     final metadata = [
-      type,
+      if (type != null) type,
       if (genres.isNotEmpty) genres,
       if (year.isNotEmpty) year,
     ].join(' • ');
@@ -373,14 +381,16 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                isMovie ? Icons.movie_outlined : Icons.tv,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.7),
-                                size: 16,
-                              ),
-                              const SizedBox(width: 6),
+                              if (type != null) ...[
+                                Icon(
+                                  isMovie ? Icons.movie_outlined : Icons.tv,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.7),
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 6),
+                              ],
                               Flexible(
                                 child: Text(
                                   metadata,

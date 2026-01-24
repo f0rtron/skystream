@@ -320,7 +320,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       'poster_path': item.posterUrl,
       'backdrop_path': item.bannerUrl ?? item.posterUrl,
       'overview': item.description,
-      'media_type': 'movie', // Default, logic could be improved
+      // 'media_type': 'movie', // Removed default assignment
       '_originalItem': item, // Store original item for navigation
     };
   }
