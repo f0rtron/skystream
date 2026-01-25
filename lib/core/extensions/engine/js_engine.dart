@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart'; // For kDebugMode
 import 'package:flutter_js/flutter_js.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:cookie_jar/cookie_jar.dart';
 import '../../storage/storage_service.dart';
 
 final jsEngineProvider = Provider<JsEngineService>((ref) {
@@ -16,9 +18,11 @@ final jsEngineProvider = Provider<JsEngineService>((ref) {
 class JsEngineService {
   late JavascriptRuntime _runtime;
   final Dio _dio = Dio();
+  final CookieJar _cookieJar = CookieJar(); // RAM-based cookie jar
   final StorageService _storage;
 
   JsEngineService(this._storage) {
+    _dio.interceptors.add(CookieManager(_cookieJar));
     _runtime = getJavascriptRuntime();
     _initPolyfills();
   }
@@ -172,6 +176,7 @@ class JsEngineService {
         'status': response.statusCode, // ALIAS for plugins like Ringz
         'body': response.data.toString(),
         'headers': response.headers.map.map((k, v) => MapEntry(k, v.join(','))),
+        'finalUrl': response.realUri.toString(),
       };
     } catch (e) {
       if (kDebugMode) debugPrint("[JS HTTP ERROR] $requestId: $e");

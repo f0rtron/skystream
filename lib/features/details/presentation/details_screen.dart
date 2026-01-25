@@ -722,6 +722,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
           const SizedBox(height: 16),
         ],
         ListView.builder(
+          padding: EdgeInsets.zero,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: episodes.length,
