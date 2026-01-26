@@ -8,7 +8,6 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:convert';
 
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../../core/extensions/base_provider.dart';
@@ -19,7 +18,6 @@ import 'widgets/skystream_player_controls.dart';
 import '../../../../features/settings/presentation/player_settings_provider.dart';
 import '../../../../core/services/torrent_service.dart';
 import '../../../../core/models/torrent_status.dart';
-import '../../../../core/extensions/providers/js_based_provider.dart';
 import '../../../../core/providers/device_info_provider.dart';
 import '../../../../shared/widgets/tv_input_widgets.dart';
 
@@ -63,18 +61,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   @override
   void initState() {
     super.initState();
-    _skipFocusNode = FocusNode(
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.arrowUp) {
-          _controlsKeyFinal.currentState?.focusBack();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-    );
+    _skipFocusNode = FocusNode(onKeyEvent: _handleSkipFocusKey);
     MediaKit.ensureInitialized();
-
+    //...
     _historyNotifier = ref.read(watchHistoryProvider.notifier);
     _isTv = ref.read(deviceProfileProvider).asData?.value.isTv ?? false;
     _cachedProviderId = ref.read(activeProviderStateProvider)?.id;
@@ -166,6 +155,15 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     _progressTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       _saveProgress();
     });
+  }
+
+  KeyEventResult _handleSkipFocusKey(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      _controlsKeyFinal.currentState?.focusBack();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   int _currentStreamIndex = 0;
@@ -898,7 +896,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 
     return PopScope(
       canPop: !_controlsVisible,
-      onPopInvoked: (didPop) async {
+      onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         if (_controlsVisible) {
           _controlsKeyFinal.currentState?.hideControls();
@@ -1026,26 +1024,26 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
               left: 0,
               right: 0,
               child: Center(
-                child: Center(
-                  child: _isManualSwitch
-                      ? const SizedBox.shrink()
-                      : TvButton(
-                          focusNode: _skipFocusNode,
-                          autofocus: true,
-                          onPressed: () =>
-                              setState(() => _forceShowControls = true),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.skip_next),
-                              const SizedBox(width: 8),
-                              Text(
-                                "Skip Loading (${_currentStreamIndex + 1}/${_streams.length})",
-                              ),
-                            ],
-                          ),
+                child: _isManualSwitch
+                    ? const SizedBox.shrink()
+                    : TvButton(
+                        isPrimary: false,
+                        backgroundColor: Colors.grey.withValues(alpha: 0.3),
+                        focusNode: _skipFocusNode,
+                        autofocus: true,
+                        onPressed: () =>
+                            setState(() => _forceShowControls = true),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.skip_next),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Skip Loading (${_currentStreamIndex + 1}/${_streams.length})",
+                            ),
+                          ],
                         ),
-                ),
+                      ),
               ),
             ),
           ],
