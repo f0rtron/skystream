@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../../core/providers/device_info_provider.dart';
 import '../../../core/utils/app_utils.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../../shared/widgets/tv_input_widgets.dart';
@@ -473,6 +474,7 @@ class SettingsScreen extends ConsumerWidget {
   ) {
     double size = settings.subtitleSize;
     bool showBackground = settings.subtitleBackgroundColor != 0;
+    final isTv = ref.read(deviceProfileProvider).asData?.value.isTv ?? false;
 
     showDialog(
       context: context,
@@ -503,6 +505,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             actions: [
               TvButton(
+                showFocusHighlight: isTv,
                 onPressed: () => Navigator.pop(ctx),
                 child: Text(
                   "Cancel",
@@ -515,6 +518,7 @@ class SettingsScreen extends ConsumerWidget {
               TvButton(
                 autofocus: true,
                 isPrimary: true,
+                showFocusHighlight: isTv,
                 onPressed: () {
                   // 0x99000000 is ~60% opacity black
                   final bg = showBackground ? 0x99000000 : 0x00000000;

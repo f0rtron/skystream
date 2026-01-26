@@ -48,7 +48,10 @@ class _DeveloperOptionsScreenState
                 icon: Icons.link_rounded,
                 title: 'Stream URL',
                 subtitle: 'Play from network URL',
-                onTap: () => _showStreamUrlDialog(context),
+                onTap: () => _showStreamUrlDialog(
+                  context,
+                  deviceAsync.asData?.value.isTv ?? false,
+                ),
               ),
               SettingsTile(
                 icon: Icons.stream,
@@ -164,7 +167,7 @@ class _DeveloperOptionsScreenState
     }
   }
 
-  void _showStreamUrlDialog(BuildContext context) {
+  void _showStreamUrlDialog(BuildContext context, bool isTv) {
     final controller = TextEditingController();
     showDialog(
       context: context,
@@ -179,6 +182,7 @@ class _DeveloperOptionsScreenState
         ),
         actions: [
           TvButton(
+            showFocusHighlight: isTv,
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancel',
@@ -191,6 +195,7 @@ class _DeveloperOptionsScreenState
           TvButton(
             autofocus: true,
             isPrimary: true,
+            showFocusHighlight: isTv,
             onPressed: () {
               final url = controller.text.trim();
               if (url.isNotEmpty) {
