@@ -1,9 +1,9 @@
 # SkyStream
 
 ![Downloads](https://img.shields.io/github/downloads/akashdh11/skystream/total?style=for-the-badge&color=blue) 
-![Stars](https://img.shields.io/github/stars/akashdh11/skystream?style=for-the-badge&color=brown)
+![Stars](https://img.shields.io/github/stars/akashdh11/skystream?style=for-the-badge&color=red)
 ![Latest Release](https://img.shields.io/github/v/release/akashdh11/skystream?style=for-the-badge&color=orange)
-![Open Issues](https://img.shields.io/github/issues/akashdh11/skystream?style=for-the-badge&color=red)
+![Open Issues](https://img.shields.io/github/issues/akashdh11/skystream?style=for-the-badge&color=brown)
 
 
 **⚠️ Warning: By default, this app doesn't provide any video sources; you have to install extensions to add functionality to the app.**
@@ -41,17 +41,17 @@ SkyStream is a modern, media streaming client. It draws inspiration from the ver
 ## 📱 Mobile
 
 <p align="center">
-  <img src="screenshots/mobile/home.png" width="350" />
-    <img src="screenshots/mobile/discover.png" width="350" />
-  <img src="screenshots/mobile/details.png" width="350" />
-  <img src="screenshots/mobile/settings.png" width="350" />
+  <img src="screenshots/mobile/home.png" width="360" />
+    <img src="screenshots/mobile/discover.png" width="360" />
+  <img src="screenshots/mobile/details.png" width="360" />
+  <img src="screenshots/mobile/settings.png" width="360" />
 </p>
 
 ## 📺 TV
 
 <p align="center">
-  <img src="screenshots/tv/details_1.png" width="700" />
-  <img src="screenshots/tv/details_2.png" width="700" />
+  <img src="screenshots/tv/details_1.png" width="720" />
+  <img src="screenshots/tv/details_2.png" width="720" />
 </p>
 
 ## Supported Platforms
