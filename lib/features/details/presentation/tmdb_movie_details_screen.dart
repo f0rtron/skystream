@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/material.dart';
@@ -34,10 +35,26 @@ final movieDetailsProvider =
       final service = ref.watch(tmdbServiceProvider);
       final language = ref.watch(languageProvider);
 
-      if (params.type == 'tv') {
-        return service.getTvDetails(params.id, language: language);
-      } else {
-        return service.getMovieDetails(params.id, language: language);
+      // Wrap in timeout to prevent infinite loading when connection is stale
+      // This ensures error UI is shown instead of forever-loading spinner
+      try {
+        if (params.type == 'tv') {
+          return await service
+              .getTvDetails(params.id, language: language)
+              .timeout(
+                const Duration(seconds: 15),
+                onTimeout: () => throw TimeoutException('Request timed out'),
+              );
+        } else {
+          return await service
+              .getMovieDetails(params.id, language: language)
+              .timeout(
+                const Duration(seconds: 15),
+                onTimeout: () => throw TimeoutException('Request timed out'),
+              );
+        }
+      } on TimeoutException {
+        rethrow; // Let error handler show retry UI
       }
     });
 

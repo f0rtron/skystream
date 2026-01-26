@@ -269,50 +269,145 @@ class TmdbService {
     int page = 1,
   }) async {
     try {
+      // --- Advanced Search Parsing ---
+      String cleanQuery = query;
+      int? filterYear;
+      String? filterLanguageCode;
+
+      // 1. Extract Year (e.g., "2023", "(2023)")
+      // Matches 19xx or 20xx surrounded by word boundaries
+      final yearRegex = RegExp(r'\b(19|20)\d{2}\b');
+      final yearMatch = yearRegex.firstMatch(cleanQuery);
+      if (yearMatch != null) {
+        filterYear = int.tryParse(yearMatch.group(0)!);
+        // Remove year from query to improve search relevance
+        cleanQuery = cleanQuery
+            .replaceAll(yearMatch.group(0)!, '')
+            .replaceAll('()', '')
+            .trim();
+      }
+
+      // 2. Extract Language (e.g., "Kannada", "Tamil")
+      final languageMap = {
+        'kannada': 'kn',
+        'tamil': 'ta',
+        'telugu': 'te',
+        'hindi': 'hi',
+        'malayalam': 'ml',
+        'english': 'en',
+        'korean': 'ko',
+        'japanese': 'ja',
+      };
+
+      for (final key in languageMap.keys) {
+        if (cleanQuery.toLowerCase().contains(key)) {
+          filterLanguageCode = languageMap[key];
+          // Remove language name using case-insensitive replace
+          cleanQuery = cleanQuery
+              .replaceAll(RegExp(key, caseSensitive: false), '')
+              .trim();
+          break; // Assume single language filter
+        }
+      }
+
+      // If query became empty (e.g. user just typed "2023"), revert to original but keep filters
+      if (cleanQuery.isEmpty) cleanQuery = query;
+
+      // Clean up double spaces
+      cleanQuery = cleanQuery.replaceAll(RegExp(r'\s+'), ' ');
+
       final response = await _dio.get(
         '/search/multi',
         queryParameters: {
           'api_key': TmdbConfig.apiKey,
           'language': language,
-          'query': query,
+          'query': cleanQuery,
           'page': page,
           'include_adult': false,
         },
       );
 
       if (response.statusCode == 200) {
-        final results = List<Map<String, dynamic>>.from(
+        final rawResults = List<Map<String, dynamic>>.from(
           response.data['results'],
         );
 
+        final List<Map<String, dynamic>> processedResults = [];
+
+        // Process results to handle 'person' type and flatten 'known_for'
+        for (final item in rawResults) {
+          final mediaType = item['media_type'];
+
+          if (mediaType == 'person') {
+            // Hero Search: Extract movies from person's known_for
+            if (item['known_for'] != null) {
+              final knownFor = List<Map<String, dynamic>>.from(
+                item['known_for'],
+              );
+              for (final known in knownFor) {
+                // known_for items often miss media_type, infer if possible or default to movie
+                known['media_type'] ??= 'movie';
+                processedResults.add(known);
+              }
+            }
+          } else if (mediaType == 'movie' || mediaType == 'tv') {
+            processedResults.add(item);
+          }
+        }
         final today = DateTime.now();
 
-        return results.where((item) {
+        var finalResults = processedResults.where((item) {
           final mediaType = item['media_type'];
-          // Keep only movies and tv
           if (mediaType != 'movie' && mediaType != 'tv') return false;
 
-          // Check release status
+          // --- Filter 1: Release Status (Existing logic) ---
           String? dateStr;
           if (mediaType == 'movie') {
             dateStr = item['release_date'];
           } else if (mediaType == 'tv') {
             dateStr = item['first_air_date'];
           }
-
-          // Exclude if no date provided
           if (dateStr == null || dateStr.isEmpty) return false;
 
+          // --- Filter 2: Year (New) ---
+          if (filterYear != null) {
+            try {
+              final date = DateTime.parse(dateStr);
+              // Allow +/- 1 year tolerance or exact match
+              // Actually strict year match is better for "Mark 2025"
+              if (date.year != filterYear) return false;
+            } catch (_) {
+              return false;
+            }
+          }
+
+          // --- Filter 3: Language (New) ---
+          if (filterLanguageCode != null) {
+            final originalLang = item['original_language'];
+            if (originalLang != filterLanguageCode) return false;
+          }
+
+          // Future date check
           try {
             final date = DateTime.parse(dateStr);
-            // Allow if date is before or strictly equal to today (ignoring time if parsed is midnight)
-            // DateTime.parse("yyyy-mm-dd") gives midnight local (or utc? usually local if no 'Z')
-            // Actually it keeps it straightforward.
             return date.isBefore(today);
           } catch (e) {
             return false;
           }
         }).toList();
+
+        // Deduplicate results based on ID (Person's known_for might duplicate direct search results)
+        final seenParams = <String>{}; // unique key: id + type
+        final uniqueResults = <Map<String, dynamic>>[];
+        for (final item in finalResults) {
+          final key = '${item['id']}_${item['media_type']}';
+          if (!seenParams.contains(key)) {
+            seenParams.add(key);
+            uniqueResults.add(item);
+          }
+        }
+
+        return uniqueResults;
       }
       return [];
     } catch (e) {
