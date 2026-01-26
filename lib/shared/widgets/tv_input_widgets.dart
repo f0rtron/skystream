@@ -244,6 +244,7 @@ class TvButton extends StatefulWidget {
   final bool isOutlined;
   final FocusNode? focusNode;
   final Color? backgroundColor;
+  final bool showFocusHighlight;
 
   const TvButton({
     super.key,
@@ -254,6 +255,7 @@ class TvButton extends StatefulWidget {
     this.isOutlined = false,
     this.focusNode,
     this.backgroundColor,
+    this.showFocusHighlight = true,
   });
 
   @override
@@ -284,6 +286,7 @@ class _TvButtonState extends State<TvButton> {
   @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
+    final showHighlight = _isFocused && widget.showFocusHighlight;
 
     // Use Material 3 button with custom focus highlight
     if (widget.isPrimary) {
@@ -292,14 +295,14 @@ class _TvButtonState extends State<TvButton> {
         autofocus: widget.autofocus,
         onPressed: widget.onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: _isFocused
+          backgroundColor: showHighlight
               ? primaryColor.withValues(alpha: 0.8)
               : (widget.backgroundColor ?? primaryColor),
           foregroundColor: Theme.of(context).colorScheme.onPrimary,
-          side: _isFocused
+          side: showHighlight
               ? const BorderSide(color: Colors.white, width: 3)
               : BorderSide.none,
-          elevation: _isFocused ? 8 : 2,
+          elevation: showHighlight ? 8 : 2,
           shadowColor: primaryColor.withValues(alpha: 0.5),
         ),
         child: widget.child,
@@ -311,10 +314,11 @@ class _TvButtonState extends State<TvButton> {
       autofocus: widget.autofocus,
       onPressed: widget.onPressed,
       style: TextButton.styleFrom(
-        backgroundColor: _isFocused
+        padding: EdgeInsets.zero,
+        backgroundColor: showHighlight
             ? primaryColor.withValues(alpha: 0.15)
             : null,
-        side: _isFocused
+        side: showHighlight
             ? BorderSide(color: primaryColor, width: 2)
             : (widget.isOutlined
                   ? BorderSide(color: Theme.of(context).colorScheme.outline)

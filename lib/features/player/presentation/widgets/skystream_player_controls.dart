@@ -60,6 +60,10 @@ class SkyStreamPlayerControlsState
     extends ConsumerState<SkyStreamPlayerControls>
     with SingleTickerProviderStateMixin {
   final FocusNode _backFocusNode = FocusNode();
+  bool _isVisible = false;
+  bool _isIpad = false;
+  bool _isTv = false;
+  bool _isInPip = false;
 
   void focusBack() {
     _backFocusNode.requestFocus();
@@ -149,7 +153,6 @@ class SkyStreamPlayerControlsState
     'kor': 'Korean',
   };
 
-  bool _isVisible = true;
   bool _showTorrentInfo = false; // Changed from true
   Timer? _hideTimer;
   bool _isLocked = false;
@@ -192,14 +195,13 @@ class SkyStreamPlayerControlsState
   String _osdLabel = "";
   Timer? _osdTimer;
   Duration _animDuration = const Duration(milliseconds: 300);
-  bool _isIpad = false;
   bool _isFullscreen = false;
-  bool _isInPip = false;
   late final FocusNode _playFocusNode;
 
   @override
   void initState() {
     super.initState();
+    _isTv = ref.read(deviceProfileProvider).asData?.value.isTv ?? false;
     _playFocusNode = FocusNode();
     try {
       FlutterVolumeController.updateShowSystemUI(false);
@@ -283,7 +285,9 @@ class SkyStreamPlayerControlsState
       });
     }
 
-    if (widget.forceShowControls) {
+    _isTv = ref.read(deviceProfileProvider).asData?.value.isTv ?? false;
+
+    if (widget.streams != null && widget.streams!.isNotEmpty) {
       _isVisible = true;
     }
     _startHideTimer();
@@ -1659,6 +1663,7 @@ class SkyStreamPlayerControlsState
     bool highlight = false,
   }) {
     return TvButton(
+      showFocusHighlight: _isTv,
       onPressed: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -1743,6 +1748,7 @@ class SkyStreamPlayerControlsState
                   child: Row(
                     children: [
                       TvButton(
+                        showFocusHighlight: _isTv,
                         focusNode: _backFocusNode,
                         onPressed:
                             widget.onBackPointer ??
@@ -1806,6 +1812,7 @@ class SkyStreamPlayerControlsState
                 children: [
                   // Seek Backward
                   TvButton(
+                    showFocusHighlight: _isTv,
                     onPressed: () =>
                         _seekRelative(const Duration(seconds: -10)),
                     child: const Icon(
@@ -1817,6 +1824,7 @@ class SkyStreamPlayerControlsState
                   const SizedBox(width: 48),
                   // Play/Pause Toggle
                   TvButton(
+                    showFocusHighlight: _isTv,
                     autofocus: true,
                     focusNode: _playFocusNode,
                     onPressed: _togglePlay,
@@ -1843,6 +1851,7 @@ class SkyStreamPlayerControlsState
                   const SizedBox(width: 48),
                   // Seek Forward
                   TvButton(
+                    showFocusHighlight: _isTv,
                     onPressed: () => _seekRelative(const Duration(seconds: 10)),
                     child: const Icon(
                       Icons.forward_10,

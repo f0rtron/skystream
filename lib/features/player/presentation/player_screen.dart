@@ -1031,6 +1031,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                         backgroundColor: Colors.grey.withValues(alpha: 0.3),
                         focusNode: _skipFocusNode,
                         autofocus: true,
+                        showFocusHighlight: _isTv, // Only highlight on TV
                         onPressed: () =>
                             setState(() => _forceShowControls = true),
                         child: Row(
