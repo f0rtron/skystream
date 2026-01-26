@@ -34,6 +34,21 @@ SkyStream is a modern, media streaming client. It draws inspiration from the ver
 
 ![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white) ![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white) ![Riverpod](https://img.shields.io/badge/Riverpod-%232D3748.svg?style=for-the-badge&logo=riverpod&logoColor=white) ![Hive](https://img.shields.io/badge/Hive-%23DE3027.svg?style=for-the-badge&logo=hive&logoColor=white)
 
+## 📱 Mobile
+
+<p align="center">
+  <img src="screenshots/mobile/home.png" width="280" />
+    <img src="screenshots/mobile/discover.png" width="280" />
+  <img src="screenshots/mobile/details.png" width="280" />
+  <img src="screenshots/mobile/settings.png" width="280" />
+</p>
+
+## 📺 TV
+
+<p align="center">
+  <img src="screenshots/tv/details_1.png" width="420" />
+  <img src="screenshots/tv/details_2.png" width="420" />
+</p>
 
 ## Supported Platforms
 
