@@ -1,37 +1,42 @@
 # SkyStream
 
-<p align="center">
+<div align="center">
+  <a href="https://github.com/akashdh11/skystream/releases">
+    <img src="https://img.shields.io/github/downloads/akashdh11/skystream/total?style=for-the-badge&color=1f6feb" />
+  </a>
+  <a href="https://github.com/akashdh11/skystream/stargazers">
+    <img src="https://img.shields.io/github/stars/akashdh11/skystream?style=for-the-badge&color=f1c40f" />
+  </a>
+  <a href="https://github.com/akashdh11/skystream/releases">
+    <img src="https://img.shields.io/github/v/release/akashdh11/skystream?style=for-the-badge&color=f39c12" />
+  </a>
+  <a href="https://github.com/akashdh11/skystream/issues">
+    <img src="https://img.shields.io/github/issues/akashdh11/skystream?style=for-the-badge&color=e74c3c" />
+  </a>
+  <a href="https://github.com/akashdh11/skystream/issues?q=is%3Aissue+is%3Aclosed">
+    <img src="https://img.shields.io/github/issues-search/akashdh11/skystream?query=is%3Aissue+is%3Aclosed&style=for-the-badge&color=2ecc71" />
+  </a>
+  <a href="https://github.com/akashdh11/skystream/commits/main">
+    <img src="https://img.shields.io/github/last-commit/akashdh11/skystream?style=for-the-badge&color=17a2b8" />
+  </a>
+</div>
 
-[![Downloads](https://img.shields.io/github/downloads/akashdh11/skystream/total?style=for-the-badge&color=1f6feb)](https://github.com/akashdh11/skystream/releases)
-[![Stars](https://img.shields.io/github/stars/akashdh11/skystream?style=for-the-badge&color=f1c40f)](https://github.com/akashdh11/skystream/stargazers)
-[![Latest Release](https://img.shields.io/github/v/release/akashdh11/skystream?style=for-the-badge&color=f39c12)](https://github.com/akashdh11/skystream/releases)
-[![Open Issues](https://img.shields.io/github/issues/akashdh11/skystream?style=for-the-badge&color=e74c3c)](https://github.com/akashdh11/skystream/issues)
-[![Closed Issues](https://img.shields.io/github/issues-search/akashdh11/skystream?query=is%3Aissue+is%3Aclosed&style=for-the-badge&color=2ecc71)](https://github.com/akashdh11/skystream/issues?q=is%3Aissue+is%3Aclosed)
-[![Last Commit](https://img.shields.io/github/last-commit/akashdh11/skystream?style=for-the-badge&color=17a2b8)](https://github.com/akashdh11/skystream/commits/main)
+<div align="center">
+  <img src="https://img.shields.io/badge/Open_Source-Yes-3498db?style=for-the-badge" />
+  <a href="https://github.com/akashdh11/skystream/pulls">
+    <img src="https://img.shields.io/badge/PRs-Welcome-27ae60?style=for-the-badge" />
+  </a>
+  <img src="https://img.shields.io/badge/Made_for_the-Community-9b59b6?style=for-the-badge" />
+</div>
 
-</p>
-<p align="center">
-
-[![Open Source](https://img.shields.io/badge/Open_Source-Yes-3498db?style=for-the-badge)](https://opensource.org/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-27ae60?style=for-the-badge)](https://github.com/akashdh11/skystream/pulls)
-![Made for the Community](https://img.shields.io/badge/Made_for_the-Community-9b59b6?style=for-the-badge)
-
-</p>
-
-<p align="center">
-
-![Android](https://img.shields.io/badge/Android-✓-3DDC84?style=for-the-badge&logo=android&logoColor=white)
-![Android TV](https://img.shields.io/badge/Android_TV-✓-34A853?style=for-the-badge&logo=android&logoColor=white)
-![iOS](https://img.shields.io/badge/iOS-✓-000000?style=for-the-badge&logo=apple&logoColor=white)
-![macOS](https://img.shields.io/badge/macOS-✓-000000?style=for-the-badge&logo=apple&logoColor=white)
-![Windows](https://img.shields.io/badge/Windows-✓-0078D6?style=for-the-badge&logo=windows&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-✓-FCC624?style=for-the-badge&logo=linux&logoColor=black)
-
-</p>
-
-
-
-
+<div align="center">
+  <img src="https://img.shields.io/badge/Android-✓-3DDC84?style=for-the-badge&logo=android&logoColor=white" />
+  <img src="https://img.shields.io/badge/Android_TV-✓-34A853?style=for-the-badge&logo=android&logoColor=white" />
+  <img src="https://img.shields.io/badge/iOS-✓-000000?style=for-the-badge&logo=apple&logoColor=white" />
+  <img src="https://img.shields.io/badge/macOS-✓-000000?style=for-the-badge&logo=apple&logoColor=white" />
+  <img src="https://img.shields.io/badge/Windows-✓-0078D6?style=for-the-badge&logo=windows&logoColor=white" />
+  <img src="https://img.shields.io/badge/Linux-✓-FCC624?style=for-the-badge&logo=linux&logoColor=black" />
+</div>
 
 
 **⚠️ Warning: By default, this app doesn't provide any video sources; you have to install extensions to add functionality to the app.**
