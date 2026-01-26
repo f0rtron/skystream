@@ -42,8 +42,8 @@ Join the discussion, get help, or find new extensions on our Telegram channel or
 <br>
 
 
-<a href="https://discord.gg/ukZC2ggN">
-  <img src="https://invidget.switchblade.xyz/ukZC2ggN">
+<a href="https://discord.gg/73XGA8Mxn9">
+  <img src="https://invidget.switchblade.xyz/73XGA8Mxn9">
 </a>
 
 
@@ -55,7 +55,9 @@ SkyStream is a modern, media streaming client. It draws inspiration from the ver
 
 ![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white) ![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white) ![Riverpod](https://img.shields.io/badge/Riverpod-%232D3748.svg?style=for-the-badge&logo=riverpod&logoColor=white) ![Hive](https://img.shields.io/badge/Hive-%23DE3027.svg?style=for-the-badge&logo=hive&logoColor=white)
 
-## 📱 Mobile
+### Screenshots
+
+### 📱 Mobile
 
 <p align="center">
   <img src="screenshots/mobile/home.png" width="360" />
@@ -64,7 +66,7 @@ SkyStream is a modern, media streaming client. It draws inspiration from the ver
   <img src="screenshots/mobile/settings.png" width="360" />
 </p>
 
-## 📺 TV
+### 📺 TV
 
 <p align="center">
   <img src="screenshots/tv/details_1.png" width="720" />
