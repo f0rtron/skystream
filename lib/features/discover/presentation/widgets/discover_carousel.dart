@@ -528,6 +528,8 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
       child: Text(
         title.toUpperCase(),
         textAlign: TextAlign.center,
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: Theme.of(context).colorScheme.onSurface,
           fontSize: 40,
