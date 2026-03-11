@@ -276,14 +276,24 @@ class ExternalPlayerService {
   Future<bool> _launchWindows(String videoUrl, ExternalPlayer player) async {
     try {
       if (player.desktopCommand != null) {
-        // Try running the command directly (works if it's in PATH)
-        final result = await Process.run(player.desktopCommand!, [videoUrl]);
-        return result.exitCode == 0;
+        try {
+          // Try running the command directly (works if it's in PATH)
+          final result = await Process.run(player.desktopCommand!, [videoUrl]);
+          if (result.exitCode == 0) return true;
+        } catch (_) {
+          // Command not recognized or not in PATH, proceed to fallback
+        }
       }
       // Fallback: try vlc:// protocol handler
       if (player.id == 'vlc') {
         final uri = Uri.parse('vlc://${Uri.encodeComponent(videoUrl)}');
         return await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+      if (player.id == 'potplayer') {
+         final uri = Uri.parse('potplayer://${Uri.encodeComponent(videoUrl)}');
+         if (await canLaunchUrl(uri)) {
+             return await launchUrl(uri, mode: LaunchMode.externalApplication);
+         }
       }
     } catch (e) {
       if (kDebugMode) debugPrint('Windows launch error: $e');
@@ -296,8 +306,12 @@ class ExternalPlayerService {
   Future<bool> _launchLinux(String videoUrl, ExternalPlayer player) async {
     try {
       if (player.desktopCommand != null) {
-        final result = await Process.run(player.desktopCommand!, [videoUrl]);
-        return result.exitCode == 0;
+        try {
+          final result = await Process.run(player.desktopCommand!, [videoUrl]);
+          return result.exitCode == 0;
+        } catch (_) {
+          // Command not recognized or not in PATH
+        }
       }
     } catch (e) {
       if (kDebugMode) debugPrint('Linux launch error: $e');

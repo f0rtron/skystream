@@ -50,5 +50,15 @@
 	    <key>NSAllowsArbitraryLoads</key>
 	    <true/>
 	</dict>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>vlc</string>
+		<string>infuse</string>
+		<string>nplayer-http</string>
+		<string>nplayer-https</string>
+		<string>nplayer-smb</string>
+		<string>nplayer-ftp</string>
+		<string>nplayer-sftp</string>
+	</array>
 </dict>
 </plist>
