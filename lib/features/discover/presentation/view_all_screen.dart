@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../shared/widgets/cards_wrapper.dart';
 import '../../details/presentation/tmdb_movie_details_screen.dart';
 import '../../../../shared/widgets/shimmer_placeholder.dart';
+import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 import '../../../../core/utils/responsive_breakpoints.dart';
 import '../../../../core/models/tmdb_item.dart';
 import 'controllers/view_all_controller.dart';
@@ -44,8 +45,8 @@ class _ViewAllScreenState extends ConsumerState<ViewAllScreen> {
     _scrollController = ScrollController()..addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(viewAllControllerProvider.notifier)
-          .init(widget.category, widget.initialMediaList);
+          .read(viewAllControllerProvider(widget.category).notifier)
+          .init(widget.initialMediaList);
       _checkInitialFill();
     });
   }
@@ -54,9 +55,9 @@ class _ViewAllScreenState extends ConsumerState<ViewAllScreen> {
     if (!mounted) return;
     if (_scrollController.hasClients &&
         _scrollController.position.maxScrollExtent <= 0) {
-      final state = ref.read(viewAllControllerProvider);
+      final state = ref.read(viewAllControllerProvider(widget.category));
       if (state.hasMore && !state.isLoading) {
-        ref.read(viewAllControllerProvider.notifier).fetchNextPage().then((_) {
+        ref.read(viewAllControllerProvider(widget.category).notifier).fetchNextPage().then((_) {
           if (mounted) {
             WidgetsBinding.instance.addPostFrameCallback(
               (_) => _checkInitialFill(),
@@ -76,18 +77,18 @@ class _ViewAllScreenState extends ConsumerState<ViewAllScreen> {
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      ref.read(viewAllControllerProvider.notifier).fetchNextPage();
+      ref.read(viewAllControllerProvider(widget.category).notifier).fetchNextPage();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(viewAllControllerProvider);
+    final ViewAllState state = ref.watch(viewAllControllerProvider(widget.category));
 
     // Calculate aspect ratio for 2:3 posters
     final isDesktop = context.isDesktop;
     final maxExtent = isDesktop ? 240.0 : 150.0;
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.sizeOf(context).width;
     final crossAxisCount = (screenWidth / maxExtent).ceil();
     const childAspectRatio = 0.55;
 
@@ -143,7 +144,7 @@ class _ViewAllScreenState extends ConsumerState<ViewAllScreen> {
                 'view_all_${widget.category.name}_${item.id}_$index';
             final mediaType = item.mediaType;
 
-            return CardsWrapper(
+            return RepaintBoundary(child: CardsWrapper(
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
@@ -172,17 +173,8 @@ class _ViewAllScreenState extends ConsumerState<ViewAllScreen> {
                           width: double.infinity,
                           placeholder: (context, url) =>
                               const ShimmerPlaceholder(),
-                          errorWidget: (context, url, error) => Container(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                            child: Icon(
-                              Icons.error_outline,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.2),
-                            ),
-                          ),
+                          errorWidget: (_, _, _) =>
+                              const ThumbnailErrorPlaceholder(),
                         ),
                       ),
                     ),
@@ -202,7 +194,7 @@ class _ViewAllScreenState extends ConsumerState<ViewAllScreen> {
                   ),
                 ],
               ),
-            );
+            ));
           },
         ),
       ),

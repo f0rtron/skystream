@@ -9,6 +9,7 @@ class GenreSelectorDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final genresAsync = ref.watch(genresProvider);
     final selectedGenre = ref.watch(discoverFilterProvider).selectedGenre;
 
@@ -21,12 +22,12 @@ class GenreSelectorDialog extends ConsumerWidget {
           width: double.infinity,
           constraints: const BoxConstraints(maxHeight: 600, maxWidth: 500),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.7),
+            color: theme.colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white12, width: 1),
+            border: Border.all(color: theme.dividerColor, width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
+                color: theme.shadowColor,
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -39,22 +40,21 @@ class GenreSelectorDialog extends ConsumerWidget {
                 padding: const EdgeInsets.all(24.0),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.category_outlined,
-                      color: Colors.blueAccent,
+                      color: theme.colorScheme.primary,
                       size: 28,
                     ),
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       "Select Genre",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: theme.colorScheme.onSurface,
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const Spacer(),
-                    // Clear button
                     if (selectedGenre != null)
                       TextButton(
                         onPressed: () {
@@ -63,15 +63,15 @@ class GenreSelectorDialog extends ConsumerWidget {
                               .setGenre(null);
                           Navigator.of(context).pop();
                         },
-                        child: const Text(
+                        child: Text(
                           "Clear",
-                          style: TextStyle(color: Colors.redAccent),
+                          style: TextStyle(color: theme.colorScheme.error),
                         ),
                       ),
                   ],
                 ),
               ),
-              const Divider(height: 1, color: Colors.white10),
+              Divider(height: 1, color: theme.dividerColor),
               Expanded(
                 child: genresAsync.when(
                   data: (genres) => ListView.builder(
@@ -92,20 +92,22 @@ class GenreSelectorDialog extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         tileColor: isSelected
-                            ? Colors.blueAccent.withValues(alpha: 0.2)
+                            ? theme.colorScheme.primary.withValues(alpha: 0.2)
                             : null,
                         leading: Icon(
                           isSelected
                               ? Icons.check_circle
                               : Icons.circle_outlined,
                           color: isSelected
-                              ? Colors.blueAccent
-                              : Colors.white24,
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.outline,
                         ),
                         title: Text(
                           genre.name,
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.white70,
+                            color: isSelected
+                                ? theme.colorScheme.onSurface
+                                : theme.colorScheme.onSurfaceVariant,
                             fontWeight: isSelected
                                 ? FontWeight.bold
                                 : FontWeight.normal,
@@ -116,10 +118,10 @@ class GenreSelectorDialog extends ConsumerWidget {
                   ),
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
-                  error: (_, _) => const Center(
+                  error: (_, _) => Center(
                     child: Text(
                       "Failed to load genres",
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: theme.colorScheme.onSurface),
                     ),
                   ),
                 ),

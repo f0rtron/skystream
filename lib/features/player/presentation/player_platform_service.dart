@@ -41,7 +41,9 @@ class PlayerPlatformService {
   void updateOrientation(int? width, int? height) {
     try {
       if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) return;
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('PlayerPlatformService.updateOrientation: $e');
+    }
 
     if (width != null && height != null && width > 0 && height > 0) {
       if (width >= height) {
@@ -75,7 +77,9 @@ class PlayerPlatformService {
         }
         return false;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('PlayerPlatformService.toggleFullscreen: $e');
+    }
     return false;
   }
 }

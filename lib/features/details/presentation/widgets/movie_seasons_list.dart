@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/utils/image_fallbacks.dart';
 import '../../../../shared/widgets/cards_wrapper.dart';
 import '../../../../shared/widgets/shimmer_placeholder.dart';
+import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 import '../../../../shared/widgets/desktop_scroll_wrapper.dart';
 import '../../../../core/utils/responsive_breakpoints.dart';
 import '../../../../core/models/tmdb_details.dart';
@@ -66,7 +67,6 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
     if (widget.seasons.isEmpty) return const SizedBox.shrink();
 
     final isDesktop = context.isDesktop;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (isDesktop) {
       return Column(
@@ -86,7 +86,7 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[900] : Colors.grey[200],
+                  color: Theme.of(context).colorScheme.surfaceContainer,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Consumer(
@@ -95,7 +95,7 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
                       value: ref
                           .watch(tmdbDetailsControllerProvider(widget.movieId))
                           .selectedSeason,
-                      dropdownColor: isDark ? Colors.grey[900] : Colors.white,
+                      dropdownColor: Theme.of(context).colorScheme.surfaceContainer,
                       underline: const SizedBox(),
                       style: TextStyle(color: widget.textColor),
                       icon: Icon(
@@ -324,6 +324,8 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
                                 width: double.infinity,
                                 placeholder: (_, _) =>
                                     const Center(child: ShimmerPlaceholder()),
+                                errorWidget: (_, _, _) =>
+                                    const ThumbnailErrorPlaceholder(),
                               ),
                             ),
                             Padding(

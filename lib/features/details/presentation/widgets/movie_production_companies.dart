@@ -95,7 +95,7 @@ class _MovieProductionCompaniesState extends State<MovieProductionCompanies> {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.onSurface,
         borderRadius: BorderRadius.circular(8),
       ),
       child: CachedNetworkImage(
@@ -114,7 +114,7 @@ class _MovieProductionCompaniesState extends State<MovieProductionCompanies> {
       margin: const EdgeInsets.only(right: 16),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.onSurface,
         borderRadius: BorderRadius.circular(8),
       ),
       child: CachedNetworkImage(

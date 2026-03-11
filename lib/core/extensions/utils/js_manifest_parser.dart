@@ -2,6 +2,14 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 class JsManifestParser {
+  static final _manifestRegex = RegExp(
+    r'getManifest\s*\(\s*\)\s*\{\s*return\s*(\{[\s\S]*?\});',
+    multiLine: true,
+  );
+  static final _unquotedKeyRegex = RegExp(r'(\w+)\s*:');
+  static final _unquotedValueRegex = RegExp(r':\s*([a-zA-Z_$][a-zA-Z0-9_$]*)');
+  static final _trailingCommaRegex = RegExp(r',\s*\}');
+
   /// Extracts and parses the `getManifest()` return object from a JavaScript file content.
   /// 
   /// Handles:
@@ -10,27 +18,18 @@ class JsManifestParser {
   /// - Trailing commas
   static Map<String, dynamic>? parse(String content) {
     try {
-      // Regex to find return { ... }; inside getManifest
-      final regex = RegExp(
-        r'getManifest\s*\(\s*\)\s*\{\s*return\s*(\{[\s\S]*?\});',
-        multiLine: true,
-      );
-      final match = regex.firstMatch(content);
+      final match = _manifestRegex.firstMatch(content);
 
       if (match != null) {
         String jsonStr = match.group(1)!;
 
-        // Quote keys (key: -> "key":)
         jsonStr = jsonStr.replaceAllMapped(
-          RegExp(r'(\w+)\s*:'),
+          _unquotedKeyRegex,
           (m) => '"${m[1]}":',
         );
 
-        // Quote unquoted identifiers (variables/constants) as string values
-        // This handles cases like "baseUrl": mainUrl -> "baseUrl": "mainUrl"
-        // Ignores booleans and null
         jsonStr = jsonStr.replaceAllMapped(
-          RegExp(r':\s*([a-zA-Z_$][a-zA-Z0-9_$]*)'),
+          _unquotedValueRegex,
           (m) {
             final val = m.group(1)!;
             if (['true', 'false', 'null'].contains(val)) return ': $val';
@@ -38,8 +37,7 @@ class JsManifestParser {
           },
         );
 
-        // Remove trailing commas
-        jsonStr = jsonStr.replaceAll(RegExp(r',\s*\}'), '}');
+        jsonStr = jsonStr.replaceAll(_trailingCommaRegex, '}');
 
         return jsonDecode(jsonStr) as Map<String, dynamic>;
       }

@@ -13,7 +13,22 @@ import '../../features/player/presentation/player_screen.dart';
 import '../domain/entity/multimedia_item.dart';
 import 'package:skystream/shared/widgets/app_scaffold.dart';
 
+/// Typed extra for /details. Use when pushing: context.push('/details', extra: DetailsRouteExtra(...)).
+class DetailsRouteExtra {
+  const DetailsRouteExtra({required this.item, this.autoPlay = false});
+  final MultimediaItem item;
+  final bool autoPlay;
+}
+
+/// Typed extra for /player. Use when pushing: context.push('/player', extra: PlayerRouteExtra(...)).
+class PlayerRouteExtra {
+  const PlayerRouteExtra({required this.item, required this.videoUrl});
+  final MultimediaItem item;
+  final String videoUrl;
+}
+
 final appRouterProvider = Provider<GoRouter>((ref) {
+  ref.keepAlive();
   final rootNavigatorKey = GlobalKey<NavigatorState>();
   final shellNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -65,25 +80,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/details',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
-          if (state.extra is Map<String, dynamic>) {
-            final map = state.extra as Map<String, dynamic>;
-            return DetailsScreen(
-              item: map['item'] as MultimediaItem,
-              autoPlay: map['autoPlay'] as bool? ?? false,
+          final extra = state.extra;
+          if (extra is! DetailsRouteExtra) {
+            return const Scaffold(
+              body: Center(child: Text('Invalid navigation. Please go back.')),
             );
           }
-          final item = state.extra as MultimediaItem;
-          return DetailsScreen(item: item);
+          return DetailsScreen(item: extra.item, autoPlay: extra.autoPlay);
         },
       ),
       GoRoute(
         path: '/player',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
-          final extras = state.extra as Map<String, dynamic>;
-          final item = extras['item'] as MultimediaItem;
-          final videoUrl = extras['url'] as String;
-          return PlayerScreen(item: item, videoUrl: videoUrl);
+          final extra = state.extra;
+          if (extra is! PlayerRouteExtra) {
+            return const Scaffold(
+              body: Center(child: Text('Invalid navigation. Please go back.')),
+            );
+          }
+          return PlayerScreen(item: extra.item, videoUrl: extra.videoUrl);
         },
       ),
     ],

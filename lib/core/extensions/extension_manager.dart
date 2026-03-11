@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart'; // Contains ChangeNotifier
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'base_provider.dart';
 
-// Import providers (Eventually this will be dynamic)
 import 'dart:io';
 import 'engine/js_engine.dart';
 import 'models/extension_plugin.dart';
 import 'providers/js_based_provider.dart';
 import 'services/plugin_storage_service.dart';
-import 'providers.dart'; // storage and repo providers
-import '../../features/extensions/providers/extensions_controller.dart';
+import 'providers.dart';
+import '../storage/settings_repository.dart';
 
 final extensionManagerProvider =
     NotifierProvider<ExtensionManager, List<SkyStreamProvider>>(
@@ -25,31 +23,20 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
   List<SkyStreamProvider> build() {
     _engine = ref.watch(jsEngineProvider);
     _storageService = ref.watch(pluginStorageServiceProvider);
-
-    // Listen to changes in installed plugin
-    ref.listen(extensionsControllerProvider, (previous, next) {
-      if (previous?.installedPlugins != next.installedPlugins) {
-        _syncPlugins(next.installedPlugins);
-      }
-    });
-
-    // Initial load
-    final extensionsState = ref.read(extensionsControllerProvider);
-    Future.microtask(() => _syncPlugins(extensionsState.installedPlugins));
-
-    // Do NOT reset state to empty here if we are rebuilding due to engine/storage change
-    // But since _engine/_storageService ARE watched, build() WILL run again if they change.
-    // However, usually they don't change.
-    // If they do change, we probably DO want to reload everything.
     return [];
+  }
+
+  /// Called by the extensions feature when installed plugins change.
+  /// Keeps core independent of the feature; sync is triggered from app/feature layer.
+  Future<void> syncFromPlugins(List<ExtensionPlugin> installed) async {
+    await _syncPlugins(installed);
   }
 
   Future<void> _syncPlugins(List<ExtensionPlugin> installed) async {
     debugPrint("ExtensionManager: Syncing ${installed.length} plugin");
     if (_engine == null || _storageService == null) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final activeId = prefs.getString('active_provider_id');
+    final activeId = ref.read(settingsRepositoryProvider).getActiveProviderId();
 
     // Sort plugins: Active first
     final sortedPlugins = List<ExtensionPlugin>.from(installed);
@@ -209,50 +196,43 @@ final activeProviderStateProvider =
 
 // Currently selected provider
 class ActiveProviderNotifier extends Notifier<SkyStreamProvider?> {
-  String? _targetProviderName;
+  String? _targetProviderId;
+  bool _initialLoadDone = false;
 
   @override
   SkyStreamProvider? build() {
-    // Only trigger load once
-    Future.microtask(() => _load());
-
-    // Listen for new plugin being loaded
     ref.listen(extensionManagerProvider, (previous, next) {
-      if (_targetProviderName != null && state == null) {
-        // Try to resolve again
+      // On first listen invocation, perform the initial load from storage
+      if (!_initialLoadDone) {
+        _initialLoadDone = true;
+        _loadFromStorage(next);
+        return;
+      }
+
+      if (_targetProviderId != null && state == null) {
         final p = ref
             .read(extensionManagerProvider.notifier)
-            .getProvider(_targetProviderName!);
+            .getProvider(_targetProviderId!);
         if (p != null) {
           state = p;
-          _targetProviderName = null; // Found it!
+          _targetProviderId = null;
           ref.read(providerResolutionLoadingProvider.notifier).set(false);
         }
       } else if (state != null) {
-        // Check if current active provider has been removed or replaced
         final currentId = state!.id;
         final found = next.where((p) => p.id == currentId);
 
         if (found.isEmpty) {
-          // Removed (likely reloading) -> Enter waiting state
           debugPrint(
             "ActiveProviderNotifier: Active provider removed, waiting for reload...",
           );
           state = null;
-          _targetProviderName = currentId;
+          _targetProviderId = currentId;
           ref.read(providerResolutionLoadingProvider.notifier).set(true);
         } else {
-          // Present -> Check for instance update
           final match = found.first;
           if (match != state) {
-            debugPrint(
-              "ActiveProviderNotifier: Refreshed active provider instance. Match: ${match.hashCode}, State: ${state.hashCode}",
-            );
             state = match;
-          } else {
-            debugPrint(
-              "ActiveProviderNotifier: Match found (${match.hashCode}) == State (${state.hashCode}), NO UPDATE.",
-            );
           }
         }
       }
@@ -261,42 +241,33 @@ class ActiveProviderNotifier extends Notifier<SkyStreamProvider?> {
     return null;
   }
 
-  Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final id = prefs.getString('active_provider_id');
 
-    // Fallback migration: Check old key if new key missing (User might still have 'active_provider')
-    // But name is unreliable. We'll start fresh or try name lookup once?
-    // Let's just strictly use ID. If not found, user re-selects (safer than picking wrong one).
 
-    if (id == '__NONE__' || id == null) {
+  void _loadFromStorage(List<SkyStreamProvider> currentProviders) {
+    final storage = ref.read(settingsRepositoryProvider);
+    final id = storage.getActiveProviderId();
+
+    if (id == null) {
       state = null;
-      _targetProviderName = null;
+      _targetProviderId = null;
       ref.read(providerResolutionLoadingProvider.notifier).set(false);
     } else {
-      _targetProviderName = id;
+      _targetProviderId = id;
       final p = ref.read(extensionManagerProvider.notifier).getProvider(id);
       if (p != null) {
         state = p;
-        _targetProviderName = null;
+        _targetProviderId = null;
         ref.read(providerResolutionLoadingProvider.notifier).set(false);
-      } else {
-        // Provider with ID not found (yet?)
-        // It might load later via _syncPlugins listener
       }
     }
   }
 
   Future<void> set(SkyStreamProvider? provider) async {
     state = provider;
-    _targetProviderName = null;
+    _targetProviderId = null;
     ref.read(providerResolutionLoadingProvider.notifier).set(false);
 
-    final prefs = await SharedPreferences.getInstance();
-    if (provider != null) {
-      await prefs.setString('active_provider_id', provider.id);
-    } else {
-      await prefs.setString('active_provider_id', '__NONE__');
-    }
+    final storage = ref.read(settingsRepositoryProvider);
+    await storage.setActiveProviderId(provider?.id);
   }
 }

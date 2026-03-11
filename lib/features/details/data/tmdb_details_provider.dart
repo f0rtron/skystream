@@ -24,7 +24,7 @@ final movieDetailsProvider =
       params,
     ) async {
       final service = ref.watch(tmdbServiceProvider);
-      final language = await ref.watch(languageProvider.future);
+      final language = ref.watch(languageProvider);
 
       // Wrap in timeout to prevent infinite loading when connection is stale
       // This ensures error UI is shown instead of forever-loading spinner

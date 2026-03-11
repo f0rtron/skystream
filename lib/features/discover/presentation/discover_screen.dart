@@ -9,6 +9,7 @@ import 'widgets/media_horizontal_list.dart';
 import 'widgets/unified_filter_dialog.dart';
 import '../data/filter_provider.dart';
 import 'delegates/discover_search_delegate.dart';
+import '../../../../core/utils/layout_constants.dart';
 import '../../../../shared/widgets/shimmer_placeholder.dart';
 import '../../../../core/models/tmdb_item.dart';
 
@@ -19,10 +20,14 @@ class DiscoverScreen extends ConsumerStatefulWidget {
   ConsumerState<DiscoverScreen> createState() => _DiscoverScreenState();
 }
 
+/// Opacity bands to avoid rebuilding the AppBar overlay every frame.
+const _opacityBands = [0.0, 0.25, 0.5, 0.75, 1.0];
+
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
     with AutomaticKeepAliveClientMixin {
   late ScrollController _scrollController;
   final ValueNotifier<bool> _isScrolledNotifier = ValueNotifier<bool>(false);
+  final ValueNotifier<double> _appBarOpacityNotifier = ValueNotifier<double>(0);
 
   @override
   bool get wantKeepAlive => true;
@@ -36,8 +41,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    final isScrolled =
-        _scrollController.offset > 200; // Threshold for status bar switch
+    final offset = _scrollController.offset * 0.8;
+    final opacity = (offset / 300).clamp(0.0, 1.0);
+    final band = _opacityBands.lastWhere(
+      (b) => b <= opacity,
+      orElse: () => _opacityBands.first,
+    );
+    if (band != _appBarOpacityNotifier.value) {
+      _appBarOpacityNotifier.value = band;
+    }
+    final isScrolled = _scrollController.offset > 200;
     if (isScrolled != _isScrolledNotifier.value) {
       _isScrolledNotifier.value = isScrolled;
     }
@@ -48,20 +61,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _isScrolledNotifier.dispose();
+    _appBarOpacityNotifier.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
-    final heroMovieAsync = ref.watch(discoverHeroMovieProvider); // Updated
-    final popularMoviesAsync = ref.watch(popularMoviesProvider);
-    final popularTVAsync = ref.watch(popularTVProvider);
-    final nowPlayingAsync = ref.watch(nowPlayingMoviesProvider);
-    final onTheAirTVAsync = ref.watch(onTheAirTVProvider);
-    final topRatedMoviesAsync = ref.watch(topRatedMoviesProvider);
-    final topRatedTVAsync = ref.watch(topRatedTVProvider);
-    final airingTodayTVAsync = ref.watch(airingTodayTVProvider);
 
     return ValueListenableBuilder<bool>(
       valueListenable: _isScrolledNotifier,
@@ -81,16 +87,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
             forceMaterialTransparency: true,
             backgroundColor: Colors.transparent,
             elevation: 0,
-            flexibleSpace: AnimatedBuilder(
-              animation: _scrollController,
-              builder: (context, child) {
-                double offset = 0;
-                if (_scrollController.hasClients) {
-                  offset = _scrollController.offset * 0.8;
-                }
-                // Transition to black over 300 pixels
-                final opacity = (offset / 300).clamp(0.0, 1.0);
-
+            flexibleSpace: ValueListenableBuilder<double>(
+              valueListenable: _appBarOpacityNotifier,
+              builder: (context, opacity, child) {
                 return Opacity(
                   opacity: opacity,
                   child: Container(
@@ -109,7 +108,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
             centerTitle: false,
             actions: [
               Padding(
-                padding: const EdgeInsets.only(right: 8.0),
+                padding: const EdgeInsets.only(right: LayoutConstants.spacingXs),
                 child: CardsWrapper(
                   onTap: () {
                     showDialog(
@@ -131,7 +130,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
 
                       return CircleAvatar(
                         backgroundColor: hasActiveFilter
-                            ? Colors.blueAccent
+                            ? Theme.of(context).colorScheme.primary
                             : Theme.of(
                                 context,
                               ).colorScheme.onSurface.withValues(alpha: 0.1),
@@ -148,12 +147,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
               ),
 
               Padding(
-                padding: const EdgeInsets.only(right: 16.0),
+                padding: const EdgeInsets.only(right: LayoutConstants.spacingMd),
                 child: CardsWrapper(
                   onTap: () {
                     showSearch(
                       context: context,
-                      delegate: DiscoverSearchDelegate(), // Updated
+                      delegate: DiscoverSearchDelegate(),
+                      useRootNavigator: false,
+                      maintainState: true,
                     );
                   },
                   borderRadius: BorderRadius.circular(50),
@@ -176,33 +177,37 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
             controller: _scrollController,
             slivers: [
               SliverToBoxAdapter(
-                child: heroMovieAsync.when(
-                  data: (movies) {
-                    if (movies.isEmpty) return const SizedBox.shrink();
-                    return DiscoverCarousel(
-                      // Updated
-                      movies: movies,
-                      scrollController: _scrollController,
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final heroMoviesAsync = ref.watch(discoverHeroMovieProvider);
+                    return heroMoviesAsync.when(
+                      data: (movies) {
+                        if (movies.isEmpty) return const SizedBox.shrink();
+                        return DiscoverCarousel(
+                          movies: movies,
+                          scrollController: _scrollController,
+                        );
+                      },
+                      loading: () => const Padding(
+                        padding: EdgeInsets.only(bottom: LayoutConstants.spacingLg),
+                        child: SizedBox(
+                          height: 500,
+                          width: double.infinity,
+                          child: ShimmerPlaceholder(),
+                        ),
+                      ),
+                      error: (err, stack) => SizedBox(
+                        height: 500,
+                        child: Center(child: Text('Error: $err')),
+                      ),
                     );
                   },
-                  loading: () => const Padding(
-                    padding: EdgeInsets.only(bottom: 24.0),
-                    child: SizedBox(
-                      height: 500,
-                      width: double.infinity,
-                      child: ShimmerPlaceholder(),
-                    ),
-                  ),
-                  error: (err, stack) => SizedBox(
-                    height: 500,
-                    child: Center(child: Text('Error: $err')),
-                  ),
                 ),
               ),
 
               SliverToBoxAdapter(
                 child: _buildSection(
-                  popularMoviesAsync,
+                  popularMoviesProvider,
                   "Popular Movies",
                   ViewAllCategory.popularMovies,
                 ),
@@ -210,7 +215,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
 
               SliverToBoxAdapter(
                 child: _buildSection(
-                  popularTVAsync,
+                  popularTVProvider,
                   "Popular TV Shows",
                   ViewAllCategory.popularTV,
                 ),
@@ -218,7 +223,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
 
               SliverToBoxAdapter(
                 child: _buildSection(
-                  nowPlayingAsync,
+                  nowPlayingMoviesProvider,
                   "New Movies",
                   ViewAllCategory.nowPlayingMovies,
                 ),
@@ -226,7 +231,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
 
               SliverToBoxAdapter(
                 child: _buildSection(
-                  onTheAirTVAsync,
+                  onTheAirTVProvider,
                   "New TV Shows",
                   ViewAllCategory.onTheAirTV,
                 ),
@@ -234,7 +239,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
 
               SliverToBoxAdapter(
                 child: _buildSection(
-                  topRatedMoviesAsync,
+                  topRatedMoviesProvider,
                   "Featured Movies",
                   ViewAllCategory.topRatedMovies,
                 ),
@@ -242,7 +247,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
 
               SliverToBoxAdapter(
                 child: _buildSection(
-                  topRatedTVAsync,
+                  topRatedTVProvider,
                   "Featured TV Shows",
                   ViewAllCategory.topRatedTV,
                 ),
@@ -250,7 +255,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
 
               SliverToBoxAdapter(
                 child: _buildSection(
-                  airingTodayTVAsync,
+                  airingTodayTVProvider,
                   "Last videos TV Shows",
                   ViewAllCategory.airingTodayTV,
                 ),
@@ -265,12 +270,15 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
   }
 
   Widget _buildSection(
-    AsyncValue<List<TmdbItem>> asyncValue,
+    FutureProvider<List<TmdbItem>> provider,
     String title,
     ViewAllCategory category,
   ) {
-    return asyncValue.when(
-      data: (items) {
+    return Consumer(
+      builder: (context, ref, _) {
+        final asyncValue = ref.watch(provider);
+        return asyncValue.when(
+          data: (items) {
         if (items.isEmpty) return const SizedBox.shrink();
         return MediaHorizontalList(
           title: title,
@@ -280,16 +288,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
         );
       },
       loading: () => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16.0),
+        padding: const EdgeInsets.symmetric(vertical: LayoutConstants.spacingMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Title Placeholder
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              padding: EdgeInsets.symmetric(horizontal: LayoutConstants.spacingMd),
               child: ShimmerPlaceholder.rectangular(width: 150, height: 24),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: LayoutConstants.spacingMd),
             // List Placeholder
             SizedBox(
               height: 250,
@@ -297,7 +305,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 scrollDirection: Axis.horizontal,
                 itemCount: 5,
-                separatorBuilder: (_, _) => const SizedBox(width: 12),
+                separatorBuilder: (_, _) => const SizedBox(width: LayoutConstants.spacingSm),
                 itemBuilder: (_, _) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -308,7 +316,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                         height: 195,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: LayoutConstants.spacingXs),
                     const ShimmerPlaceholder.rectangular(
                       width: 100,
                       height: 14,
@@ -321,6 +329,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
         ),
       ),
       error: (e, _) => const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

@@ -14,6 +14,7 @@ import 'core/network/doh_service.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'core/utils/app_utils.dart';
 import 'features/extensions/providers/extensions_controller.dart';
+import 'features/extensions/widgets/extensions_sync_bridge.dart';
 import 'core/providers/update_provider.dart';
 import 'core/widgets/update_dialog.dart';
 
@@ -31,7 +32,6 @@ void main() async {
     await windowManager.ensureInitialized();
 
     const windowOptions = WindowOptions(
-      size: Size(1280, 720),
       center: true,
       backgroundColor: Colors
           .black, // Solid black prevents transparency during fullscreen transition
@@ -41,6 +41,7 @@ void main() async {
 
     windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
+      await windowManager.maximize();
       await windowManager.focus();
     });
   }
@@ -128,7 +129,7 @@ class _AppRootState extends State<AppRoot> {
 
     return ProviderScope(
       overrides: [storageServiceProvider.overrideWithValue(_storageService)],
-      child: const MyApp(),
+      child: const ExtensionsSyncBridge(child: MyApp()),
     );
   }
 }
@@ -161,10 +162,9 @@ class _MyAppState extends ConsumerState<MyApp> {
     try {
       final controller = ref.read(updateControllerProvider.notifier);
       await controller.checkForUpdates();
+      if (!mounted) return;
 
       final state = ref.read(updateControllerProvider);
-
-      // Use the navigator context to show dialog
       final appRouter = ref.read(appRouterProvider);
       final navContext = appRouter.routerDelegate.navigatorKey.currentContext;
 
@@ -180,15 +180,14 @@ class _MyAppState extends ConsumerState<MyApp> {
 
   Future<void> _checkExtensionsUpdates() async {
     try {
-      // Wait for initialization if needed, but the provider creates it.
-      // We read the notifier to ensure it's built
       final controller = ref.read(extensionsControllerProvider.notifier);
-
-      // Give it a moment to load repos (in _init which is microtask)
+      controller.ensureInitialized();
       await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
 
       final count = await controller.checkForUpdates();
-      if (count > 0 && mounted) {
+      if (!mounted) return;
+      if (count > 0) {
         _scaffoldMessengerKey.currentState?.showSnackBar(
           SnackBar(
             content: Text("Updated $count extension${count > 1 ? 's' : ''}"),

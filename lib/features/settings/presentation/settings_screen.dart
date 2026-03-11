@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../../../core/utils/layout_constants.dart';
 import '../../../core/theme/theme_provider.dart';
 
 import 'widgets/settings_widgets.dart';
@@ -34,9 +35,9 @@ class SettingsScreen extends ConsumerWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
           child: ListView(
-            padding: const EdgeInsets.only(bottom: 24),
+            padding: const EdgeInsets.only(bottom: LayoutConstants.spacingLg),
             children: [
-              const SizedBox(height: 8),
+              const SizedBox(height: LayoutConstants.spacingXs),
               SettingsGroup(
                 title: 'General',
                 children: [
@@ -51,7 +52,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: LayoutConstants.spacingLg),
               SettingsGroup(
                 title: 'Player',
                 children: [
@@ -155,7 +156,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: LayoutConstants.spacingLg),
               Builder(
                 builder: (context) {
                   final dohState =
@@ -199,7 +200,7 @@ class SettingsScreen extends ConsumerWidget {
                   );
                 },
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: LayoutConstants.spacingLg),
               SettingsGroup(
                 title: 'Extensions',
                 children: [
@@ -212,7 +213,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: LayoutConstants.spacingLg),
               SettingsGroup(
                 title: 'App Data',
                 children: [
@@ -231,7 +232,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: LayoutConstants.spacingLg),
               SettingsGroup(
                 title: 'Developer',
                 children: [
@@ -244,7 +245,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: LayoutConstants.spacingLg),
               SettingsGroup(
                 title: 'About',
                 children: [

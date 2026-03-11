@@ -138,7 +138,7 @@ class _MovieCastListState extends State<MovieCastList> {
           children: [
             CircleAvatar(
               radius: 35,
-              backgroundColor: Colors.grey[800],
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               backgroundImage: CachedNetworkImageProvider(
                 member.profileImageUrl,
               ),

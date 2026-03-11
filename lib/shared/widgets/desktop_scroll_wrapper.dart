@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../core/utils/layout_constants.dart';
 
 class DesktopScrollWrapper extends StatefulWidget {
   final Widget child;
@@ -152,7 +153,7 @@ class _ScrollButton extends StatelessWidget {
           customBorder: const CircleBorder(),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(LayoutConstants.spacingXs),
             child: Icon(icon, color: Theme.of(context).colorScheme.onSurface),
           ),
         ),

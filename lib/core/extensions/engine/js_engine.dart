@@ -6,14 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
-import '../../storage/storage_service.dart';
+import '../../storage/extension_repository.dart';
 import '../../network/cloudflare_bypass.dart';
 import 'package:encrypt/encrypt.dart' as encrypt_lib;
 
 import '../../network/dio_client_provider.dart';
 
 final jsEngineProvider = Provider.autoDispose<JsEngineService>((ref) {
-  final storage = ref.read(storageServiceProvider);
+  final storage = ref.read(extensionRepositoryProvider);
   final dio = ref.read(dioClientProvider);
   final service = JsEngineService(storage, dio);
   ref.onDispose(() => service.dispose());
@@ -24,10 +24,13 @@ class JsEngineService {
   late JavascriptRuntime _runtime;
   final Dio _dio;
   final CookieJar _cookieJar = CookieJar(); // RAM-based cookie jar
-  final StorageService _storage;
+  final ExtensionRepository _storage;
 
   JsEngineService(this._storage, this._dio) {
-    _dio.interceptors.add(CookieManager(_cookieJar));
+    final bool hasCookieManager = _dio.interceptors.any((i) => i is CookieManager);
+    if (!hasCookieManager) {
+      _dio.interceptors.add(CookieManager(_cookieJar));
+    }
     // DohInterceptor is provided globally by dioClientProvider
     _runtime = getJavascriptRuntime();
     // Defer polyfill injection to avoid blocking the UI thread
@@ -408,22 +411,28 @@ class JsEngineService {
 
     _runtime.evaluate(evalWrapper);
 
-    // Wait for callback with timeout
-    int retries = 0;
-    while (!completer.isCompleted) {
-      if (retries > 600) {
-        // 30 seconds
-        if (!completer.isCompleted) {
-          completer.completeError("Timeout executing $functionName");
-        }
-        break;
+    // Complete only via the onMessage callback above. The JS runtime may require
+    // pumping to run promise callbacks; use a timer to pump periodically
+    // instead of a blocking loop so the UI stays responsive.
+    Timer? pumpTimer;
+    pumpTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
+      if (completer.isCompleted) {
+        pumpTimer?.cancel();
+        return;
       }
       _runtime.executePendingJob();
-      await Future.delayed(const Duration(milliseconds: 50));
-      retries++;
-    }
+    });
 
-    return completer.future;
+    try {
+      return await completer.future.timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException('Timeout executing $functionName');
+        },
+      );
+    } finally {
+      pumpTimer.cancel();
+    }
   }
 
   Future<dynamic> callFunction(String name, [List<dynamic>? args]) async {

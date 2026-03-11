@@ -1,12 +1,15 @@
-import 'package:skystream/core/providers/device_info_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:skystream/shared/widgets/focusable_item.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:skystream/core/utils/responsive_breakpoints.dart';
+import 'package:skystream/core/router/app_router.dart';
+import 'package:skystream/core/utils/image_fallbacks.dart';
+import 'package:skystream/core/utils/layout_constants.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../../shared/widgets/desktop_scroll_wrapper.dart';
+import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 
 class HomeSection extends ConsumerStatefulWidget {
   final String title;
@@ -30,8 +33,7 @@ class _HomeSectionState extends ConsumerState<HomeSection> {
   Widget build(BuildContext context) {
     if (widget.items.isEmpty) return const SizedBox.shrink();
 
-    final device = ref.watch(deviceProfileProvider).asData?.value;
-    final isLarge = (device?.isLargeScreen ?? false) || context.isDesktop;
+    final isLarge = context.isTabletOrLarger;
 
     final double width = isLarge ? 170 : 110;
     final double posterHeight = width * 1.5; // 2:3 aspect ratio
@@ -61,17 +63,18 @@ class _HomeSectionState extends ConsumerState<HomeSection> {
             child: ListView.separated(
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
+                horizontal: LayoutConstants.spacingMd,
+                vertical: LayoutConstants.spacingXs,
               ), // Added vertical padding for focus scaling
               scrollDirection: Axis.horizontal,
               itemCount: widget.items.length,
               separatorBuilder: (context, index) =>
-                  SizedBox(width: isLarge ? 24 : 12),
+                  SizedBox(width: isLarge ? LayoutConstants.spacingLg : LayoutConstants.spacingSm),
               itemBuilder: (context, index) {
                 final item = widget.items[index];
                 return FocusableItem(
-                  onTap: () => context.push('/details', extra: item),
+                  key: ValueKey(item.url),
+                  onTap: () => context.push('/details', extra: DetailsRouteExtra(item: item)),
                   borderRadius: BorderRadius.circular(12),
                   child: SizedBox(
                     width: width,
@@ -83,14 +86,14 @@ class _HomeSectionState extends ConsumerState<HomeSection> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: CachedNetworkImage(
-                              imageUrl: item.posterUrl,
+                              imageUrl: AppImageFallbacks.poster(item.posterUrl, label: item.title),
                               fit: BoxFit.cover,
                               memCacheWidth: 350, // P15: Optimize memory
                               placeholder: (context, url) => Container(
                                 color: Theme.of(context).dividerColor,
                               ),
-                              errorWidget: (context, url, error) =>
-                                  const Icon(Icons.broken_image),
+                              errorWidget: (_, _, _) =>
+                                  const ThumbnailErrorPlaceholder(),
                             ),
                           ),
                         ),

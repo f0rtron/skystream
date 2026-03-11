@@ -75,7 +75,9 @@ class LocalProxyService {
       try {
         request.response.statusCode = HttpStatus.internalServerError;
         request.response.close();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('LocalProxyService._handleRequest: error response failed: $e');
+      }
     }
   }
 
@@ -206,7 +208,9 @@ class LocalProxyService {
         final prefix = utf8.decode(bytes.take(7).toList());
         return prefix.startsWith("#EXT");
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('LocalProxyService._isValidM3u8: $e');
+    }
     return false;
   }
 

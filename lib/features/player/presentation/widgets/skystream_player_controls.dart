@@ -9,7 +9,6 @@ import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import '../../../../core/extensions/base_provider.dart';
 import '../../../../core/models/torrent_status.dart';
-import '../../../../shared/widgets/custom_widgets.dart';
 import '../components/torrent_info_widget.dart';
 import '../../../settings/presentation/player_settings_provider.dart';
 import '../../../../core/providers/device_info_provider.dart';
@@ -17,6 +16,7 @@ import '../../../../core/utils/responsive_breakpoints.dart';
 import 'player_stream_widgets.dart';
 import 'player_control_components.dart';
 import 'player_bottom_sheets.dart';
+import 'player_loading_overlay.dart';
 import 'player_osd_overlay.dart';
 import '../player_platform_service.dart';
 import '../player_gesture_handler.dart';
@@ -105,42 +105,38 @@ class SkyStreamPlayerControlsState
     _isTv = ref.read(deviceProfileProvider).asData?.value.isTv ?? false;
 
     _platformService = PlayerPlatformService();
-    _gestureHandler =
-        PlayerGestureHandler(
-          player: widget.player,
-          getSettings: () async =>
-              await ref.read(playerSettingsProvider.future),
-          isTv: _isTv,
-          isDesktop: Platform.isMacOS || Platform.isWindows || Platform.isLinux,
-          getDuration: () => _duration,
-          getPosition: () => _position,
-          onInteraction: () {
-            if (!_isVisible) {
-              setState(() => _isVisible = true);
-              widget.onVisibilityChanged?.call(true);
-            }
-            _startHideTimer();
-          },
-          onHideControls: () {
-            _cancelHideTimer();
-            if (_isVisible && mounted) {
-              setState(() => _isVisible = false);
-              widget.onVisibilityChanged?.call(false);
-            }
-          },
-          onSeekRelative: _seekRelative,
-          onDoubleTapAnimationStart: (isLeft, tapPos, seconds) {
-            if (mounted) {
-              setState(() {
-                _isSeekingLeft = isLeft;
-                _tapPosition = tapPos;
-              });
-              _seekAnimController.forward(from: 0.0);
-            }
-          },
-        )..addListener(() {
-          if (mounted) setState(() {});
-        });
+    _gestureHandler = PlayerGestureHandler(
+      player: widget.player,
+      getSettings: () async => await ref.read(playerSettingsProvider.future),
+      isTv: _isTv,
+      isDesktop: Platform.isMacOS || Platform.isWindows || Platform.isLinux,
+      getDuration: () => _duration,
+      getPosition: () => _position,
+      onInteraction: () {
+        if (!_isVisible) {
+          setState(() => _isVisible = true);
+          widget.onVisibilityChanged?.call(true);
+        }
+        _startHideTimer();
+      },
+      onHideControls: () {
+        _cancelHideTimer();
+        if (_isVisible && mounted) {
+          setState(() => _isVisible = false);
+          widget.onVisibilityChanged?.call(false);
+        }
+      },
+      onSeekRelative: _seekRelative,
+      onDoubleTapAnimationStart: (isLeft, tapPos, seconds) {
+        if (mounted) {
+          setState(() {
+            _isSeekingLeft = isLeft;
+            _tapPosition = tapPos;
+          });
+          _seekAnimController.forward(from: 0.0);
+        }
+      },
+    );
 
     _playFocusNode = FocusNode();
     try {
@@ -182,8 +178,9 @@ class SkyStreamPlayerControlsState
       }),
       // Duration: Only setState when transitioning from zero (to show controls)
       widget.player.stream.duration.listen((val) {
+        final oldDuration = _duration;
         _duration = val; // Update local cache
-        if (mounted && _duration == Duration.zero && val != Duration.zero) {
+        if (mounted && oldDuration == Duration.zero && val != Duration.zero) {
           setState(() {
             _isVisible = true;
           });
@@ -262,7 +259,9 @@ class SkyStreamPlayerControlsState
         if (iosInfo.model.toLowerCase().contains("ipad")) {
           if (mounted) setState(() => _isIpad = true);
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('SkyStreamPlayerControls._checkIpad: $e');
+      }
     }
   }
 
@@ -273,6 +272,7 @@ class SkyStreamPlayerControlsState
     _backFocusNode.dispose();
     _hideTimer?.cancel();
     _seekAnimController.dispose();
+    _gestureHandler.dispose();
     for (final s in _subscriptions) {
       s.cancel();
     }
@@ -322,13 +322,15 @@ class SkyStreamPlayerControlsState
         toggleFullscreen();
         return;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('SkyStreamPlayerControls._handleDoubleTap: $e');
+    }
 
     if (widget.isLoading || _duration == Duration.zero) return;
     if (_tapPosition != null) {
       _gestureHandler.handleDoubleTap(
         _tapPosition!,
-        MediaQuery.of(context).size.width,
+        MediaQuery.sizeOf(context).width,
       );
     }
   }
@@ -354,12 +356,9 @@ class SkyStreamPlayerControlsState
     }
   }
 
-  /// Called by parent to update torrent status without parent setState
-  void updateTorrentStatus(TorrentStatus status) {
-    // No need to setState here — the torrent info section uses widget.torrentStatus
-    // which is passed from the parent. We just need to mark this widget dirty.
-    if (mounted) setState(() {});
-  }
+  /// Torrent status is passed via widget props from the parent rebuild.
+  /// This method is retained for API compatibility but no longer forces a rebuild.
+  void updateTorrentStatus(TorrentStatus status) {}
 
   void showControls() {
     if (mounted) {
@@ -397,8 +396,10 @@ class SkyStreamPlayerControlsState
 
   void _cancelHideTimer() {
     _hideTimer?.cancel();
-    setState(() => _isVisible = true);
-    widget.onVisibilityChanged?.call(true);
+    if (!_isVisible) {
+      setState(() => _isVisible = true);
+      widget.onVisibilityChanged?.call(true);
+    }
   }
 
   void _togglePlay() {
@@ -433,7 +434,7 @@ class SkyStreamPlayerControlsState
   }
 
   void triggerSeek(bool isLeft) {
-    final width = MediaQuery.of(context).size.width;
+    final width = MediaQuery.sizeOf(context).width;
     final settings =
         ref.read(playerSettingsProvider).asData?.value ??
         const PlayerSettings();
@@ -464,7 +465,7 @@ class SkyStreamPlayerControlsState
   Future<void> _handleDragStart(DragStartDetails details) async {
     await _gestureHandler.handleDragStart(
       details,
-      MediaQuery.of(context).size.width,
+      MediaQuery.sizeOf(context).width,
     );
   }
 
@@ -478,8 +479,8 @@ class SkyStreamPlayerControlsState
 
   // Horizontal Seek
   void _handleHorizontalDragStart(DragStartDetails details) async {
-    final height = MediaQuery.of(context).size.height;
-    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
+    final height = MediaQuery.sizeOf(context).height;
+    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
     await _gestureHandler.handleHorizontalDragStart(
       details,
       _isVisible,
@@ -509,7 +510,7 @@ class SkyStreamPlayerControlsState
 
   Widget _buildKickAnimation() {
     final seconds =
-        ref.read(playerSettingsProvider).asData?.value.seekDuration ?? 10;
+        ref.watch(playerSettingsProvider).asData?.value.seekDuration ?? 10;
 
     return FadeTransition(
       opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -521,22 +522,22 @@ class SkyStreamPlayerControlsState
       child: Container(
         height: double.infinity,
         width:
-            MediaQuery.of(context).size.height * 0.5, // Half-circle proportion
+            MediaQuery.sizeOf(context).height * 0.5, // Half-circle proportion
         margin: EdgeInsets.zero,
         decoration: BoxDecoration(
           color: Colors.transparent, // Slightly lighter for full screen
           borderRadius: BorderRadius.only(
             topRight: _isSeekingLeft
-                ? Radius.circular(MediaQuery.of(context).size.height)
+                ? Radius.circular(MediaQuery.sizeOf(context).height)
                 : Radius.zero,
             bottomRight: _isSeekingLeft
-                ? Radius.circular(MediaQuery.of(context).size.height)
+                ? Radius.circular(MediaQuery.sizeOf(context).height)
                 : Radius.zero,
             topLeft: !_isSeekingLeft
-                ? Radius.circular(MediaQuery.of(context).size.height)
+                ? Radius.circular(MediaQuery.sizeOf(context).height)
                 : Radius.zero,
             bottomLeft: !_isSeekingLeft
-                ? Radius.circular(MediaQuery.of(context).size.height)
+                ? Radius.circular(MediaQuery.sizeOf(context).height)
                 : Radius.zero,
           ),
         ),
@@ -575,7 +576,7 @@ class SkyStreamPlayerControlsState
   @override
   Widget build(BuildContext context) {
     // Guard against PiP or small window size
-    final size = MediaQuery.of(context).size;
+    final size = MediaQuery.sizeOf(context);
     final isSmallWindow = size.width < 300 || size.height < 200;
 
     if (_isInPip || isSmallWindow) return const SizedBox.shrink();
@@ -621,7 +622,7 @@ class SkyStreamPlayerControlsState
         child: GestureDetector(
           onTap: () {
             if (_gestureHandler.showOSD) {
-              setState(() => _gestureHandler.showOSD = false);
+              _gestureHandler.dismissOSD();
             }
             if (_isLocked) {
               setState(() => _isVisible = !_isVisible);
@@ -679,36 +680,11 @@ class SkyStreamPlayerControlsState
                   },
                 ),
 
-                // Seek feedback overlay
-                if (_gestureHandler.swipeSeekValue != null)
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        "${_formatDuration(_gestureHandler.swipeSeekValue!)} / ${_formatDuration(_duration)}",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // Volume/Brightness OSD
-                PlayerOsdOverlay(
-                  showOSD: _gestureHandler.showOSD,
-                  osdValue: _gestureHandler.osdValue,
-                  osdLabel: _gestureHandler.osdLabel,
-                  osdIcon: _gestureHandler.osdIcon,
-                  osdAlignment: _gestureHandler.osdAlignment,
+                // OSD and volume overlay — only this subtree rebuilds on handler changes
+                PlayerOSDVolumeOverlay(
+                  handler: _gestureHandler,
+                  getDuration: () => _duration,
+                  formatDuration: _formatDuration,
                 ),
               ],
             ),
@@ -725,31 +701,12 @@ class SkyStreamPlayerControlsState
     bool rotate = false,
     bool highlight = false,
   }) {
-    return CustomButton(
-      showFocusHighlight: _isTv,
-      onPressed: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: highlight ? Theme.of(context).primaryColor : Colors.white,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 10,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return PlayerActionButton(
+      icon: icon,
+      label: label,
+      onTap: onTap,
+      highlight: highlight,
+      isTv: _isTv,
     );
   }
 
@@ -820,7 +777,7 @@ class SkyStreamPlayerControlsState
                 onVerticalDragStart: (_) {},
                 child: Container(
                   padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewPadding.bottom + 16,
+                    bottom: MediaQuery.viewPaddingOf(context).bottom + 16,
                     left: 16,
                     right: 16,
                     top: 16,
@@ -1015,36 +972,9 @@ class SkyStreamPlayerControlsState
   }
 
   Widget _buildLoadingUI() {
-    return GestureDetector(
+    return PlayerLoadingOverlay(
       onDoubleTap: _handleDoubleTap,
-      behavior: HitTestBehavior.translucent,
-      child: Container(
-        color: Colors.transparent, // Ensure hit test works
-        child: Stack(
-          children: [
-            Positioned(
-              top: MediaQuery.of(context).viewPadding.top + 16,
-              left: 16,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 36,
-                  ),
-                  tooltip: 'Go Back',
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ),
-            ),
-            const Center(child: CircularProgressIndicator(color: Colors.white)),
-          ],
-        ),
-      ),
+      onBack: () => Navigator.of(context).pop(),
     );
   }
 }

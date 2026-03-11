@@ -141,7 +141,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
         if (Platform.isWindows || Platform.isLinux) {
           windowManager.setTitleBarStyle(TitleBarStyle.normal);
         }
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('PlayerScreen.dispose: $e');
+      }
     }
     super.dispose();
   }
@@ -237,6 +239,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
   @override
   Widget build(BuildContext context) {
     final playerState = ref.watch(playerControllerProvider);
+    final subtitleSettings = ref.watch(playerSettingsProvider).asData?.value;
 
     if (playerState.errorMessage != null) {
       return Scaffold(
@@ -309,27 +312,12 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                         configuration: SubtitleViewConfiguration(
                           style: TextStyle(
                             fontSize:
-                                ref
-                                    .watch(playerSettingsProvider)
-                                    .asData
-                                    ?.value
-                                    .subtitleSize ??
-                                22.0,
+                                subtitleSettings?.subtitleSize ?? 22.0,
                             color: Color(
-                              ref
-                                      .watch(playerSettingsProvider)
-                                      .asData
-                                      ?.value
-                                      .subtitleColor ??
-                                  0xFFFFFFFF,
+                              subtitleSettings?.subtitleColor ?? 0xFFFFFFFF,
                             ),
                             backgroundColor: Color(
-                              ref
-                                      .watch(playerSettingsProvider)
-                                      .asData
-                                      ?.value
-                                      .subtitleBackgroundColor ??
-                                  0x00000000,
+                              subtitleSettings?.subtitleBackgroundColor ?? 0x00000000,
                             ),
                             shadows: const [
                               Shadow(

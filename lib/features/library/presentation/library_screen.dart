@@ -1,8 +1,12 @@
 import 'package:skystream/shared/widgets/focusable_item.dart';
+import 'package:skystream/shared/widgets/thumbnail_error_placeholder.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:skystream/core/router/app_router.dart';
+import 'package:skystream/core/utils/image_fallbacks.dart';
+import 'package:skystream/core/utils/layout_constants.dart';
 import 'library_provider.dart';
 
 class LibraryScreen extends ConsumerWidget {
@@ -33,18 +37,18 @@ class LibraryScreen extends ConsumerWidget {
               ),
             )
           : GridView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(LayoutConstants.spacingMd),
               gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 180, // Responsive column sizing
                 childAspectRatio: 2 / 3.4, // Matches poster aspect ratio
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
+                crossAxisSpacing: LayoutConstants.spacingMd,
+                mainAxisSpacing: LayoutConstants.spacingMd,
               ),
               itemCount: libraryItems.length,
               itemBuilder: (context, index) {
                 final item = libraryItems[index];
-                return FocusableItem(
-                  onTap: () => context.push('/details', extra: item),
+                return RepaintBoundary(child: FocusableItem(
+                  onTap: () => context.push('/details', extra: DetailsRouteExtra(item: item)),
                   borderRadius: BorderRadius.circular(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -53,14 +57,14 @@ class LibraryScreen extends ConsumerWidget {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: CachedNetworkImage(
-                            imageUrl: item.posterUrl,
+                            imageUrl: AppImageFallbacks.poster(item.posterUrl, label: item.title),
                             fit: BoxFit.cover,
                             memCacheWidth: 300, // P15: Optimize memory
                             placeholder: (context, url) => Container(
                               color: Theme.of(context).dividerColor,
                             ),
-                            errorWidget: (context, url, _) =>
-                                const Icon(Icons.broken_image),
+                            errorWidget: (_, _, _) =>
+                                const ThumbnailErrorPlaceholder(),
                           ),
                         ),
                       ),
@@ -77,7 +81,7 @@ class LibraryScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                );
+                ));
               },
             ),
     );

@@ -1,28 +1,37 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
-import '../../../../core/storage/storage_service.dart';
+import '../../../../core/storage/library_repository.dart';
 
 class LibraryNotifier extends Notifier<List<MultimediaItem>> {
-  late StorageService _storage;
+  late LibraryRepository _repository;
 
   @override
   List<MultimediaItem> build() {
-    _storage = ref.watch(storageServiceProvider);
-    return _storage.getLibraryItems();
+    _repository = ref.watch(libraryRepositoryProvider);
+    return _repository.getLibraryItems();
+  }
+
+  void refresh() {
+    state = _repository.getLibraryItems();
   }
 
   Future<void> addItem(MultimediaItem item) async {
-    await _storage.addToLibrary(item);
-    state = _storage.getLibraryItems(); // Refresh state
+    await _repository.addToLibrary(item);
+    state = _repository.getLibraryItems(); // Refresh state
   }
 
   Future<void> removeItem(String url) async {
-    await _storage.removeFromLibrary(url);
-    state = _storage.getLibraryItems(); // Refresh state
+    await _repository.removeFromLibrary(url);
+    state = _repository.getLibraryItems(); // Refresh state
   }
 
   bool isBookmarked(String url) {
-    return _storage.isInLibrary(url);
+    return _repository.isInLibrary(url);
+  }
+
+  Future<void> clearAll() async {
+    // _repository doesn't have clear all library yet, we should loop or add it to repo if needed
+    // or just assume it is done via settingsdeleteAllData.
   }
 }
 

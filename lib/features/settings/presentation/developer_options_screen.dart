@@ -6,9 +6,10 @@ import 'package:virtual_mouse/virtual_mouse.dart';
 
 import '../../../shared/widgets/custom_widgets.dart';
 import '../../extensions/providers/extensions_controller.dart';
-import '../../../core/storage/storage_service.dart';
+import '../../../core/storage/settings_repository.dart';
 import '../../../core/domain/entity/multimedia_item.dart';
 import '../../../core/providers/device_info_provider.dart';
+import '../../../core/router/app_router.dart';
 import 'widgets/settings_widgets.dart';
 
 import 'package:flutter/foundation.dart';
@@ -23,6 +24,14 @@ class DeveloperOptionsScreen extends ConsumerStatefulWidget {
 
 class _DeveloperOptionsScreenState
     extends ConsumerState<DeveloperOptionsScreen> {
+  bool _devLoadAssets = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _devLoadAssets = ref.read(settingsRepositoryProvider).getDevLoadAssets();
+  }
+
   @override
   Widget build(BuildContext context) {
     final deviceAsync = ref.watch(deviceProfileProvider);
@@ -56,26 +65,16 @@ class _DeveloperOptionsScreenState
                 subtitle: 'Select a local torrent file to play',
                 onTap: () => _pickTorrentFile(context),
               ),
-              FutureBuilder<bool>(
-                future: Future.value(
-                  ref.read(storageServiceProvider).getDevLoadAssets(),
+              SettingsTile(
+                icon: Icons.folder_copy_rounded,
+                title: 'Load plugin from assets',
+                subtitle: _devLoadAssets ? 'Enabled' : 'Disabled',
+                isLast: true,
+                trailing: Switch(
+                  value: _devLoadAssets,
+                  onChanged: (val) => _toggleAssetLoading(context, val),
                 ),
-                builder: (context, snapshot) {
-                  final enabled = snapshot.data ?? false;
-                  return SettingsTile(
-                    icon: Icons.folder_copy_rounded,
-                    title: 'Load plugin from assets',
-                    subtitle: enabled ? 'Enabled' : 'Disabled',
-                    isLast: true,
-                    trailing: Switch(
-                      value: enabled,
-                      onChanged: (val) =>
-                          _toggleAssetLoading(context, val, enabled),
-                    ),
-                    onTap: () =>
-                        _toggleAssetLoading(context, !enabled, enabled),
-                  );
-                },
+                onTap: () => _toggleAssetLoading(context, !_devLoadAssets),
               ),
             ],
           ),
@@ -104,7 +103,6 @@ class _DeveloperOptionsScreenState
   Future<void> _toggleAssetLoading(
     BuildContext context,
     bool newValue,
-    bool currentEnabled,
   ) async {
     if (!kDebugMode) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -112,15 +110,17 @@ class _DeveloperOptionsScreenState
           content: Text('This feature is only available in Debug builds'),
         ),
       );
-      // Ensure UI reflects the blocked state (stays disabled)
-      if (context.mounted) setState(() {});
       return;
     }
 
-    await ref.read(storageServiceProvider).setDevLoadAssets(newValue);
-    if (context.mounted) setState(() {});
+    Future<void> handleDevLoadAssetsChanged(bool? newValue) async {
+      if (newValue == null) return;
+      await ref.read(settingsRepositoryProvider).setDevLoadAssets(newValue);
+      if (context.mounted) setState(() { _devLoadAssets = newValue; });
+    }
 
-    // Refresh extensions
+    await handleDevLoadAssetsChanged(newValue);
+
     ref.read(extensionsControllerProvider.notifier).loadInstalledPlugins();
   }
 
@@ -133,16 +133,16 @@ class _DeveloperOptionsScreenState
 
       context.push(
         '/player',
-        extra: {
-          'item': MultimediaItem(
+        extra: PlayerRouteExtra(
+          item: MultimediaItem(
             title: name,
             url: path,
             posterUrl: '',
             provider: 'Local',
             episodes: [Episode(name: name, url: path, posterUrl: '')],
           ),
-          'url': path,
-        },
+          videoUrl: path,
+        ),
       );
     }
   }
@@ -185,21 +185,23 @@ class _DeveloperOptionsScreenState
                   if (uri.pathSegments.isNotEmpty) {
                     title = uri.pathSegments.last;
                   }
-                } catch (_) {}
+                } catch (e) {
+                  debugPrint('DeveloperOptionsScreen: URI parse error: $e');
+                }
 
                 Navigator.pop(context);
                 context.push(
                   '/player',
-                  extra: {
-                    'item': MultimediaItem(
+                  extra: PlayerRouteExtra(
+                    item: MultimediaItem(
                       title: title,
                       url: url, // Unique URL for history
                       posterUrl: '',
                       provider: 'Remote',
                       episodes: [Episode(name: title, url: url, posterUrl: '')],
                     ),
-                    'url': url,
-                  },
+                    videoUrl: url,
+                  ),
                 );
               }
             },
@@ -219,16 +221,16 @@ class _DeveloperOptionsScreenState
 
       context.push(
         '/player',
-        extra: {
-          'item': MultimediaItem(
+        extra: PlayerRouteExtra(
+          item: MultimediaItem(
             title: name,
             url: path,
             posterUrl: '',
             provider: 'Torrent',
             episodes: [Episode(name: name, url: path, posterUrl: '')],
           ),
-          'url': path,
-        },
+          videoUrl: path,
+        ),
       );
     }
   }

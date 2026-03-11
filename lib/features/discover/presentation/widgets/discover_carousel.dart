@@ -2,9 +2,11 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../core/utils/layout_constants.dart';
 import '../../../../shared/widgets/cards_wrapper.dart';
 import '../../../details/presentation/tmdb_movie_details_screen.dart';
 import '../../../../shared/widgets/shimmer_placeholder.dart';
+import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 import '../../../../core/models/tmdb_item.dart';
 
 class DiscoverCarousel extends StatefulWidget {
@@ -27,14 +29,34 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
   int _currentIndex = 0;
   final CarouselSliderController _carouselController =
       CarouselSliderController();
+  final ValueNotifier<double> _scrollOffset = ValueNotifier(0.0);
+
+  @override
+  void initState() {
+    super.initState();
+    widget.scrollController?.addListener(_onParentScroll);
+  }
+
+  void _onParentScroll() {
+    if (widget.scrollController!.hasClients) {
+      _scrollOffset.value = widget.scrollController!.offset;
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.scrollController?.removeListener(_onParentScroll);
+    _scrollOffset.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     if (widget.movies.isEmpty) return const SizedBox.shrink();
 
-    final size = MediaQuery.of(context).size;
+    final size = MediaQuery.sizeOf(context);
     final heroHeight = size.height * 0.60;
-    final isDesktop = size.width > 800;
+    final isDesktop = size.width > LayoutConstants.discoverCarouselDesktopBreakpoint;
 
     return SizedBox(
       height: heroHeight,
@@ -106,7 +128,7 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                     child: IconButton(
                       onPressed: () => _carouselController.previousPage(),
                       style: IconButton.styleFrom(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(LayoutConstants.spacingMd),
                       ),
                       icon: const Icon(
                         Icons.arrow_back_ios_new,
@@ -136,7 +158,7 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                     child: IconButton(
                       onPressed: () => _carouselController.nextPage(),
                       style: IconButton.styleFrom(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(LayoutConstants.spacingMd),
                       ),
                       icon: const Icon(
                         Icons.arrow_forward_ios,
@@ -223,14 +245,9 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
         }
       },
       borderRadius: BorderRadius.zero,
-      child: AnimatedBuilder(
-        animation: widget.scrollController!,
-        builder: (context, child) {
-          double scrollOffset = 0.0;
-          if (widget.scrollController!.hasClients) {
-            scrollOffset = widget.scrollController!.offset;
-          }
-
+      child: ValueListenableBuilder<double>(
+        valueListenable: _scrollOffset,
+        builder: (context, scrollOffset, child) {
           // Parallax effect: Background moves slower than foreground
           final parallaxOffset = scrollOffset * 0.1;
 
@@ -256,8 +273,8 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                     memCacheWidth:
                         1080, // High enough for quality, constrained for memory
                     placeholder: (context, url) => const ShimmerPlaceholder(),
-                    errorWidget: (context, url, error) =>
-                        Container(color: Colors.black),
+                    errorWidget: (_, _, _) =>
+                        const ThumbnailErrorPlaceholder(),
                   ),
                 ),
 
@@ -354,7 +371,7 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                           // Logo or Title Fallback
                           if (logoUrl != null)
                             Padding(
-                              padding: const EdgeInsets.only(bottom: 24.0),
+                              padding: const EdgeInsets.only(bottom: LayoutConstants.spacingLg),
                               child: _buildLogo(logoUrl, title),
                             )
                           else
@@ -511,7 +528,7 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
 
   Widget _buildTitleFallback(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
+      padding: const EdgeInsets.only(bottom: LayoutConstants.spacingMd),
       child: Text(
         title.toUpperCase(),
         textAlign: TextAlign.center,

@@ -38,36 +38,34 @@ class ViewAllState {
 }
 
 class ViewAllController extends Notifier<ViewAllState> {
+  final ViewAllCategory categoryArg;
+  
+  ViewAllController(this.categoryArg);
+
   @override
   ViewAllState build() {
-    return const ViewAllState();
+    return ViewAllState(category: categoryArg);
   }
 
-  void init(ViewAllCategory category, List<TmdbItem> initialItems) {
-    if (state.category != category) {
-      // Complete reset if category differs
-      state = ViewAllState(category: category, items: List.from(initialItems));
-    } else if (state.items.isEmpty && state.page == 1) {
-      state = state.copyWith(
-        items: List.from(initialItems),
-        category: category,
-      );
+  void init(List<TmdbItem> initialItems) {
+    if (state.items.isEmpty && state.page == 1) {
+      state = state.copyWith(items: List.from(initialItems));
     }
   }
 
   Future<void> fetchNextPage() async {
-    if (state.isLoading || !state.hasMore || state.category == null) return;
+    if (state.isLoading || !state.hasMore) return;
 
     state = state.copyWith(isLoading: true);
 
     try {
       final tmdbService = ref.read(tmdbServiceProvider);
-      final lang = await ref.read(languageProvider.future);
+      final lang = ref.read(languageProvider);
       final filters = ref.read(discoverFilterProvider);
       final nextPage = state.page + 1;
       List<TmdbItem> newItems = [];
 
-      switch (state.category!) {
+      switch (categoryArg) {
         case ViewAllCategory.popularMovies:
           newItems = await tmdbService.getPopularMovies(
             language: lang,
@@ -158,6 +156,6 @@ class ViewAllController extends Notifier<ViewAllState> {
 }
 
 final viewAllControllerProvider =
-    NotifierProvider.autoDispose<ViewAllController, ViewAllState>(
-      ViewAllController.new,
+    NotifierProvider.autoDispose.family<ViewAllController, ViewAllState, ViewAllCategory>(
+      (category) => ViewAllController(category),
     );

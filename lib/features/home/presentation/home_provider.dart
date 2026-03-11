@@ -5,9 +5,6 @@ import '../../../../core/extensions/extension_manager.dart';
 final homeDataProvider = FutureProvider<Map<String, List<MultimediaItem>>>((
   ref,
 ) async {
-  // Force keepAlive to prevent disposed/rebuild loops on error
-  ref.keepAlive();
-
   final activeProvider = ref.watch(activeProviderStateProvider);
 
   if (activeProvider == null) {
@@ -16,12 +13,12 @@ final homeDataProvider = FutureProvider<Map<String, List<MultimediaItem>>>((
     );
   }
 
-  // In a real implementation, providers return data structured by categories.
-  // For now, since getHome() returns a flat list, we will manually categorize or just show one big list.
-  // We'll treat the response as "Feature/Trending" content.
   final items = await activeProvider.getHome();
   if (items.isEmpty) {
     throw Exception('No data returned from provider.');
   }
+
+  // Only keep alive after successful load to allow retries on error
+  ref.keepAlive();
   return items;
 });

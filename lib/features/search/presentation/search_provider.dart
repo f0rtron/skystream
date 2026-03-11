@@ -27,10 +27,16 @@ class SearchAggregateState {
 /// Shared search orchestration — the single source of truth for provider
 /// fan-out, result mapping, and prefix filtering. Returns results
 /// incrementally as each provider completes natively concurrently.
+///
+/// Lifecycle: The [StreamController] is closed when the stream subscription
+/// is cancelled (e.g. ref.onDispose in the provider) via [onControllerCreated].
+/// In-flight futures check [isCancelled] and avoid adding to a closed controller.
 Stream<SearchAggregateState> searchAllProviders(
   String query,
   ExtensionManager manager, {
   required bool Function() isCancelled,
+  void Function(StreamController<SearchAggregateState> controller)?
+      onControllerCreated,
 }) async* {
   final providers = manager.getAllProviders();
 
@@ -46,6 +52,7 @@ Stream<SearchAggregateState> searchAllProviders(
   final queryParts = queryLower.split(' ').where((s) => s.isNotEmpty).toList();
 
   final controller = StreamController<SearchAggregateState>();
+  onControllerCreated?.call(controller);
   int activeFutures = providers.length;
 
   for (final provider in providers) {
@@ -146,10 +153,20 @@ final searchResultsProvider = StreamProvider.autoDispose<SearchAggregateState>((
   ref,
 ) {
   final query = ref.watch(searchQueryProvider);
+  ref.watch(extensionManagerProvider); // trigger sub when plugins change
   final manager = ref.read(extensionManagerProvider.notifier);
 
   var cancelled = false;
-  ref.onDispose(() => cancelled = true);
+  StreamController<SearchAggregateState>? searchController;
+  ref.onDispose(() {
+    cancelled = true;
+    searchController?.close();
+  });
 
-  return searchAllProviders(query, manager, isCancelled: () => cancelled);
+  return searchAllProviders(
+    query,
+    manager,
+    isCancelled: () => cancelled,
+    onControllerCreated: (c) => searchController = c,
+  );
 });

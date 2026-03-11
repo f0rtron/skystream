@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../../core/utils/layout_constants.dart';
 import '../../../../shared/widgets/shimmer_placeholder.dart';
+import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 import '../../../details/presentation/tmdb_movie_details_screen.dart';
 import '../controllers/discover_search_controller.dart';
 
@@ -239,8 +241,8 @@ class _SearchResultsGridState extends ConsumerState<_SearchResultsGrid> {
     final isLoading = searchState.isLoading;
     final results = searchState.results;
     if (isLoading && results.isEmpty) {
-      final screenWidth = MediaQuery.of(context).size.width;
-      final isDesktop = screenWidth > 800;
+      final screenWidth = MediaQuery.sizeOf(context).width;
+      final isDesktop = screenWidth > LayoutConstants.discoverCarouselDesktopBreakpoint;
       final maxExtent = isDesktop ? 240.0 : 150.0;
       const childAspectRatio = 0.55;
 
@@ -293,8 +295,8 @@ class _SearchResultsGridState extends ConsumerState<_SearchResultsGrid> {
       );
     }
 
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth > 800;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isDesktop = screenWidth > LayoutConstants.discoverCarouselDesktopBreakpoint;
     final maxExtent = isDesktop ? 240.0 : 150.0;
     const childAspectRatio = 0.55;
 
@@ -346,12 +348,8 @@ class _SearchResultsGridState extends ConsumerState<_SearchResultsGrid> {
                       fit: BoxFit.cover,
                       width: double.infinity,
                       placeholder: (_, _) => const ShimmerPlaceholder(),
-                      errorWidget: (_, _, _) => Container(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                        child: const Icon(Icons.error),
-                      ),
+                      errorWidget: (_, _, _) =>
+                          const ThumbnailErrorPlaceholder(),
                     ),
                   ),
                 ),

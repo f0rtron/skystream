@@ -8,24 +8,25 @@ class LanguageSelectorDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final languages = ref.watch(languageListProvider);
-    final currentLang = ref.watch(languageProvider).asData?.value ?? 'en-US';
+    final currentLang = ref.watch(languageProvider);
 
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
       child: Dialog(
-        backgroundColor: Colors.transparent, // Glass effect
+        backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.all(20),
         child: Container(
           width: double.infinity,
           constraints: const BoxConstraints(maxHeight: 600, maxWidth: 500),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.7),
+            color: theme.colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white12, width: 1),
+            border: Border.all(color: theme.dividerColor, width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
+                color: theme.shadowColor,
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -34,7 +35,6 @@ class LanguageSelectorDialog extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -42,16 +42,16 @@ class LanguageSelectorDialog extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.translate,
-                      color: Colors.blueAccent,
+                      color: theme.colorScheme.primary,
                       size: 24,
                     ),
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       "Select Content Language",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: theme.colorScheme.onSurface,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
@@ -59,20 +59,21 @@ class LanguageSelectorDialog extends ConsumerWidget {
                     ),
                     const Spacer(),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white54),
+                      icon: Icon(
+                        Icons.close,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),
               ),
-              const Divider(height: 1, color: Colors.white10),
-
-              // Grid
+              Divider(height: 1, color: theme.dividerColor),
               Flexible(
                 child: GridView.builder(
                   padding: const EdgeInsets.all(20),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, // 2 columns
+                    crossAxisCount: 2,
                     childAspectRatio: 2.5,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
@@ -96,19 +97,19 @@ class LanguageSelectorDialog extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? Colors.blueAccent.withValues(alpha: 0.2)
-                                : Colors.white.withValues(alpha: 0.05),
+                                ? theme.colorScheme.primary
+                                    .withValues(alpha: 0.2)
+                                : theme.colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isSelected
-                                  ? Colors.blueAccent
-                                  : Colors.white10,
+                                  ? theme.colorScheme.primary
+                                  : theme.dividerColor,
                               width: isSelected ? 2 : 1,
                             ),
                           ),
                           child: Row(
                             children: [
-                              // Avatar circle with first letter or code
                               Container(
                                 width: 32,
                                 height: 32,
@@ -116,13 +117,13 @@ class LanguageSelectorDialog extends ConsumerWidget {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: isSelected
-                                      ? Colors.blueAccent
-                                      : Colors.white24,
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.outline,
                                 ),
                                 child: Text(
                                   lang.code.split('-')[0].toUpperCase(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: theme.colorScheme.onSurface,
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -138,8 +139,9 @@ class LanguageSelectorDialog extends ConsumerWidget {
                                       lang.name,
                                       style: TextStyle(
                                         color: isSelected
-                                            ? Colors.white
-                                            : Colors.white70,
+                                            ? theme.colorScheme.onSurface
+                                            : theme.colorScheme
+                                                .onSurfaceVariant,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 15,
                                       ),
@@ -148,8 +150,8 @@ class LanguageSelectorDialog extends ConsumerWidget {
                                       lang.nativeName,
                                       style: TextStyle(
                                         color: isSelected
-                                            ? Colors.white70
-                                            : Colors.white38,
+                                            ? theme.colorScheme.onSurfaceVariant
+                                            : theme.colorScheme.outline,
                                         fontSize: 12,
                                       ),
                                     ),
@@ -157,9 +159,9 @@ class LanguageSelectorDialog extends ConsumerWidget {
                                 ),
                               ),
                               if (isSelected)
-                                const Icon(
+                                Icon(
                                   Icons.check_circle,
-                                  color: Colors.blueAccent,
+                                  color: theme.colorScheme.primary,
                                   size: 20,
                                 ),
                             ],

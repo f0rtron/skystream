@@ -9,7 +9,7 @@ import '../../../../core/extensions/models/extension_repository.dart';
 import '../../../../core/extensions/providers.dart';
 import '../../../../core/extensions/services/repository_service.dart';
 import '../../../../core/extensions/services/plugin_storage_service.dart';
-import '../../../../core/storage/storage_service.dart';
+import '../../../core/storage/settings_repository.dart';
 import '../../../../core/extensions/utils/js_manifest_parser.dart';
 
 // State for the Extensions Screen
@@ -53,16 +53,20 @@ class ExtensionsState {
 class ExtensionsController extends Notifier<ExtensionsState> {
   late RepositoryService _repositoryService;
   late PluginStorageService _storageService;
+  bool _initialized = false;
 
   @override
   ExtensionsState build() {
     _repositoryService = ref.watch(repositoryServiceProvider);
     _storageService = ref.watch(pluginStorageServiceProvider);
-
-    // Initial load
-    Future.microtask(() => _init());
-
     return ExtensionsState();
+  }
+
+  /// Call once (e.g. from Extensions screen or app startup) to load plugins and repos.
+  Future<void> ensureInitialized() async {
+    if (_initialized) return;
+    _initialized = true;
+    await _init();
   }
 
   Future<void> _init() async {
@@ -86,7 +90,7 @@ class ExtensionsController extends Notifier<ExtensionsState> {
       final plugins = await _storageService.listInstalledPlugins();
 
       // Load Asset Plugins if enabled
-      if (ref.read(storageServiceProvider).getDevLoadAssets()) {
+      if (ref.read(settingsRepositoryProvider).getDevLoadAssets()) {
         final assetPlugins = await _loadAssetPlugins();
         debugPrint(
           "ExtensionsController: Loaded ${assetPlugins.length} asset plugins",

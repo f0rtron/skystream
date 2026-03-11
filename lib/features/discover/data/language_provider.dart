@@ -1,32 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/storage/settings_repository.dart';
 
-final languageProvider = AsyncNotifierProvider<LanguageNotifier, String>(
+final languageProvider = NotifierProvider<LanguageNotifier, String>(
   () => LanguageNotifier(),
 );
 
-class LanguageNotifier extends AsyncNotifier<String> {
-  static const _kLanguageKey = 'selected_language';
-
+class LanguageNotifier extends Notifier<String> {
   @override
-  Future<String> build() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getString(_kLanguageKey);
-      return saved ?? 'en-US';
-    } catch (_) {
-      return 'en-US';
-    }
+  String build() {
+    final settings = ref.read(settingsRepositoryProvider);
+    final saved = settings.getLanguage();
+    return saved;
   }
 
   Future<void> setLanguage(String language) async {
-    state = AsyncData(language);
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_kLanguageKey, language);
-    } catch (_) {
-      // Ignore errors
-    }
+    await ref.read(settingsRepositoryProvider).setLanguage(language);
+    state = language;
   }
 }
 

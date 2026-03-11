@@ -54,7 +54,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
         // Desktop or TV use Side Navigation
         // Or if the screen is physically wide enough (like iPads/Tablets in landscape)
         // VirtualMouse cursor only shown on TV, not desktop
-        if (profile.isLargeScreen || context.isDesktop) {
+        if (profile.isTv || context.isTabletOrLarger) {
           final sideNavScaffold = Scaffold(
             body: Row(
               children: [

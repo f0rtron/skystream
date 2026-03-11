@@ -1,11 +1,12 @@
 import 'package:html_unescape/html_unescape.dart';
-import '../../utils/image_fallbacks.dart';
 
 class MultimediaItem {
   static final _unescape = HtmlUnescape();
   final String title;
   final String url;
+  /// Raw poster URL; apply [AppImageFallbacks.poster] at the UI edge when displaying.
   final String posterUrl;
+  /// Raw banner URL; apply [AppImageFallbacks.optional] at the UI edge when displaying.
   final String? bannerUrl;
   final String? description;
   final bool isFolder;
@@ -16,15 +17,14 @@ class MultimediaItem {
   MultimediaItem({
     required this.title,
     required this.url,
-    required String posterUrl,
-    String? bannerUrl,
+    required this.posterUrl,
+    this.bannerUrl,
     this.description,
     this.isFolder = false,
     this.episodes,
     this.provider,
     this.headers,
-  }) : posterUrl = AppImageFallbacks.poster(posterUrl, label: title),
-       bannerUrl = AppImageFallbacks.optional(bannerUrl);
+  });
 
   factory MultimediaItem.fromJson(Map<String, dynamic> json) {
     final title = json['title'] != null ? _unescape.convert(json['title']) : '';
@@ -116,18 +116,16 @@ class Episode {
   final String? posterUrl;
   final Map<String, String>? headers;
 
+  /// Raw poster URL; apply [AppImageFallbacks.poster] at the UI edge when displaying.
   Episode({
     required this.name,
     required this.url,
     this.season = 0,
     this.episode = 0,
     this.description,
-    String? posterUrl,
+    this.posterUrl,
     this.headers,
-  }) : posterUrl = AppImageFallbacks.poster(
-         posterUrl,
-         label: name.isNotEmpty ? name : 'Episode $episode',
-       );
+  });
 
   factory Episode.fromJson(Map<String, dynamic> json) {
     final name = json['name'] != null ? _unescape.convert(json['name']) : '';

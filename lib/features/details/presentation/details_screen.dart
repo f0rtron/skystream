@@ -2,10 +2,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/domain/entity/multimedia_item.dart';
+import '../../../shared/widgets/thumbnail_error_placeholder.dart';
+import '../../../core/utils/image_fallbacks.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:skystream/core/utils/layout_constants.dart';
 import 'package:skystream/core/utils/responsive_breakpoints.dart';
-import '../../../../core/providers/device_info_provider.dart';
+
 import '../../library/presentation/library_provider.dart';
 
 import 'details_controller.dart';
@@ -22,32 +25,43 @@ class DetailsScreen extends ConsumerStatefulWidget {
 }
 
 class _DetailsScreenState extends ConsumerState<DetailsScreen> {
+  bool _didTriggerAutoPlay = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(detailsControllerProvider.notifier)
-          .loadDetails(
-            widget.item,
-            autoPlay: widget.autoPlay,
-            context: context,
-          );
+          .read(detailsControllerProvider(widget.item.url).notifier)
+          .loadDetails(widget.item, autoPlay: widget.autoPlay);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(detailsControllerProvider(widget.item.url), (prev, next) {
+      if (!widget.autoPlay || _didTriggerAutoPlay) return;
+      final prevState = prev ?? const DetailsState();
+      final nextState = next;
+      if (prevState.details.isLoading != true || !nextState.details.hasValue) return;
+      final item = nextState.details.value!;
+      _didTriggerAutoPlay = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref
+            .read(detailsControllerProvider(widget.item.url).notifier)
+            .handlePlayPress(context, item);
+      });
+    });
     final isBookmarked = ref.watch(
       libraryProvider.select(
         (items) => items.any((i) => i.url == widget.item.url),
       ),
     );
     final libraryNotifier = ref.read(libraryProvider.notifier);
-    final device = ref.watch(deviceProfileProvider).asData?.value;
-    final isLarge = (device?.isLargeScreen ?? false) || context.isDesktop;
+    final isLarge = context.isTabletOrLarger;
 
-    final state = ref.watch(detailsControllerProvider);
+    final state = ref.watch(detailsControllerProvider(widget.item.url));
     final details = state.details.value;
     final item = details ?? widget.item;
 
@@ -56,7 +70,9 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
         slivers: [
           SliverAppBar(
             pinned: true,
-            expandedHeight: isLarge ? 300 : 400,
+            expandedHeight: isLarge
+            ? LayoutConstants.detailsExpandedHeightDesktop
+            : LayoutConstants.detailsExpandedHeightMobile,
             stretch: true,
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             flexibleSpace: FlexibleSpaceBar(
@@ -70,14 +86,15 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                   Hero(
                     tag: 'banner_${item.url}',
                     child: CachedNetworkImage(
-                      imageUrl: item.bannerUrl ?? item.posterUrl,
+                      imageUrl: AppImageFallbacks.optional(item.bannerUrl) ??
+                        AppImageFallbacks.poster(item.posterUrl, label: item.title),
                       fit: BoxFit.cover,
                       alignment: Alignment.topCenter,
                       memCacheWidth: 800, // P19: Optimize memory
                       placeholder: (context, url) =>
                           Container(color: Theme.of(context).dividerColor),
-                      errorWidget: (context, url, error) =>
-                          Container(color: Colors.grey[900]),
+                      errorWidget: (_, _, _) =>
+                          const ThumbnailErrorPlaceholder(),
                     ),
                   ),
                   Container(
@@ -167,7 +184,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: CachedNetworkImage(
-                    imageUrl: item.posterUrl,
+                    imageUrl: AppImageFallbacks.poster(item.posterUrl, label: item.title),
                     width: 250,
                     height: 375,
                     fit: BoxFit.cover,
@@ -230,13 +247,13 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
               else if (state.details is AsyncError)
                 Text(
                   "Error: ${state.details.error}",
-                  style: const TextStyle(color: Colors.red),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 )
               else if (state.isMovie)
                 const SizedBox.shrink() // Movies don't need an episode list
               else if (details?.episodes != null) ...[
                 if (state.seasonMap.keys.length > 1)
-                  DetailsSeasonSelector(state: state),
+                  DetailsSeasonSelector(state: state, itemUrl: widget.item.url),
                 const SizedBox(height: 16),
                 DetailsDesktopEpisodeGrid(
                   episodes: state.seasonMap[state.selectedSeason] ?? [],
@@ -270,7 +287,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: CachedNetworkImage(
-                  imageUrl: item.posterUrl,
+                  imageUrl: AppImageFallbacks.poster(item.posterUrl, label: item.title),
                   width: 100,
                   height: 150,
                   fit: BoxFit.cover,
@@ -332,14 +349,14 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
         else if (state.details is AsyncError)
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.red.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
             child: Text("Error: ${state.details.error}"),
           )
         else if (state.isMovie)
           const SizedBox.shrink()
         else if (details?.episodes != null) ...[
           if (state.seasonMap.keys.length > 1)
-            DetailsSeasonSelector(state: state),
+            DetailsSeasonSelector(state: state, itemUrl: widget.item.url),
           const SizedBox(height: 16),
           DetailsEpisodeList(
             episodes: state.seasonMap[state.selectedSeason] ?? [],

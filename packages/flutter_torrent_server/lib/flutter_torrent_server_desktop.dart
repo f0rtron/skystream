@@ -20,6 +20,11 @@ class FlutterTorrentServerDesktop extends FlutterTorrentServerPlatform {
   Future<int> start() async {
     if (_serverProcess != null) return _port;
 
+    if (await _checkConnection()) {
+      debugPrint("TorrServer is already running on port $_port, reusing.");
+      return _port;
+    }
+
     // Forcefully cleanup any lingering instances to ensure a fresh start
     // This prevents "Connection closed" issues from zombie processes.
     try {

@@ -3,15 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:skystream/core/domain/entity/multimedia_item.dart';
-import 'package:skystream/core/storage/storage_service.dart';
+import '../../../../core/storage/history_repository.dart';
+import 'package:skystream/core/utils/image_fallbacks.dart';
+import 'package:skystream/core/utils/layout_constants.dart';
 import 'package:skystream/shared/widgets/custom_widgets.dart';
 import '../details_controller.dart';
 import 'package:skystream/core/extensions/extension_manager.dart';
+import 'package:skystream/shared/widgets/thumbnail_error_placeholder.dart';
 
 class DetailsSeasonSelector extends ConsumerWidget {
   final DetailsState state;
+  final String itemUrl;
 
-  const DetailsSeasonSelector({super.key, required this.state});
+  const DetailsSeasonSelector({super.key, required this.state, required this.itemUrl});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,7 +25,7 @@ class DetailsSeasonSelector extends ConsumerWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: seasons.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: LayoutConstants.spacingXs),
         itemBuilder: (context, index) {
           final s = seasons[index];
           final isSelected = s == state.selectedSeason;
@@ -29,7 +33,7 @@ class DetailsSeasonSelector extends ConsumerWidget {
             label: Text("Season $s"),
             selected: isSelected,
             onSelected: (_) =>
-                ref.read(detailsControllerProvider.notifier).setSeason(s),
+                ref.read(detailsControllerProvider(itemUrl).notifier).setSeason(s),
             backgroundColor: isSelected
                 ? Theme.of(context).colorScheme.primaryContainer
                 : null,
@@ -63,8 +67,8 @@ class DetailsActionButtons extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     bool isResuming = false;
     if (state.isMovie) {
-      final storage = ref.watch(storageServiceProvider);
-      final pos = storage.getPosition(item.url);
+      final historyRepo = ref.watch(historyRepositoryProvider);
+      final pos = historyRepo.getPosition(item.url);
       if (pos > 5000) isResuming = true;
     }
 
@@ -76,18 +80,31 @@ class DetailsActionButtons extends ConsumerWidget {
               details!.episodes != null &&
               details!.episodes!.isNotEmpty)
           ? () => ref
-                .read(detailsControllerProvider.notifier)
+                .read(detailsControllerProvider(item.url).notifier)
                 .handlePlayPress(context, details!)
           : null,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(LayoutConstants.spacingMd),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.play_arrow_rounded),
-            const SizedBox(width: 8),
-            Text(isResuming ? 'Resume' : 'Play'),
-          ],
+          children: state.isLaunching
+              ? const [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(width: LayoutConstants.spacingXs),
+                  Text('Resolving...'),
+                ]
+              : [
+                  const Icon(Icons.play_arrow_rounded),
+                  const SizedBox(width: LayoutConstants.spacingXs),
+                  Text(isResuming ? 'Resume' : 'Play'),
+                ],
         ),
       ),
     );
@@ -101,12 +118,12 @@ class DetailsActionButtons extends ConsumerWidget {
         ).showSnackBar(const SnackBar(content: Text('Coming soon')));
       },
       child: const Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(LayoutConstants.spacingMd),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.download_rounded),
-            SizedBox(width: 8),
+            SizedBox(width: LayoutConstants.spacingXs),
             Text('Download'),
           ],
         ),
@@ -115,14 +132,14 @@ class DetailsActionButtons extends ConsumerWidget {
 
     if (vertical) {
       return Column(
-        children: [playBtn, const SizedBox(height: 12), downloadBtn],
+        children: [playBtn, const SizedBox(height: LayoutConstants.spacingSm), downloadBtn],
       );
     }
 
     return Row(
       children: [
         Expanded(child: playBtn),
-        const SizedBox(width: 12),
+        const SizedBox(width: LayoutConstants.spacingSm),
         Expanded(child: downloadBtn),
       ],
     );
@@ -153,7 +170,7 @@ class DetailsDesktopEpisodeGrid extends ConsumerWidget {
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: LayoutConstants.spacingMd),
         ],
         GridView.builder(
           shrinkWrap: true,
@@ -168,33 +185,32 @@ class DetailsDesktopEpisodeGrid extends ConsumerWidget {
           itemBuilder: (context, index) {
             final ep = episodes[index];
             return Card(
+              key: ValueKey(ep.url),
               margin: EdgeInsets.zero,
               child: InkWell(
                 onTap: () => ref
-                    .read(detailsControllerProvider.notifier)
+                    .read(detailsControllerProvider(parentItem.url).notifier)
                     .handlePlayPress(context, parentItem, specificEpisode: ep),
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(LayoutConstants.spacingXs),
                   child: Row(
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: ep.posterUrl != null
-                            ? CachedNetworkImage(
-                                imageUrl: ep.posterUrl!,
+                        child: CachedNetworkImage(
+                                imageUrl: AppImageFallbacks.poster(
+                                  ep.posterUrl,
+                                  label: ep.name.isNotEmpty
+                                      ? ep.name
+                                      : 'Episode ${ep.episode}',
+                                ),
                                 width: 80,
                                 height: 60,
                                 fit: BoxFit.cover,
-                              )
-                            : Container(
-                                width: 80,
-                                height: 60,
-                                color: Colors.grey[800],
-                                child: Center(child: Text("${ep.episode}")),
                               ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: LayoutConstants.spacingSm),
                       Expanded(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -219,7 +235,13 @@ class DetailsDesktopEpisodeGrid extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      const Icon(Icons.play_circle_outline),
+                      state.isLaunching
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.play_circle_outline),
                     ],
                   ),
                 ),
@@ -256,7 +278,7 @@ class DetailsEpisodeList extends ConsumerWidget {
               context,
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: LayoutConstants.spacingMd),
         ],
         ListView.builder(
           padding: EdgeInsets.zero,
@@ -266,27 +288,34 @@ class DetailsEpisodeList extends ConsumerWidget {
           itemBuilder: (context, index) {
             final ep = episodes[index];
             return Card(
-              margin: const EdgeInsets.only(bottom: 8),
+              key: ValueKey(ep.url),
+              margin: const EdgeInsets.only(bottom: LayoutConstants.spacingXs),
               child: ListTile(
-                leading: ep.posterUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: ep.posterUrl!,
-                        width: 80,
-                        fit: BoxFit.cover,
-                        errorWidget: (_, _, _) => const Icon(Icons.movie),
-                      )
-                    : Container(
-                        width: 80,
-                        color: Colors.grey[800],
-                        child: Center(child: Text("${ep.episode}")),
-                      ),
+                leading: CachedNetworkImage(
+                  imageUrl: AppImageFallbacks.poster(
+                    ep.posterUrl,
+                    label: ep.name.isNotEmpty
+                        ? ep.name
+                        : 'Episode ${ep.episode}',
+                  ),
+                  width: 80,
+                  fit: BoxFit.cover,
+                  errorWidget: (_, _, _) =>
+                      const ThumbnailErrorPlaceholder(iconSize: 32),
+                ),
                 title: Text(
                   ep.name.isNotEmpty ? ep.name : "Episode ${ep.episode}",
                 ),
                 subtitle: Text(ep.description ?? ""),
-                trailing: const Icon(Icons.play_circle_outline),
+                trailing: state.isLaunching
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.play_circle_outline),
                 onTap: () => ref
-                    .read(detailsControllerProvider.notifier)
+                    .read(detailsControllerProvider(parentItem.url).notifier)
                     .handlePlayPress(context, parentItem, specificEpisode: ep),
               ),
             );
@@ -339,7 +368,9 @@ class DetailsProviderChip extends ConsumerWidget {
       if (p.isDebug) {
         isDebug = true;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('DetailsProviderChip.build: $e');
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

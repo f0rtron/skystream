@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/layout_constants.dart';
 import 'search_provider.dart';
 import 'widgets/search_result_section.dart';
 
@@ -115,7 +116,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: const EdgeInsets.symmetric(vertical: LayoutConstants.spacingMd),
             itemCount: state.results.length,
             itemBuilder: (context, index) {
               final pResult = state.results[index];
@@ -136,7 +137,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    final query = ref.read(searchQueryProvider);
+    final query = ref.watch(searchQueryProvider);
     if (query.isEmpty) {
       return Center(
         child: Column(
@@ -147,7 +148,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               size: 64,
               color: Theme.of(context).dividerColor,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: LayoutConstants.spacingMd),
             Text(
               'Search for your favorite content',
               style: Theme.of(context).textTheme.bodyLarge,

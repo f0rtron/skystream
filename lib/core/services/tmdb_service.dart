@@ -4,6 +4,7 @@ import '../models/tmdb_genre.dart';
 import '../config/tmdb_config.dart';
 
 class TmdbService {
+  static final _yearRegex = RegExp(r'\b(19|20)\d{2}\b');
   final Dio _dio;
 
   TmdbService(Dio baseDio)
@@ -27,234 +28,125 @@ class TmdbService {
     return [];
   }
 
-  // Use discovery endpoint to enforce filters (e.g. valid release dates)
-  Future<List<TmdbItem>> getTrending({
+  /// Shared pattern: use discover endpoint when filters are active, otherwise
+  /// fall back to the simpler direct endpoint.
+  Future<List<TmdbItem>> _fetchWithFilterFallback({
+    required String discoverPath,
+    required String directPath,
+    required String sortBy,
     String language = 'en-US',
     int? genreId,
     int? year,
     double? minRating,
     int page = 1,
+    Map<String, dynamic>? additionalParams,
   }) async {
-    if (language != 'en-US' ||
+    final hasFilters = language != 'en-US' ||
         genreId != null ||
         year != null ||
-        minRating != null) {
+        minRating != null;
+    if (hasFilters) {
       return _getDiscoveryResults(
-        '/discover/movie',
-        language,
-        'popularity.desc',
-        genreId: genreId,
-        year: year,
-        minRating: minRating,
-        page: page,
+        discoverPath, language, sortBy,
+        genreId: genreId, year: year, minRating: minRating,
+        page: page, additionalParams: additionalParams,
       );
     }
-    return _getResults('/trending/all/day', language: language, page: page);
+    return _getResults(directPath, language: language, page: page);
   }
+
+  Future<List<TmdbItem>> getTrending({
+    String language = 'en-US', int? genreId, int? year,
+    double? minRating, int page = 1,
+  }) => _fetchWithFilterFallback(
+    discoverPath: '/discover/movie', directPath: '/trending/all/day',
+    sortBy: 'popularity.desc', language: language,
+    genreId: genreId, year: year, minRating: minRating, page: page,
+  );
 
   Future<List<TmdbItem>> getPopularMovies({
-    String language = 'en-US',
-    int? genreId,
-    int? year,
-    double? minRating,
-    int page = 1,
-  }) async {
-    return _getDiscoveryResults(
-      '/discover/movie',
-      language,
-      'popularity.desc',
-      genreId: genreId,
-      year: year,
-      minRating: minRating,
-      page: page,
-    );
-  }
+    String language = 'en-US', int? genreId, int? year,
+    double? minRating, int page = 1,
+  }) => _getDiscoveryResults(
+    '/discover/movie', language, 'popularity.desc',
+    genreId: genreId, year: year, minRating: minRating, page: page,
+  );
 
   Future<List<TmdbItem>> getTopRated({
-    String language = 'en-US',
-    int? genreId,
-    int? year,
-    double? minRating,
-    int page = 1,
-  }) async {
-    return _getDiscoveryResults(
-      '/discover/movie',
-      language,
-      'vote_average.desc',
-      genreId: genreId,
-      year: year,
-      minRating: minRating,
-      page: page,
-    );
-  }
+    String language = 'en-US', int? genreId, int? year,
+    double? minRating, int page = 1,
+  }) => _getDiscoveryResults(
+    '/discover/movie', language, 'vote_average.desc',
+    genreId: genreId, year: year, minRating: minRating, page: page,
+  );
 
   Future<List<TmdbItem>> getNowPlayingMovies({
-    String language = 'en-US',
-    int? genreId,
-    int? year,
-    double? minRating,
-    int page = 1,
-  }) async {
-    if (genreId != null || year != null || minRating != null) {
+    String language = 'en-US', int? genreId, int? year,
+    double? minRating, int page = 1,
+  }) {
+    final today = DateTime.now().toString().split(' ')[0];
+    final extra = <String, dynamic>{'release_date.lte': today};
+    if (genreId != null || year != null || minRating != null || language != 'en-US') {
       return _getDiscoveryResults(
-        '/discover/movie',
-        language,
-        'release_date.desc',
-        genreId: genreId,
-        year: year,
-        minRating: minRating,
-        page: page,
-        additionalParams: {
-          'release_date.lte': DateTime.now().toString().split(' ')[0],
-        },
-      );
-    }
-    // Standard endpoint but filtering language if needed
-    if (language != 'en-US') {
-      return _getDiscoveryResults(
-        '/discover/movie',
-        language,
-        'release_date.desc',
-        page: page,
-        additionalParams: {
-          'release_date.lte': DateTime.now().toString().split(' ')[0],
-        },
+        '/discover/movie', language, 'release_date.desc',
+        genreId: genreId, year: year, minRating: minRating,
+        page: page, additionalParams: extra,
       );
     }
     return _getResults('/movie/now_playing', language: language, page: page);
   }
 
   Future<List<TmdbItem>> getTrendingMovies({
-    String language = 'en-US',
-    int? genreId,
-    int? year,
-    double? minRating,
-    int page = 1,
-  }) async {
-    if (language != 'en-US' ||
-        genreId != null ||
-        year != null ||
-        minRating != null) {
-      return _getDiscoveryResults(
-        '/discover/movie',
-        language,
-        'popularity.desc',
-        genreId: genreId,
-        year: year,
-        minRating: minRating,
-        page: page,
-      );
-    }
-    return _getResults('/trending/movie/week', language: language, page: page);
-  }
+    String language = 'en-US', int? genreId, int? year,
+    double? minRating, int page = 1,
+  }) => _fetchWithFilterFallback(
+    discoverPath: '/discover/movie', directPath: '/trending/movie/week',
+    sortBy: 'popularity.desc', language: language,
+    genreId: genreId, year: year, minRating: minRating, page: page,
+  );
 
   Future<List<TmdbItem>> getTrendingAllDay({
-    String language = 'en-US',
-    int? genreId,
-    int? year,
-    double? minRating,
-    int page = 1,
-  }) async {
-    if (language != 'en-US' ||
-        genreId != null ||
-        year != null ||
-        minRating != null) {
-      return _getDiscoveryResults(
-        '/discover/movie',
-        language,
-        'popularity.desc',
-        genreId: genreId,
-        year: year,
-        minRating: minRating,
-        page: page,
-      );
-    }
-    return _getResults('/trending/all/day', language: language, page: page);
-  }
+    String language = 'en-US', int? genreId, int? year,
+    double? minRating, int page = 1,
+  }) => _fetchWithFilterFallback(
+    discoverPath: '/discover/movie', directPath: '/trending/all/day',
+    sortBy: 'popularity.desc', language: language,
+    genreId: genreId, year: year, minRating: minRating, page: page,
+  );
 
   Future<List<TmdbItem>> getOnTheAirTV({
-    String language = 'en-US',
-    int? genreId,
-    int? year,
-    double? minRating,
-    int page = 1,
-  }) async {
-    if (genreId != null ||
-        year != null ||
-        language != 'en-US' ||
-        minRating != null) {
-      return _getDiscoveryResults(
-        '/discover/tv',
-        language,
-        'popularity.desc',
-        genreId: genreId,
-        year: year,
-        minRating: minRating,
-        page: page,
-      );
-    }
-    return _getResults('/tv/on_the_air', language: language, page: page);
-  }
+    String language = 'en-US', int? genreId, int? year,
+    double? minRating, int page = 1,
+  }) => _fetchWithFilterFallback(
+    discoverPath: '/discover/tv', directPath: '/tv/on_the_air',
+    sortBy: 'popularity.desc', language: language,
+    genreId: genreId, year: year, minRating: minRating, page: page,
+  );
 
   Future<List<TmdbItem>> getPopularTV({
-    String language = 'en-US',
-    int? genreId,
-    int? year,
-    double? minRating,
-    int page = 1,
-  }) async {
-    return _getDiscoveryResults(
-      '/discover/tv',
-      language,
-      'popularity.desc',
-      genreId: genreId,
-      year: year,
-      minRating: minRating,
-      page: page,
-    );
-  }
+    String language = 'en-US', int? genreId, int? year,
+    double? minRating, int page = 1,
+  }) => _getDiscoveryResults(
+    '/discover/tv', language, 'popularity.desc',
+    genreId: genreId, year: year, minRating: minRating, page: page,
+  );
 
   Future<List<TmdbItem>> getTopRatedTV({
-    String language = 'en-US',
-    int? genreId,
-    int? year,
-    double? minRating,
-    int page = 1,
-  }) async {
-    return _getDiscoveryResults(
-      '/discover/tv',
-      language,
-      'vote_average.desc',
-      genreId: genreId,
-      year: year,
-      minRating: minRating,
-      page: page,
-    );
-  }
+    String language = 'en-US', int? genreId, int? year,
+    double? minRating, int page = 1,
+  }) => _getDiscoveryResults(
+    '/discover/tv', language, 'vote_average.desc',
+    genreId: genreId, year: year, minRating: minRating, page: page,
+  );
 
   Future<List<TmdbItem>> getAiringTodayTV({
-    String language = 'en-US',
-    int? genreId,
-    int? year,
-    double? minRating,
-    int page = 1,
-  }) async {
-    if (genreId != null ||
-        year != null ||
-        language != 'en-US' ||
-        minRating != null) {
-      return _getDiscoveryResults(
-        '/discover/tv',
-        language,
-        'first_air_date.desc',
-        genreId: genreId,
-        year: year,
-        minRating: minRating,
-        page: page,
-      );
-    }
-    return _getResults('/tv/airing_today', language: language, page: page);
-  }
+    String language = 'en-US', int? genreId, int? year,
+    double? minRating, int page = 1,
+  }) => _fetchWithFilterFallback(
+    discoverPath: '/discover/tv', directPath: '/tv/airing_today',
+    sortBy: 'first_air_date.desc', language: language,
+    genreId: genreId, year: year, minRating: minRating, page: page,
+  );
 
   Future<List<TmdbItem>> multiSearch({
     required String query,
@@ -266,10 +158,7 @@ class TmdbService {
     int? filterYear;
     String? filterLanguageCode;
 
-    // 1. Extract Year (e.g., "2023", "(2023)")
-    // Matches 19xx or 20xx surrounded by word boundaries
-    final yearRegex = RegExp(r'\b(19|20)\d{2}\b');
-    final yearMatch = yearRegex.firstMatch(cleanQuery);
+    final yearMatch = _yearRegex.firstMatch(cleanQuery);
     if (yearMatch != null) {
       filterYear = int.tryParse(yearMatch.group(0)!);
       // Remove year from query to improve search relevance

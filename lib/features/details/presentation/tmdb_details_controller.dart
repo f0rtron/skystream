@@ -30,7 +30,7 @@ class TmdbDetailsController extends Notifier<TmdbDetailsState> {
   }
 
   void fetchEpisodes(int season) async {
-    final lang = await ref.read(languageProvider.future);
+    final lang = ref.read(languageProvider);
 
     final future = ref
         .read(tmdbServiceProvider)

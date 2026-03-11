@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../../core/utils/layout_constants.dart';
 import '../../../../shared/widgets/cards_wrapper.dart';
 import '../../../details/presentation/tmdb_movie_details_screen.dart';
 import '../../../../shared/widgets/desktop_scroll_wrapper.dart'; // Import DesktopScrollWrapper
 import '../../../../core/utils/responsive_breakpoints.dart';
 import '../../../../shared/widgets/shimmer_placeholder.dart';
+import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 import '../view_all_screen.dart'; // Import ViewAllScreen
 import '../../../../core/models/tmdb_item.dart';
 
@@ -58,7 +60,7 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
       children: [
         // Header Row
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+          padding: const EdgeInsets.fromLTRB(LayoutConstants.spacingMd, LayoutConstants.spacingLg, LayoutConstants.spacingMd, LayoutConstants.spacingSm),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -83,14 +85,14 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
                       width: isDesktop ? 30 : 20, // Accent width
                       height: 3,
                       decoration: BoxDecoration(
-                        color: Colors.blueAccent, // Nuvio blue
+                        color: Theme.of(context).colorScheme.primary,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                   ],
                 ),
               ),
-              if (widget.showViewAll) const SizedBox(width: 8),
+              if (widget.showViewAll) const SizedBox(width: LayoutConstants.spacingXs),
 
               if (widget.showViewAll)
                 CardsWrapper(
@@ -108,7 +110,7 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
+                      horizontal: LayoutConstants.spacingSm,
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
@@ -155,11 +157,11 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
             child: ListView.separated(
               controller: _scrollController, // Passes controller
               clipBehavior: Clip.none,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: LayoutConstants.spacingMd),
               scrollDirection: Axis.horizontal,
               itemCount: widget.mediaList.length,
               separatorBuilder: (context, index) =>
-                  SizedBox(width: isDesktop ? 24 : 12),
+                  SizedBox(width: isDesktop ? LayoutConstants.spacingLg : LayoutConstants.spacingSm),
               itemBuilder: (context, index) {
                 final item = widget.mediaList[index];
                 final imageUrl = item.posterImageUrl;
@@ -169,7 +171,7 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
                     '${prefix}_${widget.title}_${item.id}_${itemTitle.hashCode}_$index';
                 final mediaType = item.mediaType;
 
-                return CardsWrapper(
+                return RepaintBoundary(child: CardsWrapper(
                   onTap: () {
                     if (widget.onTap != null) {
                       widget.onTap!(item);
@@ -204,23 +206,13 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
                                 width: double.infinity,
                                 placeholder: (context, url) =>
                                     const ShimmerPlaceholder(),
-                                errorWidget: (context, url, error) => Container(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                                  child: Icon(
-                                    Icons.error_outline,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.2),
-                                  ),
-                                ),
+                                errorWidget: (_, _, _) =>
+                                    const ThumbnailErrorPlaceholder(),
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: LayoutConstants.spacingXs),
                         // Title below poster
                         Text(
                           itemTitle,
@@ -237,7 +229,7 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
                       ],
                     ),
                   ),
-                );
+                ));
               },
             ),
           ),

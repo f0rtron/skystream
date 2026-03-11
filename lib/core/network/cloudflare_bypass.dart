@@ -179,7 +179,9 @@ class CloudflareBypass {
     } finally {
       try {
         await headless?.dispose();
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('CloudflareBypass: headless dispose error: $e');
+      }
     }
 
     return result;

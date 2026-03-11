@@ -8,12 +8,13 @@ class YearSelectorDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final selectedYear = ref.watch(discoverFilterProvider).selectedYear;
     final currentYear = DateTime.now().year;
     final years = List.generate(
       50,
       (index) => currentYear - index,
-    ); // 50 years back
+    );
 
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -24,12 +25,12 @@ class YearSelectorDialog extends ConsumerWidget {
           width: double.infinity,
           constraints: const BoxConstraints(maxHeight: 600, maxWidth: 500),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.7),
+            color: theme.colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white12, width: 1),
+            border: Border.all(color: theme.dividerColor, width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
+                color: theme.shadowColor,
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -42,16 +43,16 @@ class YearSelectorDialog extends ConsumerWidget {
                 padding: const EdgeInsets.all(24.0),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.calendar_today,
-                      color: Colors.blueAccent,
+                      color: theme.colorScheme.primary,
                       size: 28,
                     ),
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       "Select Year",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: theme.colorScheme.onSurface,
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
@@ -65,15 +66,15 @@ class YearSelectorDialog extends ConsumerWidget {
                               .setYear(null);
                           Navigator.of(context).pop();
                         },
-                        child: const Text(
+                        child: Text(
                           "Clear",
-                          style: TextStyle(color: Colors.redAccent),
+                          style: TextStyle(color: theme.colorScheme.error),
                         ),
                       ),
                   ],
                 ),
               ),
-              const Divider(height: 1, color: Colors.white10),
+              Divider(height: 1, color: theme.dividerColor),
               Expanded(
                 child: GridView.builder(
                   padding: const EdgeInsets.all(20),
@@ -98,19 +99,22 @@ class YearSelectorDialog extends ConsumerWidget {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? Colors.blueAccent.withValues(alpha: 0.2)
-                              : Colors.white.withValues(alpha: 0.05),
+                              ? theme.colorScheme.primary
+                                  .withValues(alpha: 0.2)
+                              : theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: isSelected
-                                ? Colors.blueAccent
+                                ? theme.colorScheme.primary
                                 : Colors.transparent,
                           ),
                         ),
                         child: Text(
                           year.toString(),
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.white70,
+                            color: isSelected
+                                ? theme.colorScheme.onSurface
+                                : theme.colorScheme.onSurfaceVariant,
                             fontWeight: isSelected
                                 ? FontWeight.bold
                                 : FontWeight.normal,

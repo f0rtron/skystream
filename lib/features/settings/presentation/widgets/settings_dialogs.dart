@@ -4,7 +4,7 @@ import '../../../../shared/widgets/custom_widgets.dart';
 import '../../../../core/providers/device_info_provider.dart';
 import '../../../../core/services/external_player_service.dart';
 import '../../../../core/network/doh_service.dart';
-import '../../../../core/storage/storage_service.dart';
+import '../../../../core/storage/settings_repository.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../../core/utils/app_utils.dart';
 import '../player_settings_provider.dart';
@@ -467,14 +467,14 @@ void showResetDataDialog(BuildContext context, WidgetRef ref) {
             Navigator.pop(context);
 
             // Clear Preferences ONLY
-            await ref.read(storageServiceProvider).clearPreferences();
+            await ref.read(settingsRepositoryProvider).clearPreferences();
 
             // Restart App
             if (context.mounted) {
               await AppUtils.restartApp(context);
             }
           },
-          style: TextButton.styleFrom(foregroundColor: Colors.orange),
+          style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.tertiary),
           child: const Text('Reset Data'),
         ),
       ],
@@ -506,14 +506,14 @@ void showFactoryResetDialog(BuildContext context, WidgetRef ref) {
           onPressed: () async {
             Navigator.pop(context);
             // Deep Clean (Extensions, Prefs, Hive)
-            await ref.read(storageServiceProvider).deleteAllData();
+            await ref.read(settingsRepositoryProvider).deleteAllData();
 
             // Restart App
             if (context.mounted) {
               await AppUtils.restartApp(context);
             }
           },
-          style: TextButton.styleFrom(foregroundColor: Colors.red),
+          style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
           child: const Text('Factory Reset'),
         ),
       ],

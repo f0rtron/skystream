@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../core/extensions/base_provider.dart';
 import '../../../core/extensions/extension_manager.dart';
-import '../../../core/storage/storage_service.dart';
+import '../../../../core/storage/library_repository.dart';
+import '../../../../core/storage/history_repository.dart';
+import '../../library/presentation/library_provider.dart';
 import '../../library/presentation/history_provider.dart';
 import 'playback_launcher.dart';
 
@@ -12,12 +14,16 @@ class DetailsState {
   final Map<int, List<Episode>> seasonMap;
   final int selectedSeason;
   final bool isMovie;
+  final MultimediaItem? item;
+  final bool isLaunching;
 
   const DetailsState({
     this.details = const AsyncLoading(),
     this.seasonMap = const {},
     this.selectedSeason = 1,
     this.isMovie = false,
+    this.item,
+    this.isLaunching = false,
   });
 
   DetailsState copyWith({
@@ -25,21 +31,34 @@ class DetailsState {
     Map<int, List<Episode>>? seasonMap,
     int? selectedSeason,
     bool? isMovie,
+    MultimediaItem? item,
+    bool? isLaunching,
   }) {
     return DetailsState(
       details: details ?? this.details,
       seasonMap: seasonMap ?? this.seasonMap,
       selectedSeason: selectedSeason ?? this.selectedSeason,
       isMovie: isMovie ?? this.isMovie,
+      item: item ?? this.item,
+      isLaunching: isLaunching ?? this.isLaunching,
     );
   }
 }
 
 class DetailsController extends Notifier<DetailsState> {
-  String? _initializedUrl;
+  final String itemUrl;
+  DetailsController(this.itemUrl);
 
   @override
-  DetailsState build() => const DetailsState();
+  DetailsState build() {
+    return const DetailsState();
+  }
+
+  void init(MultimediaItem initialItem) {
+    if (state.item == null) {
+      state = state.copyWith(item: initialItem);
+    }
+  }
 
   void setSeason(int season) {
     if (state.seasonMap.containsKey(season)) {
@@ -47,13 +66,20 @@ class DetailsController extends Notifier<DetailsState> {
     }
   }
 
+  void setLaunching(bool value) {
+    if (state.isLaunching != value) {
+      state = state.copyWith(isLaunching: value);
+    }
+  }
+
+  /// Loads details for [item]. Auto-play is not handled here; the caller
+  /// (e.g. DetailsScreen) should trigger play after load completes when
+  /// [autoPlay] is true, using [handlePlayPress] with its BuildContext.
   Future<void> loadDetails(
     MultimediaItem item, {
     bool autoPlay = false,
-    BuildContext? context,
   }) async {
-    if (_initializedUrl == item.url) return;
-    _initializedUrl = item.url;
+    if (state.details is AsyncData) return;
 
     state = state.copyWith(details: const AsyncLoading());
 
@@ -79,12 +105,6 @@ class DetailsController extends Notifier<DetailsState> {
 
         _processEpisodes(itemToUse.episodes);
         state = state.copyWith(details: AsyncData(itemToUse));
-
-        if (autoPlay && context != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            handlePlayPress(context, itemToUse);
-          });
-        }
         return;
       }
 
@@ -94,7 +114,9 @@ class DetailsController extends Notifier<DetailsState> {
           provider = manager.getAllProviders().firstWhere(
             (p) => p.id == item.provider || p.name == item.provider,
           );
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('DetailsController.loadDetails: $e');
+        }
       }
 
       provider ??= active;
@@ -105,12 +127,6 @@ class DetailsController extends Notifier<DetailsState> {
 
         _processEpisodes(withProvider.episodes);
         state = state.copyWith(details: AsyncData(withProvider));
-
-        if (autoPlay && context != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            handlePlayPress(context, withProvider);
-          });
-        }
       } else {
         throw Exception("No provider selected or found for this item");
       }
@@ -150,6 +166,20 @@ class DetailsController extends Notifier<DetailsState> {
     );
   }
 
+  void toggleLibrary() {
+    final item = state.details.value;
+    if (item == null) return;
+
+    final libraryRepo = ref.read(libraryRepositoryProvider);
+    final wasInLibrary = libraryRepo.isInLibrary(item.url);
+
+    if (wasInLibrary) {
+      ref.read(libraryProvider.notifier).removeItem(item.url);
+    } else {
+      ref.read(libraryProvider.notifier).addItem(item);
+    }
+  }
+
   void handlePlayPress(
     BuildContext context,
     MultimediaItem details, {
@@ -169,9 +199,9 @@ class DetailsController extends Notifier<DetailsState> {
       return;
     }
 
-    final storage = ref.read(storageServiceProvider);
-    final lastEpisodeUrl = storage.getLastEpisodeUrl(details.url);
-    final position = storage.getPosition(details.url);
+    final historyRepo = ref.read(historyRepositoryProvider);
+    final lastEpisodeUrl = historyRepo.getLastEpisodeUrl(details.url);
+    final position = historyRepo.getPosition(details.url);
     final historyHistory = ref.read(watchHistoryProvider);
     final duration = historyHistory
         .firstWhere(
@@ -228,6 +258,6 @@ class DetailsController extends Notifier<DetailsState> {
 }
 
 final detailsControllerProvider =
-    NotifierProvider.autoDispose<DetailsController, DetailsState>(
-      DetailsController.new,
+    NotifierProvider.autoDispose.family<DetailsController, DetailsState, String>(
+      (url) => DetailsController(url),
     );

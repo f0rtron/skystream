@@ -34,7 +34,7 @@ class PlayerTopBar extends StatelessWidget {
         onVerticalDragStart: (_) {},
         child: Container(
           padding: EdgeInsets.only(
-            top: MediaQuery.of(context).viewPadding.top + 16,
+            top: MediaQuery.viewPaddingOf(context).top + 16,
             left: 16,
             right: 16,
             bottom: 8,
@@ -170,7 +170,7 @@ class PlayerBottomBar extends StatelessWidget {
         onVerticalDragStart: (_) {},
         child: Container(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewPadding.bottom + 16,
+            bottom: MediaQuery.viewPaddingOf(context).bottom + 16,
             left: 16,
             right: 16,
             top: 16,

@@ -5,25 +5,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DeviceProfile {
   final bool isTv;
-  final bool isDesktop;
-  final bool isMobile; // Phone or Tablet
+
+  /// Indicates if running on a desktop operating system (macOS, Windows, Linux)
+  /// Use this for capability checks (e.g. window controls, mouse hovers), 
+  /// NOT for layout sizing. Use [ResponsiveBreakpoints] for layout sizing.
+  final bool isDesktopOS; 
 
   const DeviceProfile({
     this.isTv = false,
-    this.isDesktop = false,
-    this.isMobile = true,
+    this.isDesktopOS = false,
   });
-
-  bool get isLargeScreen => isTv || isDesktop;
 }
 
 final deviceProfileProvider = FutureProvider<DeviceProfile>((ref) async {
   bool isTv = false;
-  bool isDesktop = false;
+  bool isDesktopOS = false;
 
-  if (kIsWeb) {
-    // Web logic if needed
-  } else {
+  if (!kIsWeb) {
     if (Platform.isAndroid) {
       final deviceInfo = DeviceInfoPlugin();
       final androidInfo = await deviceInfo.androidInfo;
@@ -31,17 +29,12 @@ final deviceProfileProvider = FutureProvider<DeviceProfile>((ref) async {
     }
 
     if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-      isDesktop = true;
+      isDesktopOS = true;
     }
   }
 
-  // If not Tv and not Desktop, it's mobile (phone or tablet)
-  // We don't distinguish tablet here strictly via OS features usually, 
-  // responsive UI handles the rest.
-  
   return DeviceProfile(
     isTv: isTv,
-    isDesktop: isDesktop,
-    isMobile: !isTv && !isDesktop,
+    isDesktopOS: isDesktopOS,
   );
 });

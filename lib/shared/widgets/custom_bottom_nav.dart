@@ -17,9 +17,7 @@ class CustomBottomNavBar extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF0A0A0A)
-            : Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.surface,
       ),
       child: NavigationBar(
         selectedIndex: currentIndex,

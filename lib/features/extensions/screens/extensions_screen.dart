@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/layout_constants.dart';
 import '../../../../core/extensions/models/extension_plugin.dart';
 import '../../../core/providers/device_info_provider.dart';
 import '../../../shared/widgets/custom_widgets.dart';
@@ -15,7 +16,8 @@ class ExtensionsScreen extends ConsumerStatefulWidget {
 
 class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
   final ScrollController _scrollController = ScrollController();
-  bool _isFabExtended = true;
+  final ValueNotifier<bool> _isFabExtended = ValueNotifier<bool>(true);
+  bool _didEnsureInit = false;
 
   @override
   void initState() {
@@ -26,23 +28,30 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
   void _onScroll() {
     if (_scrollController.position.userScrollDirection ==
             ScrollDirection.reverse &&
-        _isFabExtended) {
-      setState(() => _isFabExtended = false);
+        _isFabExtended.value) {
+      _isFabExtended.value = false;
     } else if (_scrollController.position.userScrollDirection ==
             ScrollDirection.forward &&
-        !_isFabExtended) {
-      setState(() => _isFabExtended = true);
+        !_isFabExtended.value) {
+      _isFabExtended.value = true;
     }
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _isFabExtended.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_didEnsureInit) {
+      _didEnsureInit = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(extensionsControllerProvider.notifier).ensureInitialized();
+      });
+    }
     // Listen for errors
     ref.listen(extensionsControllerProvider, (previous, next) {
       if (previous?.error != next.error && next.error != null) {
@@ -101,11 +110,11 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
                   final repo = state.repositories[repoIndex];
                   final plugins = state.availablePlugins[repo.url] ?? [];
 
-                  return Card(
+                  return                   Card(
                     margin: const EdgeInsets.only(
-                      bottom: 16,
-                      left: 16,
-                      right: 16,
+                      bottom: LayoutConstants.spacingMd,
+                      left: LayoutConstants.spacingMd,
+                      right: LayoutConstants.spacingMd,
                     ),
                     color: Theme.of(context).colorScheme.surface,
                     elevation: 0,
@@ -121,8 +130,8 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
                       backgroundColor: Colors.transparent,
                       collapsedBackgroundColor: Colors.transparent,
                       tilePadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+                        horizontal: LayoutConstants.spacingMd,
+                        vertical: LayoutConstants.spacingXs,
                       ),
                       title: Row(
                         children: [
@@ -181,50 +190,53 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
           );
         },
       ),
-      floatingActionButton: Material(
-        elevation: 4,
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF0A0A0A)
-            : Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => _showAddRepoDialog(context, ref),
-          child: Container(
-            height: 56,
-            constraints: const BoxConstraints(minWidth: 56),
-            padding: EdgeInsets.symmetric(horizontal: _isFabExtended ? 16 : 0),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.add, color: Theme.of(context).colorScheme.primary),
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  child: SizedBox(
-                    width: _isFabExtended ? null : 0,
-                    child: _isFabExtended
-                        ? Padding(
-                            padding: const EdgeInsets.only(left: 12),
-                            child: Text(
-                              "Add Repo",
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.fade,
-                              softWrap: false,
-                            ),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
+      floatingActionButton: ValueListenableBuilder<bool>(
+        valueListenable: _isFabExtended,
+        builder: (context, isFabExtended, _) {
+          return Material(
+            elevation: 4,
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => _showAddRepoDialog(context, ref),
+              child: Container(
+                height: 56,
+                constraints: const BoxConstraints(minWidth: 56),
+                padding: EdgeInsets.symmetric(horizontal: isFabExtended ? LayoutConstants.spacingMd : 0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add, color: Theme.of(context).colorScheme.primary),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      child: SizedBox(
+                        width: isFabExtended ? null : 0,
+                        child: isFabExtended
+                            ? Padding(
+                                padding: const EdgeInsets.only(left: LayoutConstants.spacingSm),
+                                child: Text(
+                                  "Add Repo",
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.fade,
+                                  softWrap: false,
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -235,17 +247,17 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
   ) {
     return Card(
       margin: const EdgeInsets.only(
-        bottom: 16,
-        left: 16,
-        right: 16,
-        top: 16, // Extra top padding for first item
+        bottom: LayoutConstants.spacingMd,
+        left: LayoutConstants.spacingMd,
+        right: LayoutConstants.spacingMd,
+        top: LayoutConstants.spacingMd, // Extra top padding for first item
       ),
       color: Theme.of(context).colorScheme.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: Colors.orange.withValues(alpha: 0.5),
+          color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.5),
         ), // Orange border for debug
       ),
       clipBehavior: Clip.antiAlias,
@@ -255,11 +267,11 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
         initiallyExpanded: true,
         backgroundColor: Colors.transparent,
         collapsedBackgroundColor: Colors.transparent,
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        tilePadding: const EdgeInsets.symmetric(horizontal: LayoutConstants.spacingMd, vertical: LayoutConstants.spacingXs),
         title: Text(
           "Debug Extensions",
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: Colors.orange,
+            color: Theme.of(context).colorScheme.tertiary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -302,7 +314,7 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
                   .removeRepository(repo.url);
               Navigator.pop(context);
             },
-            child: const Text("Remove", style: TextStyle(color: Colors.red)),
+            child: Text("Remove", style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ),
         ],
       ),
@@ -335,7 +347,7 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: LayoutConstants.spacingXs),
           CustomButton(
             autofocus: true,
             isPrimary: true,
@@ -368,12 +380,12 @@ class _PluginTile extends ConsumerWidget {
     if (isDebugSection) {
       return ListTile(
         leading: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(LayoutConstants.spacingXs),
           decoration: BoxDecoration(
-            color: Colors.orange.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(Icons.bug_report, color: Colors.orange, size: 20),
+          child: Icon(Icons.bug_report, color: Theme.of(context).colorScheme.tertiary, size: 20),
         ),
         title: Row(
           children: [
@@ -384,7 +396,7 @@ class _PluginTile extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: LayoutConstants.spacingXs),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               decoration: BoxDecoration(
@@ -432,7 +444,7 @@ class _PluginTile extends ConsumerWidget {
 
     return ListTile(
       leading: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(LayoutConstants.spacingXs),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
@@ -472,7 +484,7 @@ class _PluginTile extends ConsumerWidget {
           // Install / Delete Button
           if (isInstalled)
             IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
+              icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
               onPressed: () {
                 ref
                     .read(extensionsControllerProvider.notifier)

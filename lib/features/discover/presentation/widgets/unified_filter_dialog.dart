@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/utils/layout_constants.dart';
 import '../../data/filter_provider.dart';
 import '../../data/language_provider.dart';
 import '../../data/tmdb_provider.dart';
@@ -74,12 +75,12 @@ class _UnifiedFilterDialogState extends ConsumerState<UnifiedFilterDialog>
                       padding: const EdgeInsets.all(20.0),
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.tune,
-                            color: Colors.blueAccent,
+                            color: Theme.of(context).colorScheme.primary,
                             size: 28,
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: LayoutConstants.spacingSm),
                           Text(
                             "Filters",
                             style: TextStyle(
@@ -102,8 +103,8 @@ class _UnifiedFilterDialogState extends ConsumerState<UnifiedFilterDialog>
                     ),
                     TabBar(
                       controller: _tabController,
-                      indicatorColor: Colors.blueAccent,
-                      labelColor: Colors.blueAccent,
+                      indicatorColor: Theme.of(context).colorScheme.primary,
+                      labelColor: Theme.of(context).colorScheme.primary,
                       unselectedLabelColor: Theme.of(
                         context,
                       ).colorScheme.onSurfaceVariant,
@@ -234,15 +235,15 @@ class _UnifiedFilterDialogState extends ConsumerState<UnifiedFilterDialog>
 
               // Footer
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(LayoutConstants.spacingMd),
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: LayoutConstants.spacingMd),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -277,7 +278,7 @@ class _RatingTab extends ConsumerWidget {
     final ratings = [null, 5.0, 6.0, 7.0, 8.0, 9.0];
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(LayoutConstants.spacingMd),
       itemCount: ratings.length,
       itemBuilder: (context, index) {
         final rating = ratings[index];
@@ -296,13 +297,13 @@ class _RatingTab extends ConsumerWidget {
             borderRadius: BorderRadius.circular(12),
           ),
           tileColor: isSelected
-              ? Colors.blueAccent.withValues(alpha: 0.2)
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
               : null,
-          focusColor: Colors.blueAccent.withValues(alpha: 0.5),
+          focusColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
           leading: Icon(
             Icons.star,
             color: isSelected
-                ? Colors.blueAccent
+                ? Theme.of(context).colorScheme.primary
                 : (rating == null
                       ? Theme.of(
                           context,
@@ -313,7 +314,7 @@ class _RatingTab extends ConsumerWidget {
             label,
             style: TextStyle(
               color: isSelected
-                  ? Colors.blueAccent
+                  ? Theme.of(context).colorScheme.primary
                   : Theme.of(context).colorScheme.onSurface,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
@@ -322,13 +323,13 @@ class _RatingTab extends ConsumerWidget {
             subtitle,
             style: TextStyle(
               color: isSelected
-                  ? Colors.blueAccent
+                  ? Theme.of(context).colorScheme.primary
                   : Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 12,
             ),
           ),
           trailing: isSelected
-              ? const Icon(Icons.check_circle, color: Colors.blueAccent)
+              ? Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary)
               : null,
         );
       },
@@ -342,7 +343,7 @@ class _LanguageTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final languages = ref.watch(languageListProvider);
-    final currentLang = ref.watch(languageProvider).asData?.value ?? 'en-US';
+    final currentLang = ref.watch(languageProvider);
 
     return GridView.builder(
       padding: const EdgeInsets.all(20),
@@ -362,19 +363,19 @@ class _LanguageTab extends ConsumerWidget {
             ref.read(languageProvider.notifier).setLanguage(lang.code);
           },
           borderRadius: BorderRadius.circular(16),
-          focusColor: Colors.blueAccent.withValues(alpha: 0.6),
+          focusColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: LayoutConstants.spacingMd),
             decoration: BoxDecoration(
               color: isSelected
-                  ? Colors.blueAccent.withValues(alpha: 0.2)
+                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
                   : Theme.of(
                       context,
                     ).colorScheme.onSurface.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isSelected
-                    ? Colors.blueAccent
+                    ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).dividerColor.withValues(alpha: 0.1),
               ),
             ),
@@ -387,7 +388,7 @@ class _LanguageTab extends ConsumerWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: isSelected
-                        ? Colors.blueAccent
+                        ? Theme.of(context).colorScheme.primary
                         : Theme.of(
                             context,
                           ).colorScheme.onSurface.withValues(alpha: 0.1),
@@ -401,7 +402,7 @@ class _LanguageTab extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: LayoutConstants.spacingSm),
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -411,7 +412,7 @@ class _LanguageTab extends ConsumerWidget {
                         lang.name,
                         style: TextStyle(
                           color: isSelected
-                              ? Colors.blueAccent
+                              ? Theme.of(context).colorScheme.primary
                               : Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
@@ -421,7 +422,7 @@ class _LanguageTab extends ConsumerWidget {
                         lang.nativeName,
                         style: TextStyle(
                           color: isSelected
-                              ? Colors.blueAccent.withValues(alpha: 0.7)
+                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.7)
                               : Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 12,
                         ),
@@ -430,9 +431,9 @@ class _LanguageTab extends ConsumerWidget {
                   ),
                 ),
                 if (isSelected)
-                  const Icon(
+                  Icon(
                     Icons.check_circle,
-                    color: Colors.blueAccent,
+                    color: Theme.of(context).colorScheme.primary,
                     size: 20,
                   ),
               ],
@@ -454,7 +455,7 @@ class _GenreTab extends ConsumerWidget {
 
     return genresAsync.when(
       data: (genres) => ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(LayoutConstants.spacingMd),
         itemCount: genres.length + 1, // +1 for "All Genres"
         itemBuilder: (context, index) {
           if (index == 0) {
@@ -468,17 +469,17 @@ class _GenreTab extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               tileColor: isSelected
-                  ? Colors.blueAccent.withValues(alpha: 0.2)
+                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
                   : null,
               leading: Icon(
                 Icons.category, // Distinct icon for All
-                color: isSelected ? Colors.blueAccent : Colors.white24,
+                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.white24,
               ),
               title: Text(
                 "All Genres",
                 style: TextStyle(
                   color: isSelected
-                      ? Colors.blueAccent
+                      ? Theme.of(context).colorScheme.primary
                       : Theme.of(
                           context,
                         ).colorScheme.onSurface.withValues(alpha: 0.7),
@@ -499,13 +500,13 @@ class _GenreTab extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             tileColor: isSelected
-                ? Colors.blueAccent.withValues(alpha: 0.2)
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
                 : null,
-            focusColor: Colors.blueAccent.withValues(alpha: 0.5),
+            focusColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
             leading: Icon(
               isSelected ? Icons.check_circle : Icons.circle_outlined,
               color: isSelected
-                  ? Colors.blueAccent
+                  ? Theme.of(context).colorScheme.primary
                   : Theme.of(
                       context,
                     ).colorScheme.onSurface.withValues(alpha: 0.3),
@@ -514,7 +515,7 @@ class _GenreTab extends ConsumerWidget {
               genre.name,
               style: TextStyle(
                 color: isSelected
-                    ? Colors.blueAccent
+                    ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
@@ -560,25 +561,25 @@ class _YearTab extends ConsumerWidget {
               ref.read(discoverFilterProvider.notifier).setYear(null);
             },
             borderRadius: BorderRadius.circular(8),
-            focusColor: Colors.blueAccent.withValues(alpha: 0.6),
+            focusColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
             child: Container(
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? Colors.blueAccent.withValues(alpha: 0.2)
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
                     : Theme.of(
                         context,
                       ).colorScheme.onSurface.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: isSelected ? Colors.blueAccent : Colors.transparent,
+                  color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
                 ),
               ),
               child: Text(
                 "All",
                 style: TextStyle(
                   color: isSelected
-                      ? Colors.blueAccent
+                      ? Theme.of(context).colorScheme.primary
                       : Theme.of(
                           context,
                         ).colorScheme.onSurface.withValues(alpha: 0.7),
@@ -598,25 +599,25 @@ class _YearTab extends ConsumerWidget {
             ref.read(discoverFilterProvider.notifier).setYear(year);
           },
           borderRadius: BorderRadius.circular(8),
-          focusColor: Colors.blueAccent.withValues(alpha: 0.4),
+          focusColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
           child: Container(
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: isSelected
-                  ? Colors.blueAccent.withValues(alpha: 0.2)
+                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
                   : Theme.of(
                       context,
                     ).colorScheme.onSurface.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: isSelected ? Colors.blueAccent : Colors.transparent,
+                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
               ),
             ),
             child: Text(
               year.toString(),
               style: TextStyle(
                 color: isSelected
-                    ? Colors.blueAccent
+                    ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 16,

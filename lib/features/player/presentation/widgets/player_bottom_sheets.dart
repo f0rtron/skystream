@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import '../../../../core/extensions/base_provider.dart';
 import '../../../../core/models/torrent_status.dart';
+import '../../../../core/utils/layout_constants.dart';
 import 'player_utils.dart';
 
 class PlayerBottomSheets {
@@ -28,7 +29,7 @@ class PlayerBottomSheets {
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(LayoutConstants.spacingMd),
                 child: Text(
                   "Select Source",
                   style: TextStyle(
@@ -109,7 +110,7 @@ class PlayerBottomSheets {
             return Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(LayoutConstants.spacingMd),
                   child: Text(
                     "Torrent Content",
                     style: TextStyle(
@@ -205,7 +206,7 @@ class PlayerBottomSheets {
           builder: (context, scrollController) {
             return ListView(
               controller: scrollController,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(LayoutConstants.spacingMd),
               children: [
                 Text(
                   "Audio Tracks",

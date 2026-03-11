@@ -1,5 +1,63 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../player_gesture_handler.dart';
+
+/// Rebuilds only when [PlayerGestureHandler] notifies (OSD/volume state).
+/// Use this instead of listening to the handler in the full controls to avoid
+/// rebuilding the entire player UI on every OSD change.
+class PlayerOSDVolumeOverlay extends StatelessWidget {
+  const PlayerOSDVolumeOverlay({
+    super.key,
+    required this.handler,
+    required this.getDuration,
+    required this.formatDuration,
+  });
+
+  final PlayerGestureHandler handler;
+  final Duration Function() getDuration;
+  final String Function(Duration) formatDuration;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: handler,
+      builder: (context, _) {
+        return Stack(
+          children: [
+            if (handler.swipeSeekValue != null)
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    '${formatDuration(handler.swipeSeekValue!)} / ${formatDuration(getDuration())}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            PlayerOsdOverlay(
+              showOSD: handler.showOSD,
+              osdValue: handler.osdValue,
+              osdLabel: handler.osdLabel,
+              osdIcon: handler.osdIcon,
+              osdAlignment: handler.osdAlignment,
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
 
 class PlayerOsdOverlay extends StatelessWidget {
   final bool showOSD;

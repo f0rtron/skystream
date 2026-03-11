@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:skystream/core/utils/responsive_breakpoints.dart';
-import 'package:skystream/core/providers/device_info_provider.dart';
+
 import 'package:skystream/features/home/presentation/widgets/continue_watching_card.dart';
 import 'package:skystream/features/library/presentation/history_provider.dart';
 import 'package:skystream/shared/widgets/desktop_scroll_wrapper.dart';
@@ -36,8 +36,7 @@ class _ContinueWatchingSectionState
   Widget build(BuildContext context) {
     if (widget.items.isEmpty) return const SizedBox.shrink();
 
-    final device = ref.watch(deviceProfileProvider).asData?.value;
-    final isLarge = (device?.isLargeScreen ?? false) || context.isDesktop;
+    final isLarge = context.isTabletOrLarger;
 
     final double width = isLarge ? 360.0 : 280.0;
     final double listHeight = isLarge ? 200.0 : 150.0;
@@ -68,7 +67,7 @@ class _ContinueWatchingSectionState
                       width: isLarge ? 30 : 20,
                       height: 3,
                       decoration: BoxDecoration(
-                        color: Colors.blueAccent,
+                        color: Theme.of(context).colorScheme.primary,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -101,9 +100,9 @@ class _ContinueWatchingSectionState
                               ),
                             );
                           },
-                          child: const Text(
+                          child: Text(
                             'Clear All',
-                            style: TextStyle(color: Colors.redAccent),
+                            style: TextStyle(color: Theme.of(context).colorScheme.error),
                           ),
                         ),
                       ],
@@ -113,7 +112,7 @@ class _ContinueWatchingSectionState
                 icon: const Icon(Icons.delete_sweep, size: 18),
                 label: const Text('Clear All'),
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey,
+                  foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),
               ),
@@ -133,8 +132,10 @@ class _ContinueWatchingSectionState
               separatorBuilder: (context, index) =>
                   SizedBox(width: isLarge ? 24 : 12),
               itemBuilder: (context, index) {
+                final historyItem = widget.items[index];
                 return ContinueWatchingCard(
-                  historyItem: widget.items[index],
+                  key: ValueKey(historyItem.item.url),
+                  historyItem: historyItem,
                   width: width,
                   isLarge: isLarge,
                 );

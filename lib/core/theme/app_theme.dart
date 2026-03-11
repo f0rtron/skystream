@@ -150,6 +150,34 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      scaffoldBackgroundColor: colorScheme.surface,
+
+      // Dialog Theme
+      dialogTheme: DialogThemeData(
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: TextStyle(
+          fontFamily: 'Outfit',
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: colorScheme.onSurface,
+        ),
+      ),
+
+      // Bottom Sheet Theme
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        modalBackgroundColor: colorScheme.surface,
+      ),
+
+      // Card Theme
+      cardTheme: CardThemeData(
+        color: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 1,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
 
       // Material 3 Color Scheme
       colorScheme: colorScheme,

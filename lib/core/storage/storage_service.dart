@@ -118,6 +118,18 @@ class StorageService {
     return _settingsBox.get('dev_load_assets', defaultValue: false);
   }
 
+  // --- Active Provider ---
+
+  Future<void> setActiveProviderId(String? id) async {
+    await _settingsBox.put('active_provider_id', id ?? '__NONE__');
+  }
+
+  String? getActiveProviderId() {
+    final id = _settingsBox.get('active_provider_id') as String?;
+    if (id == null || id == '__NONE__') return null;
+    return id;
+  }
+
   // --- Extension Persistence ---
 
   Future<void> setExtensionData(String key, String? value) async {
@@ -130,6 +142,24 @@ class StorageService {
 
   String? getExtensionData(String key) {
     return _extensionsBox.get(key) as String?;
+  }
+
+  // --- Language ---
+  Future<void> setLanguage(String lang) async {
+    await _settingsBox.put('language', lang);
+  }
+
+  String getLanguage() {
+    return _settingsBox.get('language', defaultValue: 'en-US');
+  }
+
+  // --- Player Settings ---
+  Future<void> setPlayerSetting(String key, dynamic value) async {
+    await _settingsBox.put(key, value);
+  }
+
+  T? getPlayerSetting<T>(String key, {T? defaultValue}) {
+    return _settingsBox.get(key, defaultValue: defaultValue) as T?;
   }
 
   // --- Watch History ---

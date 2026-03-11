@@ -12,8 +12,8 @@ class TmdbItem {
   final String releaseDate;
   final double voteAverage;
   final String overview;
-  String? logoUrl;
-  String? genresStr;
+  final String? logoUrl;
+  final String? genresStr;
   final MultimediaItem? sourceItem;
 
   TmdbItem({

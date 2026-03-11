@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:skystream/core/utils/responsive_breakpoints.dart';
-import 'package:skystream/core/providers/device_info_provider.dart';
+
 import 'package:skystream/core/extensions/extension_manager.dart';
 import 'package:skystream/core/domain/entity/multimedia_item.dart';
+import 'package:skystream/core/router/app_router.dart';
+import 'package:skystream/core/utils/image_fallbacks.dart';
 import 'package:skystream/shared/widgets/desktop_scroll_wrapper.dart';
+import 'package:skystream/shared/widgets/thumbnail_error_placeholder.dart';
 import '../../../../shared/widgets/cards_wrapper.dart';
 
 class SearchResultSection extends ConsumerStatefulWidget {
@@ -39,8 +42,7 @@ class _SearchResultSectionState extends ConsumerState<SearchResultSection> {
   Widget build(BuildContext context) {
     if (widget.results.isEmpty) return const SizedBox.shrink();
 
-    final device = ref.watch(deviceProfileProvider).asData?.value;
-    final isLarge = (device?.isLargeScreen ?? false) || context.isDesktop;
+    final isLarge = context.isTabletOrLarger;
     // Matching MediaHorizontalList/ContinueWatchingSection dimensions
     final double width = isLarge ? 200.0 : 130.0;
     final double listHeight = isLarge ? 350.0 : 230.0;
@@ -80,7 +82,7 @@ class _SearchResultSectionState extends ConsumerState<SearchResultSection> {
                       width: isLarge ? 30 : 20,
                       height: 3,
                       decoration: BoxDecoration(
-                        color: Colors.blueAccent,
+                        color: Theme.of(context).colorScheme.primary,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -107,8 +109,9 @@ class _SearchResultSectionState extends ConsumerState<SearchResultSection> {
                 final uniqueTag =
                     'search_${widget.providerId}_${item.url}_$rIndex';
 
-                return CardsWrapper(
-                  onTap: () => context.push('/details', extra: item),
+                return RepaintBoundary(child: CardsWrapper(
+                  key: ValueKey(item.url),
+                  onTap: () => context.push('/details', extra: DetailsRouteExtra(item: item)),
                   borderRadius: BorderRadius.circular(12),
                   child: SizedBox(
                     width: width,
@@ -121,7 +124,7 @@ class _SearchResultSectionState extends ConsumerState<SearchResultSection> {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
                               child: CachedNetworkImage(
-                                imageUrl: item.posterUrl,
+                                imageUrl: AppImageFallbacks.poster(item.posterUrl, label: item.title),
                                 fit: BoxFit.cover,
                                 width: double.infinity,
                                 memCacheWidth:
@@ -129,15 +132,8 @@ class _SearchResultSectionState extends ConsumerState<SearchResultSection> {
                                 placeholder: (context, url) => Container(
                                   color: Theme.of(context).dividerColor,
                                 ),
-                                errorWidget: (context, url, _) => Container(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                                  child: const Icon(
-                                    Icons.broken_image,
-                                    color: Colors.white24,
-                                  ),
-                                ),
+                                errorWidget: (_, _, _) =>
+                                    const ThumbnailErrorPlaceholder(),
                               ),
                             ),
                           ),
@@ -158,7 +154,7 @@ class _SearchResultSectionState extends ConsumerState<SearchResultSection> {
                       ],
                     ),
                   ),
-                );
+                ));
               },
             ),
           ),
@@ -177,7 +173,9 @@ class _SearchResultSectionState extends ConsumerState<SearchResultSection> {
       if (p.isDebug) {
         isDebug = true;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('SearchResultSection._buildDebugTag: $e');
+    }
 
     if (!isDebug) return const SizedBox.shrink();
 

@@ -8,7 +8,7 @@ class ResponsiveBreakpoints {
   static const double desktopBreakpoint = 900;
 
   static DeviceScreenType getDeviceType(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
+    final width = MediaQuery.sizeOf(context).width;
 
     if (width >= desktopBreakpoint) {
       return DeviceScreenType.desktop;

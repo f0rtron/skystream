@@ -35,7 +35,7 @@ class UpdateDialog extends ConsumerWidget {
               const SizedBox(height: 10),
               Text('${(updateState.progress * 100).toStringAsFixed(0)}%'),
             ] else if (updateState is UpdateError) ...[
-               Text('Error: ${updateState.message}', style: const TextStyle(color: Colors.red)),
+               Text('Error: ${updateState.message}', style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ] else ...[
                // Truncate body if too long
                ConstrainedBox(

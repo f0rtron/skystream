@@ -12,6 +12,7 @@ import '../../discover/presentation/view_all_screen.dart';
 import 'package:flutter/rendering.dart';
 import 'package:skystream/core/extensions/extension_manager.dart';
 import 'package:skystream/core/domain/entity/multimedia_item.dart';
+import 'package:skystream/core/router/app_router.dart';
 import '../../../core/models/tmdb_item.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -237,6 +238,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // Main content
     return homeDataAsync.when(
       data: (data) {
+        final filteredEntries = data.entries
+            .where((e) => e.key != 'Trending')
+            .toList();
         return RefreshIndicator(
           onRefresh: () => ref.refresh(homeDataProvider.future),
           child: CustomScrollView(
@@ -249,24 +253,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     movies: data['Trending']!
                         .take(7)
                         .cast<MultimediaItem>()
-                        .map(
-                          (item) => TmdbItem(
-                            id: item.url.hashCode,
-                            title: item.title,
-                            posterPath: item.posterUrl,
-                            mediaType: 'movie',
-                            releaseDate: '',
-                            voteAverage: 0.0,
-                            overview: item.description ?? '',
-                            sourceItem: item, // Link original item
-                          ),
-                        )
+                        .map(_toTmdbItem)
                         .toList(),
                     scrollController: _scrollController,
                     onTap: (tmdbItem) {
                       final item = tmdbItem.sourceItem;
                       if (item != null) {
-                        context.push('/details', extra: item);
+                        context.push('/details', extra: DetailsRouteExtra(item: item));
                       }
                     },
                   ),
@@ -277,24 +270,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     movies: data.values.first
                         .take(7)
                         .cast<MultimediaItem>()
-                        .map(
-                          (item) => TmdbItem(
-                            id: item.url.hashCode,
-                            title: item.title,
-                            posterPath: item.posterUrl,
-                            mediaType: 'movie',
-                            releaseDate: '',
-                            voteAverage: 0.0,
-                            overview: item.description ?? '',
-                            sourceItem: item,
-                          ),
-                        )
+                        .map(_toTmdbItem)
                         .toList(),
                     scrollController: _scrollController,
                     onTap: (tmdbItem) {
                       final item = tmdbItem.sourceItem;
                       if (item != null) {
-                        context.push('/details', extra: item);
+                        context.push('/details', extra: DetailsRouteExtra(item: item));
                       }
                     },
                   ),
@@ -313,44 +295,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    final entries = data.entries
-                        .where((e) => e.key != 'Trending')
-                        .toList();
-                    if (index >= entries.length) return null;
-                    final entry = entries[index];
+                    if (index >= filteredEntries.length) return null;
+                    final entry = filteredEntries[index];
                     return RepaintBoundary(
                       child: MediaHorizontalList(
                         title: entry.key,
                         mediaList: entry.value
                             .cast<MultimediaItem>()
-                            .map(
-                              (item) => TmdbItem(
-                                id: item.url.hashCode,
-                                title: item.title,
-                                posterPath: item.posterUrl,
-                                mediaType: 'movie',
-                                releaseDate: '',
-                                voteAverage: 0.0,
-                                overview: item.description ?? '',
-                                sourceItem: item,
-                              ),
-                            )
+                            .map(_toTmdbItem)
                             .toList(),
                         category: ViewAllCategory.trending,
                         showViewAll: false,
                         onTap: (tmdbItem) {
                           final item = tmdbItem.sourceItem;
                           if (item != null) {
-                            context.push('/details', extra: item);
+                            context.push('/details', extra: DetailsRouteExtra(item: item));
                           }
                         },
                         heroTagPrefix: 'home',
                       ),
                     );
                   },
-                  childCount: data.entries
-                      .where((e) => e.key != 'Trending')
-                      .length,
+                  childCount: filteredEntries.length,
                 ),
               ),
 
@@ -365,7 +331,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  // Removed _mapItemToMap helper as we map directly to TmdbItem
+  TmdbItem _toTmdbItem(MultimediaItem item) {
+    return TmdbItem(
+      id: item.url.hashCode,
+      title: item.title,
+      posterPath: item.posterUrl,
+      mediaType: 'movie',
+      releaseDate: '',
+      voteAverage: 0.0,
+      overview: item.description ?? '',
+      sourceItem: item,
+    );
+  }
 
   Widget _buildErrorState(BuildContext context, String error, WidgetRef ref) {
     return Center(
@@ -434,11 +411,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       }
     }
 
+    final scrollController = ScrollController();
     showDialog(
       context: context,
       builder: (context) {
-        final scrollController = ScrollController();
-
         // Auto-scroll to selected item after dialog opens
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (scrollController.hasClients && selectedIndex > 0) {
@@ -460,7 +436,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           title: const Text('Select Provider'),
           content: ConstrainedBox(
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.6,
+              maxHeight: MediaQuery.sizeOf(context).height * 0.6,
             ),
             child: RadioGroup<String?>(
               groupValue: activeProvider?.id,
@@ -528,6 +504,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ),
         );
       },
-    );
+    ).then((_) => scrollController.dispose());
   }
 }

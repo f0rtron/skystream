@@ -9,9 +9,8 @@ import 'package:path_provider/path_provider.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../../core/extensions/base_provider.dart';
 import '../../../../core/extensions/extension_manager.dart';
+import '../../../../core/extensions/providers.dart';
 import '../../../../core/models/torrent_status.dart';
-import '../../../../core/services/torrent_service.dart';
-import '../../../../core/storage/storage_service.dart';
 import '../../library/presentation/history_provider.dart';
 
 class PlayerState {
@@ -83,6 +82,7 @@ class PlayerController extends Notifier<PlayerState> {
   late MultimediaItem _item;
   late String _videoUrl;
   Timer? _torrentPollTimer;
+  bool _isPolling = false;
 
   // Track last saved position for threshold-based saving
   Duration _lastSavedPosition = Duration.zero;
@@ -96,6 +96,7 @@ class PlayerController extends Notifier<PlayerState> {
 
   @override
   PlayerState build() {
+    ref.keepAlive();
     return const PlayerState();
   }
 
@@ -136,7 +137,9 @@ class PlayerController extends Notifier<PlayerState> {
               initialTitle = "${item.title} $epTitle";
             }
           }
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('PlayerController.init: $e');
+        }
       }
     }
 
@@ -283,15 +286,26 @@ class PlayerController extends Notifier<PlayerState> {
         return manager.getAllProviders().firstWhere(
           (p) => p.id == val || p.name == val,
         );
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('PlayerController._resolveProvider: $e');
+      }
     }
     return activeState;
   }
 
   int _findSavedStreamIndex(List<StreamResult> streams) {
     try {
-      final storage = ref.read(storageServiceProvider);
-      final lastUrl = storage.getLastStreamUrl(_item.url);
+      final historyList = ref.read(watchHistoryProvider);
+      final previousState = historyList.firstWhere(
+        (h) => h.item.url == _item.url,
+        orElse: () => HistoryItem(
+          item: _item,
+          position: 0,
+          duration: 0,
+          timestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
+      );
+      final lastUrl = previousState.lastStreamUrl;
       if (lastUrl != null) {
         final foundIndex = streams.indexWhere((s) => s.url == lastUrl);
         if (foundIndex != -1) return foundIndex;
@@ -326,6 +340,8 @@ class PlayerController extends Notifier<PlayerState> {
 
       if (playUrl.contains("index=")) {
         startTorrentPolling(playUrl);
+      } else {
+        stopTorrentPolling();
       }
 
       state = state.copyWith(
@@ -343,8 +359,18 @@ class PlayerController extends Notifier<PlayerState> {
 
       await _player.open(Media(playUrl, httpHeaders: headers, extras: extras));
 
-      final storage = ref.read(storageServiceProvider);
-      final savedPos = storage.getPosition(_item.url);
+      final historyList = ref.read(watchHistoryProvider);
+      final savedPos = historyList
+          .firstWhere(
+            (h) => h.item.url == _item.url,
+            orElse: () => HistoryItem(
+              item: _item,
+              position: 0,
+              duration: 0,
+              timestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
+          )
+          .position;
 
       if (savedPos > 0) {
         await _safeSeekTo(savedPos);
@@ -389,6 +415,8 @@ class PlayerController extends Notifier<PlayerState> {
 
       if (playUrl.contains("index=")) {
         startTorrentPolling(playUrl);
+      } else {
+        stopTorrentPolling();
       }
 
       state = state.copyWith(streamSubtitle: "$pName - ${stream.quality}");
@@ -462,7 +490,7 @@ class PlayerController extends Notifier<PlayerState> {
   Future<void> onTorrentFileSelected(int index) async {
     state = state.copyWith(isLoading: true);
     try {
-      final url = await TorrentService().getStreamUrlForFileIndex(index);
+      final url = await ref.read(torrentServiceProvider).getStreamUrlForFileIndex(index);
       if (url != null && state.currentStream != null) {
         String fileLabel = "Torrent File $index";
         try {
@@ -476,7 +504,9 @@ class PlayerController extends Notifier<PlayerState> {
             fileLabel = (file['path'] as String).split('/').last;
             state = state.copyWith(playerTitle: fileLabel);
           }
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('PlayerController.onTorrentFileSelected: $e');
+        }
 
         final newStream = StreamResult(
           url: url,
@@ -533,30 +563,38 @@ class PlayerController extends Notifier<PlayerState> {
     _torrentPollTimer?.cancel();
 
     Future<void> poll() async {
-      final status = await TorrentService().getCurrentStatus();
-      if (status != null) {
-        final urlToCheck = activeStreamUrl ?? state.currentStream?.url;
-        if (urlToCheck?.contains("index=") ?? false) {
-          try {
-            final uri = Uri.parse(urlToCheck!);
-            final indexStr = uri.queryParameters['index'];
-            if (indexStr != null) {
-              final index = int.tryParse(indexStr);
-              final files = status.data['file_stats'] as List<dynamic>?;
-              final file = files?.firstWhere(
-                (f) => f['id'] == index,
-                orElse: () => null,
-              );
-              if (file != null) {
-                final name = (file['path'] as String).split('/').last;
-                if (state.playerTitle != name) {
-                  state = state.copyWith(playerTitle: name);
+      if (_isPolling) return;
+      _isPolling = true;
+      try {
+        final status = await ref.read(torrentServiceProvider).getCurrentStatus();
+        if (status != null) {
+          final urlToCheck = activeStreamUrl ?? state.currentStream?.url;
+          if (urlToCheck?.contains("index=") ?? false) {
+            try {
+              final uri = Uri.parse(urlToCheck!);
+              final indexStr = uri.queryParameters['index'];
+              if (indexStr != null) {
+                final index = int.tryParse(indexStr);
+                final files = status.data['file_stats'] as List<dynamic>?;
+                final file = files?.firstWhere(
+                  (f) => f['id'] == index,
+                  orElse: () => null,
+                );
+                if (file != null) {
+                  final name = (file['path'] as String).split('/').last;
+                  if (state.playerTitle != name) {
+                    state = state.copyWith(playerTitle: name);
+                  }
                 }
               }
+            } catch (e) {
+              debugPrint('PlayerController.startTorrentPolling: $e');
             }
-          } catch (_) {}
+          }
+          state = state.copyWith(torrentStatus: status);
         }
-        state = state.copyWith(torrentStatus: status);
+      } finally {
+        _isPolling = false;
       }
     }
 
@@ -570,6 +608,23 @@ class PlayerController extends Notifier<PlayerState> {
   void stopTorrentPolling() {
     _torrentPollTimer?.cancel();
     _torrentPollTimer = null;
+    if (state.torrentStatus != null) {
+      state = PlayerState(
+        isLoading: state.isLoading,
+        errorMessage: state.errorMessage,
+        playerTitle: state.playerTitle,
+        streamSubtitle: state.streamSubtitle,
+        streams: state.streams,
+        currentStreamIndex: state.currentStreamIndex,
+        currentStream: state.currentStream,
+        previousStream: state.previousStream,
+        torrentStatus: null,
+        externalSubtitles: state.externalSubtitles,
+        isManualSwitch: state.isManualSwitch,
+        isOpeningStream: state.isOpeningStream,
+        isReverting: state.isReverting,
+      );
+    }
   }
 
   Future<void> disposeController() async {
@@ -582,7 +637,7 @@ class PlayerController extends Notifier<PlayerState> {
     _positionSub?.cancel();
 
     saveProgress();
-    TorrentService().stop();
+    ref.read(torrentServiceProvider).stop();
     Future.microtask(() {
       state = const PlayerState();
     });
@@ -596,7 +651,9 @@ class PlayerController extends Notifier<PlayerState> {
       );
       if (p.isDebug) return "${p.name} [DEBUG]";
       return p.name;
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('PlayerController._getProviderDisplayName: $e');
+    }
     return providerName;
   }
 
@@ -605,7 +662,7 @@ class PlayerController extends Notifier<PlayerState> {
         stream.url.endsWith(".torrent") ||
         (stream.url.startsWith("/") && stream.quality.contains("Torrent"))) {
       state = state.copyWith(streamSubtitle: "Initializing Torrent Engine...");
-      final torrentUrl = await TorrentService().getStreamUrl(stream.url);
+      final torrentUrl = await ref.read(torrentServiceProvider).getStreamUrl(stream.url);
       if (torrentUrl != null) return torrentUrl;
       return null;
     }
@@ -654,4 +711,6 @@ class PlayerController extends Notifier<PlayerState> {
 }
 
 final playerControllerProvider =
-    NotifierProvider<PlayerController, PlayerState>(PlayerController.new);
+    NotifierProvider.autoDispose<PlayerController, PlayerState>(
+      PlayerController.new,
+    );

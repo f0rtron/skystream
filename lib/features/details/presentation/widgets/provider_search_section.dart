@@ -3,16 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:skystream/core/domain/entity/multimedia_item.dart';
 import 'package:skystream/core/extensions/extension_manager.dart';
+import 'package:skystream/core/utils/image_fallbacks.dart';
 import 'package:skystream/features/search/presentation/search_provider.dart';
 import '../../../../shared/widgets/cards_wrapper.dart';
 import '../details_screen.dart';
 import '../../../../shared/widgets/desktop_scroll_wrapper.dart';
+import '../../../../core/utils/layout_constants.dart';
 import '../../../../shared/widgets/shimmer_placeholder.dart';
+import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 
 // Delegates to the shared searchAllProviders() function — no duplicated
 // fan-out, mapping, or filtering logic.
 final _providerSearchProvider = FutureProvider.family
     .autoDispose<SearchAggregateState, String>((ref, query) async {
+      ref.watch(extensionManagerProvider);
       final manager = ref.read(extensionManagerProvider.notifier);
       // Collect the final emission from the incremental stream
 
@@ -68,7 +72,7 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
       content = Container(
         height: 140,
         alignment: Alignment.center,
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(LayoutConstants.spacingMd),
         child: Text(
           "No plugins installed",
           textAlign: TextAlign.center,
@@ -95,7 +99,7 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
             return Container(
               height: 140,
               alignment: Alignment.center,
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(LayoutConstants.spacingMd),
               child: Text(
                 "No streams found.",
                 textAlign: TextAlign.center,
@@ -117,9 +121,9 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
                 scrollDirection: Axis.horizontal,
                 padding: widget.compact
                     ? EdgeInsets.zero
-                    : const EdgeInsets.symmetric(horizontal: 16),
+                    : const EdgeInsets.symmetric(horizontal: LayoutConstants.spacingMd),
                 itemCount: allItems.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 12),
+                separatorBuilder: (_, _) => const SizedBox(width: LayoutConstants.spacingSm),
                 itemBuilder: (context, index) {
                   final data = allItems[index];
                   final item = data['item'] as MultimediaItem;
@@ -153,14 +157,17 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
                             SizedBox(
                               width: 90,
                               height: double.infinity,
-                              child: item.posterUrl.isNotEmpty
-                                  ? CachedNetworkImage(
-                                      imageUrl: item.posterUrl,
-                                      fit: BoxFit.cover,
-                                      errorWidget: (_, _, _) =>
-                                          const ShimmerPlaceholder(),
-                                    )
-                                  : const ShimmerPlaceholder(),
+                              child: CachedNetworkImage(
+                                imageUrl: AppImageFallbacks.poster(
+                                  item.posterUrl,
+                                  label: item.title,
+                                ),
+                                fit: BoxFit.cover,
+                                placeholder: (_, _) =>
+                                    const ShimmerPlaceholder(),
+                                errorWidget: (_, _, _) =>
+                                    const ThumbnailErrorPlaceholder(),
+                              ),
                             ),
                             Expanded(
                               child: Padding(
@@ -231,7 +238,7 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
           ),
         ),
         error: (err, _) => Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(LayoutConstants.spacingMd),
           child: Text("Error: $err"),
         ),
       );
@@ -252,12 +259,12 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
           color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
         ),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: LayoutConstants.spacingMd),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: LayoutConstants.spacingMd),
             child: Row(
               children: [
                 Icon(
@@ -265,7 +272,7 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
                   size: 18,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: LayoutConstants.spacingXs),
                 Text(
                   "Available Sources",
                   style: TextStyle(
@@ -274,7 +281,7 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: LayoutConstants.spacingXs),
                 // Fix 3: Styled Beta Tag
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -299,7 +306,7 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: LayoutConstants.spacingSm),
           content,
         ],
       ),

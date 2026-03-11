@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/layout_constants.dart';
 
 class SettingsGroup extends StatelessWidget {
   final String title;
@@ -12,7 +13,7 @@ class SettingsGroup extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: LayoutConstants.spacingMd, vertical: LayoutConstants.spacingSm),
           child: Text(
             title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -22,7 +23,7 @@ class SettingsGroup extends StatelessWidget {
           ),
         ),
         Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
+          margin: const EdgeInsets.symmetric(horizontal: LayoutConstants.spacingMd),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
@@ -62,7 +63,7 @@ class SettingsTile extends StatelessWidget {
             context,
           ).colorScheme.primary.withValues(alpha: 0.15),
           leading: Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(LayoutConstants.spacingXs),
             decoration: BoxDecoration(
               color: Theme.of(
                 context,

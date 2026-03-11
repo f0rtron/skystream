@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/utils/layout_constants.dart';
 
 /// A Slider widget that handles D-pad navigation properly on TV.
 /// Left/Right D-pad adjusts the value, Up/Down D-pad navigates to other focusable elements.
@@ -110,7 +111,7 @@ class _CustomSliderState extends State<CustomSlider> {
                 )
               : Border.all(color: Colors.transparent, width: 2),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: LayoutConstants.spacingXs, vertical: 4),
         child: ExcludeFocus(
           child: Slider(
             value: widget.value.clamp(widget.min, widget.max),

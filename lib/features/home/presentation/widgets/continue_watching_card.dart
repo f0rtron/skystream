@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:skystream/features/library/presentation/history_provider.dart';
 
 import 'package:skystream/shared/widgets/focusable_item.dart';
+import 'package:skystream/shared/widgets/thumbnail_error_placeholder.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:skystream/core/router/app_router.dart';
+import 'package:skystream/core/utils/image_fallbacks.dart';
 import '../../../../core/extensions/extension_manager.dart';
 
 class ContinueWatchingCard extends ConsumerWidget {
@@ -37,7 +40,7 @@ class ContinueWatchingCard extends ConsumerWidget {
 
     return FocusableItem(
       onTap: () =>
-          context.push('/details', extra: {'item': item, 'autoPlay': true}),
+          context.push('/details', extra: DetailsRouteExtra(item: item, autoPlay: true)),
       onLongPress: () {
         showModalBottomSheet(
           context: context,
@@ -54,17 +57,17 @@ class ContinueWatchingCard extends ConsumerWidget {
                   title: const Text('View Details'),
                   onTap: () {
                     Navigator.pop(context);
-                    context.push('/details', extra: item);
+                    context.push('/details', extra: DetailsRouteExtra(item: item));
                   },
                 ),
                 ListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     Icons.delete_outline,
-                    color: Colors.redAccent,
+                    color: Theme.of(context).colorScheme.error,
                   ),
-                  title: const Text(
+                  title: Text(
                     'Remove from History',
-                    style: TextStyle(color: Colors.redAccent),
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
                   ),
                   onTap: () {
                     ref
@@ -94,7 +97,7 @@ class ContinueWatchingCard extends ConsumerWidget {
           Container(
             width: width,
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E),
+              color: Theme.of(context).colorScheme.surfaceContainer,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
@@ -107,13 +110,13 @@ class ContinueWatchingCard extends ConsumerWidget {
                       left: Radius.circular(12),
                     ),
                     child: CachedNetworkImage(
-                      imageUrl: item.posterUrl,
+                      imageUrl: AppImageFallbacks.poster(item.posterUrl, label: item.title),
                       fit: BoxFit.cover,
                       memCacheWidth: 200, // P15: Optimize memory
                       placeholder: (context, url) =>
                           Container(color: Theme.of(context).dividerColor),
-                      errorWidget: (context, url, err) =>
-                          const Icon(Icons.broken_image),
+                      errorWidget: (_, _, _) =>
+                          const ThumbnailErrorPlaceholder(),
                     ),
                   ),
                 ),
@@ -164,9 +167,9 @@ class ContinueWatchingCard extends ConsumerWidget {
                           child: LinearProgressIndicator(
                             value: progress,
                             minHeight: 4,
-                            backgroundColor: Colors.grey[800],
+                            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.grey[500]!,
+                              Theme.of(context).colorScheme.outline,
                             ),
                           ),
                         ),
@@ -174,7 +177,7 @@ class ContinueWatchingCard extends ConsumerWidget {
                         Text(
                           "$percentage% watched",
                           style: TextStyle(
-                            color: Colors.grey[500],
+                            color: Theme.of(context).colorScheme.outline,
                             fontSize: 11,
                           ),
                         ),

@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/domain/entity/multimedia_item.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/services/external_player_service.dart';
 import '../../../core/extensions/extension_manager.dart';
 import '../../../core/extensions/base_provider.dart';
+import '../../../core/extensions/providers.dart';
 import '../../settings/presentation/player_settings_provider.dart';
+import 'details_controller.dart';
 
 class PlaybackLauncher {
   final Ref _ref;
@@ -23,16 +26,26 @@ class PlaybackLauncher {
     if (!context.mounted) return;
 
     if (settings.preferredPlayer != null) {
+      if (baseItem.url.isNotEmpty) {
+        _ref.read(detailsControllerProvider(baseItem.url).notifier).setLaunching(true);
+      }
       _launchExternal(
         context,
         url,
         detailedItem ?? baseItem,
         settings.preferredPlayer!,
-      );
+      ).whenComplete(() {
+        if (baseItem.url.isNotEmpty) {
+          _ref.read(detailsControllerProvider(baseItem.url).notifier).setLaunching(false);
+        }
+      });
     } else {
       context.push(
         '/player',
-        extra: {'item': detailedItem ?? baseItem, 'url': url},
+        extra: PlayerRouteExtra(
+          item: detailedItem ?? baseItem,
+          videoUrl: url,
+        ),
       );
     }
   }
@@ -69,7 +82,9 @@ class PlaybackLauncher {
           provider = manager.getAllProviders().firstWhere(
             (p) => p.id == val || p.name == val,
           );
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('PlaybackLauncher.launch: $e');
+        }
       }
       provider ??= _ref.read(activeProviderStateProvider);
       if (provider == null) throw Exception('No active provider');
@@ -94,13 +109,19 @@ class PlaybackLauncher {
             duration: const Duration(seconds: 3),
           ),
         );
-        context.push('/player', extra: {'item': item, 'url': episodeDataUrl});
+        context.push(
+          '/player',
+          extra: PlayerRouteExtra(item: item, videoUrl: episodeDataUrl),
+        );
         return;
       }
 
       if (streams.length == 1) {
-        _launchStream(context, streams.first, item, episodeDataUrl, playerId);
+        await _launchStream(context, streams.first, item, episodeDataUrl, playerId);
       } else {
+        if (item.url.isNotEmpty) {
+           _ref.read(detailsControllerProvider(item.url).notifier).setLaunching(false);
+        }
         _showSourcePicker(context, streams, item, episodeDataUrl, playerId);
       }
     } catch (e) {
@@ -109,7 +130,10 @@ class PlaybackLauncher {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e. Using internal player.')),
       );
-      context.push('/player', extra: {'item': item, 'url': episodeDataUrl});
+      context.push(
+        '/player',
+        extra: PlayerRouteExtra(item: item, videoUrl: episodeDataUrl),
+      );
     }
   }
 
@@ -120,8 +144,18 @@ class PlaybackLauncher {
     String episodeDataUrl,
     String playerId,
   ) async {
+    String playUrl = stream.url;
+    if (stream.url.startsWith("magnet:") ||
+        stream.url.endsWith(".torrent") ||
+        (stream.url.startsWith("/") && stream.quality.contains("Torrent"))) {
+      final torrentUrl = await _ref.read(torrentServiceProvider).getStreamUrl(stream.url);
+      if (torrentUrl != null) {
+        playUrl = torrentUrl;
+      }
+    }
+
     final success = await ExternalPlayerService.instance.launch(
-      stream.url,
+      playUrl,
       headers: stream.headers,
       playerId: playerId,
       title: item.title,
@@ -138,7 +172,10 @@ class PlaybackLauncher {
           duration: const Duration(seconds: 3),
         ),
       );
-      context.push('/player', extra: {'item': item, 'url': episodeDataUrl});
+      context.push(
+        '/player',
+        extra: PlayerRouteExtra(item: item, videoUrl: episodeDataUrl),
+      );
     }
   }
 
@@ -159,7 +196,7 @@ class PlaybackLauncher {
       builder: (ctx) => SafeArea(
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.5,
+            maxHeight: MediaQuery.sizeOf(context).height * 0.5,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

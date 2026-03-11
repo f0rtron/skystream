@@ -61,6 +61,12 @@ class PlayerGestureHandler extends ChangeNotifier {
     });
   }
 
+  /// Dismiss the OSD overlay (e.g. on tap). Call [notifyListeners] so listeners can rebuild.
+  void dismissOSD() {
+    showOSD = false;
+    notifyListeners();
+  }
+
   void showToast(String message, IconData icon) {
     showOSD = true;
     osdIcon = icon;
