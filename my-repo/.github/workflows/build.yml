@@ -1,0 +1,37 @@
+name: Build and Deploy Repository
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - 'dist/**'
+      - 'README.md'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Repository
+        run: |
+          npm install -g skystream-cli
+          skystream build -u https://raw.githubusercontent.com/${{ github.repository }}
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "chore: automated build [skip ci]" || echo "No changes to commit"
+          git push

@@ -1,15 +1,19 @@
 import 'package:html_unescape/html_unescape.dart';
 
+enum MultimediaContentType { movie, series, anime, livestream, other }
+
 class MultimediaItem {
   static final _unescape = HtmlUnescape();
   final String title;
   final String url;
+
   /// Raw poster URL; apply [AppImageFallbacks.poster] at the UI edge when displaying.
   final String posterUrl;
+
   /// Raw banner URL; apply [AppImageFallbacks.optional] at the UI edge when displaying.
   final String? bannerUrl;
   final String? description;
-  final bool isFolder;
+  final MultimediaContentType contentType;
   final List<Episode>? episodes;
   final String? provider;
   final Map<String, String>? headers;
@@ -20,7 +24,7 @@ class MultimediaItem {
     required this.posterUrl,
     this.bannerUrl,
     this.description,
-    this.isFolder = false,
+    this.contentType = MultimediaContentType.movie,
     this.episodes,
     this.provider,
     this.headers,
@@ -28,16 +32,20 @@ class MultimediaItem {
 
   factory MultimediaItem.fromJson(Map<String, dynamic> json) {
     final title = json['title'] != null ? _unescape.convert(json['title']) : '';
+
+    // Determine content type
+    final String? typeStr = json['type'] ?? json['contentType'];
+    final MultimediaContentType type = MultimediaItem.parseContentType(typeStr);
+
     return MultimediaItem(
       title: title,
       url: json['url'] ?? '',
       posterUrl: json['posterUrl'] ?? '',
-      bannerUrl:
-          json['backgroundPosterUrl'] ?? json['bannerUrl'], // Handle JS naming
+      bannerUrl: json['backgroundPosterUrl'] ?? json['bannerUrl'],
       description: json['description'] != null
           ? _unescape.convert(json['description'])
           : null,
-      isFolder: json['isFolder'] ?? false,
+      contentType: type,
       episodes: json['episodes'] != null
           ? (json['episodes'] as List)
                 .map((e) => Episode.fromJson(Map<String, dynamic>.from(e)))
@@ -50,18 +58,23 @@ class MultimediaItem {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'title': title,
-      'url': url,
-      'posterUrl': posterUrl,
-      'bannerUrl': bannerUrl,
-      'description': description,
-      'isFolder': isFolder,
-      'episodes': episodes?.map((e) => e.toJson()).toList(),
-      'provider': provider,
-      'headers': headers,
-    };
+  static MultimediaContentType parseContentType(String? raw) {
+    if (raw == null) return MultimediaContentType.movie;
+    switch (raw.toLowerCase()) {
+      case 'movie':
+        return MultimediaContentType.movie;
+      case 'series':
+      case 'tv':
+        return MultimediaContentType.series;
+      case 'anime':
+        return MultimediaContentType.anime;
+      case 'livestream':
+      case 'live':
+      case 'iptv':
+        return MultimediaContentType.livestream;
+      default:
+        return MultimediaContentType.other;
+    }
   }
 
   MultimediaItem copyWith({
@@ -70,7 +83,7 @@ class MultimediaItem {
     String? posterUrl,
     String? bannerUrl,
     String? description,
-    bool? isFolder,
+    MultimediaContentType? contentType,
     List<Episode>? episodes,
     String? provider,
     Map<String, String>? headers,
@@ -81,11 +94,25 @@ class MultimediaItem {
       posterUrl: posterUrl ?? this.posterUrl,
       bannerUrl: bannerUrl ?? this.bannerUrl,
       description: description ?? this.description,
-      isFolder: isFolder ?? this.isFolder,
+      contentType: contentType ?? this.contentType,
       episodes: episodes ?? this.episodes,
       provider: provider ?? this.provider,
       headers: headers ?? this.headers,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'url': url,
+      'posterUrl': posterUrl,
+      'bannerUrl': bannerUrl,
+      'description': description,
+      'type': contentType.name,
+      'episodes': episodes?.map((e) => e.toJson()).toList(),
+      'provider': provider,
+      'headers': headers,
+    };
   }
 
   @override
@@ -100,10 +127,7 @@ class MultimediaItem {
 
   @override
   int get hashCode =>
-      url.hashCode ^
-      title.hashCode ^
-      posterUrl.hashCode ^
-      (provider?.hashCode ?? 0);
+      url.hashCode ^ title.hashCode ^ posterUrl.hashCode ^ (provider?.hashCode ?? 0);
 }
 
 class Episode {

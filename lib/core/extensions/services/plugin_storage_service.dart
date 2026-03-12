@@ -5,7 +5,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../models/extension_plugin.dart';
 import 'dart:convert';
-import '../utils/js_manifest_parser.dart';
 
 class PluginStorageService {
   /// Root directory for extensions: app_doc_dir/extensions/plugin/
@@ -21,8 +20,8 @@ class PluginStorageService {
   /// Installs a plugin from a .sky (Zip) file.
   ///
   /// 1. Reads the zip.
-  /// 2. Extracts `plugin.js`.
-  /// 3. Parses `getManifest()` from JS to get metadata (ID, Version, etc).
+  /// 2. Extracts `plugin.json`.
+  /// 3. Parses the JSON for metadata (ID, Version, etc).
   /// 4. Installs to: plugin/[ID]/
   /// 5. Generates `meta.json` for caching.
   Future<ExtensionPlugin?> installPlugin(
@@ -36,21 +35,23 @@ class PluginStorageService {
     final bytes = await file.readAsBytes();
     final archive = ZipDecoder().decodeBytes(bytes);
 
-    // Find plugin.js
-    final jsFile = archive.findFile('plugin.js');
-    if (jsFile == null) throw Exception("Invalid .sky: Missing plugin.js");
+    // Find and parse plugin.json (Plugin v2 Standard)
+    final jsonFile = archive.findFile('plugin.json');
+    if (jsonFile == null) {
+      throw Exception("Invalid .sky: Missing plugin.json (V2 Standard required)");
+    }
 
-    final jsContent = utf8.decode(jsFile.content as List<int>);
-
-    // Extract Manifest
-    final manifestMap = _extractManifestFromJs(jsContent);
-    if (manifestMap == null) {
-      throw Exception("Failed to parse getManifest() from plugin.js");
+    final jsonContent = utf8.decode(jsonFile.content as List<int>);
+    final Map<String, dynamic> manifestMap;
+    try {
+      manifestMap = jsonDecode(jsonContent);
+    } catch (e) {
+      throw Exception("Failed to parse plugin.json: $e");
     }
 
     // Ensure ID exists
     if (manifestMap['id'] == null) {
-      throw Exception("Plugin Manifest missing 'id'");
+      throw Exception("Plugin Manifest (plugin.json) missing 'id'");
     }
 
     // Create ExtensionPlugin Object
@@ -141,19 +142,17 @@ class PluginStorageService {
             continue;
           }
 
-          // Check for plugin.js (Recover manifest if meta.json missing)
-          final jsFile = File(p.join(entity.path, 'plugin.js'));
-          if (await jsFile.exists()) {
-            final content = await jsFile.readAsString();
-            final manifest = _extractManifestFromJs(content);
-            if (manifest != null) {
-              // Auto-generate meta.json
-              const repoId = 'Local'; // recovered
-              manifest['repositoryId'] = repoId;
-              await metaFile.writeAsString(jsonEncode(manifest));
-              plugins.add(ExtensionPlugin.fromJson(manifest, repoId));
-              continue;
-            }
+          // Check for plugin.json (Plugin v2 Standard)
+          final jsonFile = File(p.join(entity.path, 'plugin.json'));
+          if (await jsonFile.exists()) {
+            final content = await jsonFile.readAsString();
+            final manifest = jsonDecode(content) as Map<String, dynamic>;
+            // Auto-generate meta.json if missing
+            const repoId = 'Local'; 
+            manifest['repositoryId'] = repoId;
+            await metaFile.writeAsString(jsonEncode(manifest));
+            plugins.add(ExtensionPlugin.fromJson(manifest, repoId));
+            continue;
           }
 
           // Legacy Folder Structure Loop (Optional: if we still want to see old plugins?)
@@ -178,7 +177,4 @@ class PluginStorageService {
     return jsFile.path;
   }
 
-  Map<String, dynamic>? _extractManifestFromJs(String content) {
-    return JsManifestParser.parse(content);
-  }
 }

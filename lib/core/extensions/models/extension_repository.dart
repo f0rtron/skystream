@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'extension_plugin.dart';
 
 class ExtensionRepository {
   final String name;
@@ -9,6 +10,7 @@ class ExtensionRepository {
   final int manifestVersion;
   final List<String> pluginLists;
   final List<String> includedRepos;
+  final List<ExtensionPlugin> plugins; // NEW: Direct plugin list
   final String? _explicitId;
 
   ExtensionRepository({
@@ -16,6 +18,7 @@ class ExtensionRepository {
     required this.url,
     required this.pluginLists,
     this.includedRepos = const [],
+    this.plugins = const [],
     this.description,
     this.iconUrl,
     this.manifestVersion = 1,
@@ -28,11 +31,15 @@ class ExtensionRepository {
 
   /// Factory constructor to parse from JSON
   factory ExtensionRepository.fromJson(Map<String, dynamic> json, String url) {
+    final repoId = json['id'] as String? ?? 'Unknown';
     return ExtensionRepository(
       name: json['name'] as String? ?? 'Unknown Repository',
       url: url,
       pluginLists: (json['pluginLists'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
       includedRepos: (json['repos'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      plugins: (json['plugins'] as List<dynamic>?)
+          ?.map((e) => ExtensionPlugin.fromJson(e as Map<String, dynamic>, repoId))
+          .toList() ?? [],
       description: json['description'] as String?,
       iconUrl: json['iconUrl'] as String?,
       manifestVersion: json['manifestVersion'] as int? ?? 1,

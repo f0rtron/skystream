@@ -71,7 +71,7 @@ Stream<SearchAggregateState> searchAllProviders(
                 posterUrl: item.posterUrl,
                 bannerUrl: item.bannerUrl,
                 description: item.description,
-                isFolder: item.isFolder,
+                contentType: item.contentType,
                 episodes: item.episodes,
                 provider: provider.id,
               ),

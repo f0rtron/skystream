@@ -14,6 +14,7 @@ class ExtensionPlugin {
   final List<String> languages; // e.g. ["en"]
   final int? fileSize; // In bytes
   final int status; // 0: Down, 1: Ok, 2: Slow, 3: Beta
+  final Map<String, dynamic> manifest; // Raw JSON manifest
 
   ExtensionPlugin({
     required this.id,
@@ -29,6 +30,7 @@ class ExtensionPlugin {
     this.categories = const [],
     this.languages = const [],
     this.fileSize,
+    this.manifest = const {},
   });
 
   /// The Globally Unique ID
@@ -60,17 +62,16 @@ class ExtensionPlugin {
     Map<String, dynamic> json,
     String repositoryId,
   ) {
-    // Legacy fallback: valid internalName or name
-    final internal = json['internalName'] as String? ?? 'UnknownInternalName';
-    final fallbackId = "$repositoryId.$internal";
+    final internal = json['internalName'] as String? ?? json['name']?.toString().toUpperCase().replaceAll(RegExp(r'\s+'), '') ?? 'UNKNOWN';
+    final fallbackId = "$repositoryId.${internal.toLowerCase()}";
 
     return ExtensionPlugin(
-      id: json['id'] as String? ?? fallbackId,
+      id: (json['id'] as String?) ?? (json['package-name'] as String?) ?? fallbackId,
       name: json['name'] as String? ?? 'Unknown Plugin',
       internalName: internal,
       repositoryId: repositoryId,
       sourceUrl: json['url'] as String? ?? '',
-      version: json['version'] as int? ?? 0,
+      version: json['version'] as int? ?? 1,
       status: json['status'] as int? ?? 1,
       iconUrl: json['iconUrl'] as String?,
       authors:
@@ -79,9 +80,10 @@ class ExtensionPlugin {
               .toList() ??
           [],
       description: json['description'] as String?,
-      categories: _readList(json, ['categories', 'tvTypes', 'types']),
+      categories: _readList(json, ['categories', 'types', 'tvTypes']),
       languages: _readList(json, ['languages', 'language', 'lang']),
       fileSize: json['fileSize'] as int?,
+      manifest: json,
     );
   }
 }

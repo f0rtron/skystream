@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'dart:io';
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/extensions/models/extension_plugin.dart';
 import '../../../../core/extensions/models/extension_repository.dart';
@@ -10,7 +11,6 @@ import '../../../../core/extensions/providers.dart';
 import '../../../../core/extensions/services/repository_service.dart';
 import '../../../../core/extensions/services/plugin_storage_service.dart';
 import '../../../core/storage/settings_repository.dart';
-import '../../../../core/extensions/utils/js_manifest_parser.dart';
 
 // State for the Extensions Screen
 class ExtensionsState {
@@ -111,17 +111,21 @@ class ExtensionsController extends Notifier<ExtensionsState> {
       final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
       final assets = manifest.listAssets();
 
-      final pluginFiles = assets
+      // Find all .json manifest files. Each manifest.json represents a plugin.
+      final manifestFiles = assets
           .where(
-            (key) => key.startsWith('assets/plugins/') && key.endsWith('.js'),
+            (key) => key.startsWith('assets/plugins/') && key.endsWith('.json'),
           )
           .toList();
 
       final plugins = <ExtensionPlugin>[];
 
-      for (final file in pluginFiles) {
-        final content = await rootBundle.loadString(file);
-        final plugin = _parseJsPlugin(content, file);
+      for (final configFile in manifestFiles) {
+        final content = await rootBundle.loadString(configFile);
+        // The .js file is expected to have the same name as the .json file
+        final jsFile = configFile.replaceFirst('.json', '.js');
+        
+        final plugin = _parseJsonManifest(content, jsFile);
         if (plugin != null) {
           plugins.add(plugin);
         }
@@ -133,37 +137,29 @@ class ExtensionsController extends Notifier<ExtensionsState> {
     }
   }
 
-  ExtensionPlugin? _parseJsPlugin(String content, String filePath) {
+  ExtensionPlugin? _parseJsonManifest(String content, String jsFilePath) {
     try {
-      final jsonMap = JsManifestParser.parse(content);
+      final json = Map<String, dynamic>.from(jsonDecode(content));
 
-      if (jsonMap != null) {
-        final json = Map<String, dynamic>.from(jsonMap);
-
-        // Ensure ID
-        if (json['id'] == null) {
-          // Fallback for dev if missing
-          json['id'] = "local.asset.${filePath.split('/').last}";
-        }
-
-        // Apply .debug suffix for asset plugins to allow coexistence with release versions
-        // and for easy identification in UI
-        if (filePath.startsWith('assets/')) {
-          final originalId = json['id'];
-          if (!originalId.toString().endsWith('.debug')) {
-            json['id'] = "$originalId.debug";
-          }
-        }
-
-        // Inject sourceUrl (filePath) so it is picked up by fromJson
-        json['url'] = filePath;
-
-        return ExtensionPlugin.fromJson(json, 'LocalAssets');
+      // Ensure ID exists
+      if (json['id'] == null) {
+        json['id'] = "local.asset.${jsFilePath.split('/').last}";
       }
 
-      return null;
+      // Apply .debug suffix for asset plugins for identification
+      if (jsFilePath.startsWith('assets/')) {
+        final String originalId = json['id'].toString();
+        if (!originalId.endsWith('.debug')) {
+          json['id'] = "$originalId.debug";
+        }
+      }
+
+      // Important: The sourceUrl for the provider is the .js file
+      json['url'] = jsFilePath;
+
+      return ExtensionPlugin.fromJson(json, 'LocalAssets');
     } catch (e) {
-      debugPrint("Error parsing asset plugin $filePath: $e");
+      debugPrint("Error parsing json manifest for $jsFilePath: $e");
       return null;
     }
   }

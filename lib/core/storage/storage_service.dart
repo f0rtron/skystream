@@ -67,7 +67,7 @@ class StorageService {
       'posterUrl': item.posterUrl,
       'bannerUrl': item.bannerUrl,
       'description': item.description,
-      'isFolder': item.isFolder,
+      'type': item.contentType.name,
       'provider': item.provider,
     });
   }
@@ -92,7 +92,7 @@ class StorageService {
           posterUrl: map['posterUrl'] ?? '',
           bannerUrl: map['bannerUrl'],
           description: map['description'],
-          isFolder: map['isFolder'] ?? false,
+          contentType: MultimediaItem.parseContentType(map['type'] ?? map['contentType']),
           provider: map['provider'],
         ),
       );
@@ -184,7 +184,7 @@ class StorageService {
       'posterUrl': item.posterUrl,
       'bannerUrl': item.bannerUrl,
       'description': item.description,
-      'isFolder': item.isFolder,
+      'contentType': item.contentType.name,
       'provider': item.provider,
       'position': positionMillis,
       'duration': durationMillis,

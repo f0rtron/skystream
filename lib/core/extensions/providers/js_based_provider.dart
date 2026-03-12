@@ -22,6 +22,7 @@ class JsBasedProvider extends SkyStreamProvider {
   final String? _forcedName;
 
   late Future<void> _initFuture;
+  final Map<String, dynamic>? _initialManifest;
 
   // Update constructor
   JsBasedProvider(
@@ -30,9 +31,11 @@ class JsBasedProvider extends SkyStreamProvider {
     required String id,
     String? namespace,
     String? forcedName,
+    Map<String, dynamic>? manifest,
   }) : _id = id,
        _namespace = namespace,
-       _forcedName = forcedName {
+       _forcedName = forcedName,
+       _initialManifest = manifest {
     _initFuture = _init();
   }
 
@@ -58,59 +61,50 @@ class JsBasedProvider extends SkyStreamProvider {
     }
 
     if (script != null) {
-      // Wrap script if namespace provided
+      // 1. Ensure manifest is populated BEFORE evaluation
+      if (_initialManifest != null && _initialManifest!.isNotEmpty) {
+        _manifest = _initialManifest!;
+      }
+
+      final manifestJson = jsonEncode(_manifest);
+
+      // 2. Enforce IIFE wrapping for namespaced execution (Plugin v2 Standard)
       if (_namespace != null) {
-        script =
-            """
-          globalThis['$_namespace'] = (function() {
-              $script
-              
-              return {
-                  getManifest: (typeof getManifest !== 'undefined') ? getManifest : undefined,
-                  getHome: (typeof getHome !== 'undefined') ? getHome : undefined,
-                  search: (typeof search !== 'undefined') ? search : undefined,
-                  load: (typeof load !== 'undefined') ? load : undefined,
-                  loadStreams: (typeof loadStreams !== 'undefined') ? loadStreams : undefined,
-              };
+        script = """
+          (function() {
+              // Standard v2: Every plugin strictly uses the injected manifest.
+              const manifest = $manifestJson;
+
+              var exports = (function() {
+                  $script
+                  
+                  return {
+                      getHome: (typeof getHome !== 'undefined') ? getHome : (typeof globalThis.getHome !== 'undefined' ? globalThis.getHome : undefined),
+                      search: (typeof search !== 'undefined') ? search : (typeof globalThis.search !== 'undefined' ? globalThis.search : undefined),
+                      load: (typeof load !== 'undefined') ? load : (typeof globalThis.load !== 'undefined' ? globalThis.load : undefined),
+                      loadStreams: (typeof loadStreams !== 'undefined') ? loadStreams : (typeof globalThis.loadStreams !== 'undefined' ? globalThis.loadStreams : undefined),
+                  };
+              })();
+              globalThis['$_namespace'] = exports;
+
+              // Final Cleanup: If the plugin polluted globalThis (old style), we clean it up 
+              // after capturing it into the namespace.
+              if (globalThis.getHome) delete globalThis.getHome;
+              if (globalThis.search) delete globalThis.search;
+              if (globalThis.load) delete globalThis.load;
+              if (globalThis.loadStreams) delete globalThis.loadStreams;
           })();
           """;
       }
 
       try {
         await _jsEngine.loadScript(script);
-
-        try {
-          final funcName = _namespace != null
-              ? '$_namespace.getManifest'
-              : 'getManifest';
-          final manifest = await _jsEngine.callFunction(funcName);
-          // ... (rest unchanged)
-          if (manifest is Map) {
-            _manifest = Map<String, dynamic>.from(manifest);
-          } else {
-            if (kDebugMode) {
-              String msg = manifest.toString();
-              if (msg.length > 500) {
-                msg = "${msg.substring(0, 500)}... [Truncated]";
-              }
-              debugPrint(
-                "Error: getManifest returned non-Map: $msg for $_scriptPath",
-              );
-            }
-            _error = "Manifest type err";
-          }
-        } catch (e) {
-          if (kDebugMode) {
-            debugPrint("Error loading manifest for $_scriptPath: $e");
-          }
-          _error = "Manifest: $e";
-        }
+        debugPrint("JsBasedProvider: Loaded namespaced script for $_id");
       } catch (e) {
-        if (kDebugMode) debugPrint("Error evaluating script $_scriptPath: $e");
         _error = "Eval: $e";
+        debugPrint("JsBasedProvider: CRITICAL - Eval failed for $_id: $e");
       }
     } else {
-      if (kDebugMode) debugPrint("JS Script not found at $_scriptPath");
       _error = "Not found";
     }
   }
@@ -203,60 +197,85 @@ class JsBasedProvider extends SkyStreamProvider {
   @override
   Future<Map<String, List<MultimediaItem>>> getHome() async {
     await _initFuture;
-    final result = await _jsEngine.invokeAsync(_fn('getHome'));
-    if (result is Map<String, dynamic>) {
-      final map = <String, List<MultimediaItem>>{};
-      result.forEach((key, value) {
-        if (value is List) {
-          map[key] = value
-              .map((e) => MultimediaItem.fromJson(Map<String, dynamic>.from(e)))
-              .toList();
-        }
-      });
-      return map;
+    if (_error != null) throw JsPluginException("INIT_ERROR", _error!);
+    try {
+      final result = await _jsEngine.invokeAsync(_fn('getHome'));
+      if (result is Map) {
+        final map = <String, List<MultimediaItem>>{};
+        result.forEach((key, value) {
+          if (value is List) {
+            map[key.toString()] = value
+                .map(
+                  (e) =>
+                      MultimediaItem.fromJson(Map<String, dynamic>.from(e)),
+                )
+                .toList();
+          }
+        });
+        return map;
+      }
+      throw Exception("Extension returned invalid home data (not a map).");
+    } on JsPluginException catch (e) {
+      if (kDebugMode) debugPrint("JsPluginException in getHome: $e");
+      rethrow;
+    } catch (e) {
+      if (kDebugMode) debugPrint("Error in getHome: $e");
+      throw Exception("Failed to load home content: $e");
     }
-    // Throw error if result is invalid (null or not a map) to trigger Error Screen
-    throw Exception("Extension returned invalid data (null or not a map).");
   }
 
   @override
   Future<List<MultimediaItem>> search(String query) async {
     await _initFuture;
-    final result = await _jsEngine.invokeAsync(_fn('search'), [query]);
-    if (result is List) {
-      return result
-          .map((e) => MultimediaItem.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
+    if (_error != null) throw JsPluginException("INIT_ERROR", _error!);
+    try {
+      final result = await _jsEngine.invokeAsync(_fn('search'), [query]);
+      if (result is List) {
+        return result
+            .map((e) => MultimediaItem.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+      }
+      return [];
+    } on JsPluginException catch (e) {
+      if (kDebugMode) debugPrint("JsPluginException in search: $e");
+      rethrow;
+    } catch (e) {
+      if (kDebugMode) debugPrint("Error in search: $e");
+      return [];
     }
-    return [];
   }
 
   @override
   Future<MultimediaItem> getDetails(String url) async {
     await _initFuture;
+    if (_error != null) throw JsPluginException("INIT_ERROR", _error!);
     try {
       final result = await _jsEngine.invokeAsync(_fn('load'), [url]);
       if (result is Map) {
-        // ...
         final map = Map<String, dynamic>.from(result);
         if (map['url'] == null || map['url'].toString().isEmpty) {
           map['url'] = url;
         }
         return MultimediaItem.fromJson(map);
       }
+      throw Exception("Extension returned invalid detail data.");
+    } on JsPluginException catch (e) {
+      if (kDebugMode) debugPrint("JsPluginException in getDetails: $e");
+      rethrow;
     } catch (e) {
       if (kDebugMode) debugPrint("Error in getDetails: $e");
+      return MultimediaItem(
+        title: "Error: $e",
+        url: url,
+        posterUrl: "",
+      );
     }
-    return MultimediaItem(
-      title: "Error loading details",
-      url: url,
-      posterUrl: "",
-    );
   }
 
   @override
   Future<List<StreamResult>> loadStreams(String url) async {
     await _initFuture;
+    if (_error != null) throw JsPluginException("INIT_ERROR", _error!);
     await LocalProxyService.instance.startServer();
 
     try {
@@ -272,13 +291,6 @@ class JsBasedProvider extends SkyStreamProvider {
               final base64Content = finalUrl.substring("magic_m3u8:".length);
               final bytes = base64Decode(base64Content);
               var m3u8Content = utf8.decode(bytes);
-
-              // M3U8 Rewriting is now done by LocalProxyService recursively if we serve it,
-              // BUT the JS might have pre-encoded "MAGIC_PROXY_v1" placeholders.
-              // We should probably strip those or let the Proxy Service handle them?
-              // Actually, the new ProxyService doesn't know about "MAGIC_PROXY_v1".
-              // We need to keep the placeholder replacement OR rely on the JS to produce clean URLs.
-              // The current JS produces "MAGIC_PROXY_v1".
 
               // Compatibility: Replace MAGIC_PROXY_v1 with real local proxy URLs
               m3u8Content = m3u8Content.replaceAllMapped(
@@ -303,7 +315,6 @@ class JsBasedProvider extends SkyStreamProvider {
           // DIRECT PROXY URL HANDLING
           else if (finalUrl.startsWith("MAGIC_PROXY_v1")) {
             try {
-              // Strip prefix
               final b64Url = finalUrl.substring("MAGIC_PROXY_v1".length);
               final realUrlBytes = base64Decode(b64Url);
               final realUrl = utf8.decode(realUrlBytes);
@@ -335,9 +346,13 @@ class JsBasedProvider extends SkyStreamProvider {
           );
         }).toList();
       }
+      return [];
+    } on JsPluginException catch (e) {
+      if (kDebugMode) debugPrint("JsPluginException in loadStreams: $e");
+      rethrow;
     } catch (e) {
       if (kDebugMode) debugPrint("Error in loadStreams: $e");
+      return [];
     }
-    return [];
   }
 }

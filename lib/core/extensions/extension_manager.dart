@@ -132,8 +132,9 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
       final provider = JsBasedProvider(
         _engine!,
         path,
-        id: plugin.id, // Pass ID
+        id: plugin.id,
         namespace: namespace,
+        manifest: plugin.manifest, // Pass pre-parsed manifest
       );
 
       debugPrint("ExtensionManager: Waiting for init of $namespace");

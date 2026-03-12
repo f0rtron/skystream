@@ -12,6 +12,17 @@ import 'package:encrypt/encrypt.dart' as encrypt_lib;
 
 import '../../network/dio_client_provider.dart';
 
+class JsPluginException implements Exception {
+  final String code;
+  final String message;
+  final String? pluginId;
+
+  JsPluginException(this.code, this.message, {this.pluginId});
+
+  @override
+  String toString() => "JsPluginException[$code]: $message";
+}
+
 final jsEngineProvider = Provider.autoDispose<JsEngineService>((ref) {
   final storage = ref.read(extensionRepositoryProvider);
   final dio = ref.read(dioClientProvider);
@@ -177,8 +188,50 @@ class JsEngineService {
       }
     """);
 
-    // CloudStream Environment Stubs
+    // Standard Entities
     _runtime.evaluate("""
+      class MultimediaItem {
+        constructor({ title, url, posterUrl, type, bannerUrl, description, episodes, headers, provider }) {
+          this.title = title;
+          this.url = url;
+          this.posterUrl = posterUrl;
+          this.type = type || 'movie';
+          this.bannerUrl = bannerUrl;
+          this.description = description;
+          this.episodes = episodes;
+          this.headers = headers;
+          this.provider = provider;
+        }
+      }
+
+      class Episode {
+        constructor({ name, url, season, episode, description, posterUrl, headers }) {
+          this.name = name;
+          this.url = url;
+          this.season = season || 0;
+          this.episode = episode || 0;
+          this.description = description;
+          this.posterUrl = posterUrl;
+          this.headers = headers;
+        }
+      }
+
+      class StreamResult {
+        constructor({ url, quality, headers, subtitles, drmKid, drmKey, licenseUrl }) {
+          this.url = url;
+          this.quality = quality || 'Auto';
+          this.headers = headers;
+          this.subtitles = subtitles;
+          this.drmKid = drmKid;
+          this.drmKey = drmKey;
+          this.licenseUrl = licenseUrl;
+        }
+      }
+
+      globalThis.MultimediaItem = MultimediaItem;
+      globalThis.Episode = Episode;
+      globalThis.StreamResult = StreamResult;
+
       var CloudStream = {
          getLanguage: function() { return "en"; },
          getRegion: function() { return "US"; }
@@ -331,20 +384,40 @@ class JsEngineService {
       if (isResolved) return;
       isResolved = true;
 
+      // Unpack standard v2 PluginResult if present
+      // We skip this check for getManifest which returns metadata directly for speed.
+      bool isManifestRequest = functionName.endsWith("getManifest");
+
+      dynamic unwrapped;
       if (result is String) {
         if (result == "__dart_void__") {
-          completer.complete(null);
+          unwrapped = null;
         } else {
           try {
-            completer.complete(jsonDecode(result));
+            unwrapped = jsonDecode(result);
           } catch (e) {
-            completer.complete(result);
+            unwrapped = result;
           }
         }
       } else if (result is Map && result.containsKey('__dart_error__')) {
         completer.completeError(result['__dart_error__']);
+        return;
       } else {
-        completer.complete(result);
+        unwrapped = result;
+      }
+
+      if (!isManifestRequest && unwrapped is Map) {
+        final success = unwrapped['success'] ?? false;
+        if (!success) {
+          final code = unwrapped['errorCode'] ?? 'UNKNOWN_ERROR';
+          final message = unwrapped['message'] ?? 'An unexpected plugin error occurred';
+          completer.completeError(JsPluginException(code, message));
+          return;
+        }
+        // Success case: return the nested data
+        completer.complete(unwrapped['data']);
+      } else {
+        completer.complete(unwrapped);
       }
     }
 

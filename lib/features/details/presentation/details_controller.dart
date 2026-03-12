@@ -103,7 +103,7 @@ class DetailsController extends Notifier<DetailsState> {
           );
         }
 
-        _processEpisodes(itemToUse.episodes);
+        _processEpisodes(itemToUse.episodes, itemToUse);
         state = state.copyWith(details: AsyncData(itemToUse));
         return;
       }
@@ -125,7 +125,7 @@ class DetailsController extends Notifier<DetailsState> {
         final fetchedItem = await provider.getDetails(item.url);
         final withProvider = fetchedItem.copyWith(provider: provider.id);
 
-        _processEpisodes(withProvider.episodes);
+        _processEpisodes(withProvider.episodes, withProvider);
         state = state.copyWith(details: AsyncData(withProvider));
       } else {
         throw Exception("No provider selected or found for this item");
@@ -135,13 +135,22 @@ class DetailsController extends Notifier<DetailsState> {
     }
   }
 
-  void _processEpisodes(List<Episode>? episodes) {
+  void _processEpisodes(List<Episode>? episodes, MultimediaItem contextItem) {
+    // Determine isMovie based on contentType if available
+    bool isMovie = contextItem.contentType == MultimediaContentType.movie ||
+                   contextItem.contentType == MultimediaContentType.livestream;
+
     if (episodes == null || episodes.isEmpty) {
-      state = state.copyWith(isMovie: false, seasonMap: {});
+      state = state.copyWith(isMovie: isMovie, seasonMap: {});
       return;
     }
 
-    if (episodes.length == 1) {
+    // Fallback: If not explicitly movie/livestream, check episode count for legacy support
+    if (!isMovie && episodes.length == 1) {
+      isMovie = true;
+    }
+
+    if (isMovie) {
       state = state.copyWith(
         isMovie: true,
         seasonMap: {1: episodes},

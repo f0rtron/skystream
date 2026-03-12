@@ -1,0 +1,9 @@
+{
+  "name": "My-Repo",
+  "id": "dev.akash.abc",
+  "description": "SkyStream plugins repository",
+  "manifestVersion": 1,
+  "pluginLists": [
+    "REPLACE_WITH_BASE_URL/plugins.json"
+  ]
+}

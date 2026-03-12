@@ -29,7 +29,7 @@ class HistoryItem {
         posterUrl: map['posterUrl'] ?? '',
         bannerUrl: map['bannerUrl'],
         description: map['description'],
-        isFolder: map['isFolder'] ?? false,
+        contentType: MultimediaItem.parseContentType(map['type'] ?? map['contentType'] ?? 'movie'),
         provider: map['provider'],
       ),
       position: map['position'] ?? 0,
