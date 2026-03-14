@@ -15,6 +15,7 @@ class ExtensionPlugin {
   final int status; // 0: Down, 1: Ok, 2: Slow, 3: Beta
   final Map<String, dynamic> manifest; // Raw JSON manifest
   final String? customBaseUrl; // User-defined override for baseUrl
+  final List<dynamic>? settingsSchema; // Dynamic settings schema from JS bridge
 
   ExtensionPlugin({
     required this.packageName,
@@ -31,6 +32,7 @@ class ExtensionPlugin {
     this.fileSize,
     this.manifest = const {},
     this.customBaseUrl,
+    this.settingsSchema,
   });
 
   /// Helper to check if this is a debug/asset plugin
@@ -83,6 +85,7 @@ class ExtensionPlugin {
       fileSize: json['fileSize'] as int?,
       manifest: json,
       customBaseUrl: json['customBaseUrl'] as String?,
+      settingsSchema: json['settingsSchema'] as List<dynamic>?,
     );
   }
 
@@ -102,6 +105,7 @@ class ExtensionPlugin {
       fileSize: fileSize,
       manifest: manifest,
       customBaseUrl: customBaseUrl ?? this.customBaseUrl,
+      settingsSchema: settingsSchema ?? this.settingsSchema,
     );
   }
 }

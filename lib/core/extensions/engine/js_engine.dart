@@ -9,6 +9,8 @@ import 'package:cookie_jar/cookie_jar.dart';
 import '../../storage/extension_repository.dart';
 import '../../network/cloudflare_bypass.dart';
 import 'package:encrypt/encrypt.dart' as encrypt_lib;
+import '../services/plugin_storage_service.dart';
+import '../providers.dart';
 
 import '../../network/dio_client_provider.dart';
 import 'package:html/parser.dart' as html_parser;
@@ -27,23 +29,28 @@ class JsPluginException implements Exception {
 
 final jsEngineProvider = Provider.autoDispose<JsEngineService>((ref) {
   final storage = ref.read(extensionRepositoryProvider);
+  final pluginStorage = ref.read(pluginStorageServiceProvider);
   final dio = ref.read(dioClientProvider);
-  final service = JsEngineService(storage, dio);
+  final service = JsEngineService(storage, pluginStorage, dio);
   ref.onDispose(() => service.dispose());
   return service;
 });
 
 class JsEngineService {
-  late JavascriptRuntime _runtime;
+  final JavascriptRuntime _runtime;
   final Dio _dio;
   final CookieJar _cookieJar = CookieJar(); // RAM-based cookie jar
   final ExtensionRepository _storage;
+  final PluginStorageService _pluginStorage;
+
+  // Track the plugin currently being initialized to associate registerSettings calls
+  String? currentPackageName;
 
   // Persistent callback registry to prevent memory leaks from dynamic listeners
   final Map<String, Completer<dynamic>> _pendingCallbacks = {};
   final Map<String, dynamic> _domRegistry = {};
 
-  JsEngineService(this._storage, this._dio) {
+  JsEngineService(this._storage, this._pluginStorage, this._dio) : _runtime = getJavascriptRuntime() {
     final bool hasCookieManager = _dio.interceptors.any(
       (i) => i is CookieManager,
     );
@@ -51,7 +58,7 @@ class JsEngineService {
       _dio.interceptors.add(CookieManager(_cookieJar));
     }
     // DohInterceptor is provided globally by dioClientProvider
-    _runtime = getJavascriptRuntime();
+    // DohInterceptor is provided globally by dioClientProvider
     // Defer polyfill injection to avoid blocking the UI thread
     Future.microtask(() => _initPolyfills());
   }
@@ -147,6 +154,30 @@ class JsEngineService {
       return _handleStorage(args, false);
     });
 
+    _runtime.onMessage('get_preference', (dynamic args) {
+      try {
+        final Map<String, dynamic> data = args is Map ? Map<String, dynamic>.from(args) : jsonDecode(args.toString());
+        final String packageName = data['packageName'];
+        final String key = data['key'];
+        return _storage.getExtensionData("$packageName:$key");
+      } catch (e) {
+        return null;
+      }
+    });
+
+    _runtime.onMessage('set_preference', (dynamic args) async {
+      try {
+        final Map<String, dynamic> data = args is Map ? Map<String, dynamic>.from(args) : jsonDecode(args.toString());
+        final String packageName = data['packageName'];
+        final String key = data['key'];
+        final dynamic value = data['value'];
+        await _storage.setExtensionData("$packageName:$key", value);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    });
+
     // Base64 Bridge
     _runtime.onMessage('base64_decode', (dynamic args) {
       try {
@@ -185,9 +216,14 @@ class JsEngineService {
         final Map<String, dynamic> data = args is Map
             ? Map<String, dynamic>.from(args)
             : jsonDecode(args);
-        final String nodeId = data['nodeId'];
-        final String query = data['query'];
+        final String? nodeId = data['nodeId'];
+        final String? query = data['query'];
         final bool multi = data['multi'] ?? false;
+
+        if (nodeId == null || query == null) {
+           if (kDebugMode) debugPrint("[DOM Query Error] nodeId or query is null");
+           return null;
+        }
 
         final node = _domRegistry[nodeId];
         if (node == null) return null;
@@ -215,9 +251,16 @@ class JsEngineService {
     });
 
     // Native SDK Helpers
-    _runtime.onMessage('register_settings', (dynamic args) {
+    _runtime.onMessage('register_settings', (dynamic args) async {
       if (kDebugMode) debugPrint("[JS SDK] Settings Registration: $args");
-      // Future: Store schema in extension database for UI generation
+      if (currentPackageName != null) {
+        try {
+          final schema = args is List ? args : jsonDecode(args.toString());
+          await _pluginStorage.saveSettingsSchema(currentPackageName!, schema);
+        } catch (e) {
+          debugPrint("Failed to save settings schema for $currentPackageName: $e");
+        }
+      }
     });
 
     _runtime.onMessage('solve_captcha', (dynamic args) async {
@@ -265,40 +308,37 @@ class JsEngineService {
     _runtime.evaluate("""
       async function _dartHttp(method, url, headers, body) {
          try {
-            return await sendMessage('http_request', JSON.stringify({
+            var res = await sendMessage('http_request', JSON.stringify({
               method: method,
               url: url,
               headers: headers,
               body: body
             }));
+            if (typeof res === 'string') res = JSON.parse(res);
+            return res;
          } catch(e) {
             console.error("HTTP Bridge Error: " + e);
-            throw e;
+            return { status: 0, statusCode: 0, body: "", error: e.toString() };
          }
       }
 
       function http_get(url, headers, cb) {
-         var promise = _dartHttp('GET', url, headers, null);
-         if (cb && typeof cb === 'function') {
-            promise.then(cb).catch(function(err) { cb({status: 0, body: ""}); });
-         }
+         var promise = _dartHttp('GET', url, headers, null).then(function(res) {
+            if (cb && typeof cb === 'function') cb(res);
+            return res.body;
+         });
          return promise;
       }
       
       async function _fetch(url) {
-          var res = await http_get(url, {});
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-              return res.body; 
-          } else {
-              throw "HTTP Error " + res.statusCode + " fetching " + url;
-          }
+          return await http_get(url, {});
       }
       
       function http_post(url, headers, body, cb) {
-         var promise = _dartHttp('POST', url, headers, body);
-         if (cb && typeof cb === 'function') {
-            promise.then(cb).catch(function(err) { cb({status: 0, body: ""}); });
-         }
+         var promise = _dartHttp('POST', url, headers, body).then(function(res) {
+            if (cb && typeof cb === 'function') cb(res);
+            return res.body;
+         });
          return promise;
       }
     """);
@@ -536,6 +576,12 @@ class JsEngineService {
           : null;
       final dynamic body = req['body'];
 
+      final Map<String, dynamic> finalHeaders = headers ?? {};
+      if (!finalHeaders.keys.any((k) => k.toLowerCase() == 'user-agent')) {
+        finalHeaders['User-Agent'] =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36";
+      }
+
       debugPrint("[JS HTTP] $method $url ($requestId)");
 
       final response = await _dio.request(
@@ -543,7 +589,7 @@ class JsEngineService {
         data: body,
         options: Options(
           method: method,
-          headers: headers,
+          headers: finalHeaders,
           responseType: ResponseType.plain,
           validateStatus: (_) => true,
         ),

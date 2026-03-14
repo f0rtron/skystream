@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/layout_constants.dart';
-import '../../../../core/extensions/models/extension_plugin.dart';
+import '../../../core/extensions/models/extension_plugin.dart';
 import '../../../core/providers/device_info_provider.dart';
 import '../../../shared/widgets/custom_widgets.dart';
 import '../providers/extensions_controller.dart';
+import '../widgets/plugin_settings_dialog.dart';
 
 class ExtensionsScreen extends ConsumerStatefulWidget {
   const ExtensionsScreen({super.key});
@@ -477,6 +478,19 @@ class _PluginTile extends ConsumerWidget {
                 ref
                     .read(extensionsControllerProvider.notifier)
                     .updatePlugin(updateAvailable);
+              },
+            ),
+
+          // Settings Button
+          if (isInstalled && installedPlugin.settingsSchema != null)
+            IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: "Settings",
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => PluginSettingsDialog(plugin: installedPlugin),
+                );
               },
             ),
 

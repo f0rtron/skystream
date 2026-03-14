@@ -14,12 +14,7 @@ class Actor {
   final String? role;
   final Actor? voiceActor;
 
-  Actor({
-    required this.name,
-    this.image,
-    this.role,
-    this.voiceActor,
-  });
+  Actor({required this.name, this.image, this.role, this.voiceActor});
 
   factory Actor.fromJson(Map<String, dynamic> json) {
     return Actor(
@@ -51,15 +46,14 @@ class Trailer {
   factory Trailer.fromJson(Map<String, dynamic> json) {
     return Trailer(
       url: json['url'] ?? json['extractorUrl'] ?? '',
-      headers: json['headers'] != null ? Map<String, String>.from(json['headers']) : null,
+      headers: json['headers'] != null
+          ? Map<String, String>.from(json['headers'])
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'url': url,
-      'headers': headers,
-    };
+    return {'url': url, 'headers': headers};
   }
 }
 
@@ -79,11 +73,7 @@ class NextAiring {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'episode': episode,
-      'unixTime': unixTime,
-      'season': season,
-    };
+    return {'episode': episode, 'unixTime': unixTime, 'season': season};
   }
 }
 
@@ -153,15 +143,21 @@ class MultimediaItem {
       posterUrl: json['posterUrl'] ?? '',
       bannerUrl: json['backgroundPosterUrl'] ?? json['bannerUrl'],
       logoUrl: json['logoUrl'],
-      description: json['description'] != null ? _unescape.convert(json['description']) : null,
+      description: json['description'] != null
+          ? _unescape.convert(json['description'])
+          : null,
       contentType: type,
       episodes: json['episodes'] != null
           ? (json['episodes'] as List)
-              .map<Episode>((e) => Episode.fromJson(Map<String, dynamic>.from(e)))
-              .toList()
+                .map<Episode>(
+                  (e) => Episode.fromJson(Map<String, dynamic>.from(e)),
+                )
+                .toList()
           : null,
       provider: json['provider'],
-      headers: json['headers'] != null ? Map<String, String>.from(json['headers']) : null,
+      headers: json['headers'] != null
+          ? Map<String, String>.from(json['headers'])
+          : null,
       year: json['year'],
       score: (json['score'] as num?)?.toDouble(),
       duration: json['duration'],
@@ -170,20 +166,26 @@ class MultimediaItem {
       contentRating: json['contentRating'],
       cast: json['cast'] != null || json['actors'] != null
           ? ((json['cast'] ?? json['actors']) as List)
-              .map<Actor>((a) => Actor.fromJson(Map<String, dynamic>.from(a)))
-              .toList()
+                .map<Actor>((a) => Actor.fromJson(Map<String, dynamic>.from(a)))
+                .toList()
           : null,
       trailers: json['trailers'] != null
           ? (json['trailers'] as List)
-              .map<Trailer>((t) => Trailer.fromJson(Map<String, dynamic>.from(t)))
-              .toList()
+                .map<Trailer>(
+                  (t) => Trailer.fromJson(Map<String, dynamic>.from(t)),
+                )
+                .toList()
           : null,
       recommendations: json['recommendations'] != null
           ? (json['recommendations'] as List)
-              .map<MultimediaItem>((r) => MultimediaItem.fromJson(Map<String, dynamic>.from(r)))
-              .toList()
+                .map<MultimediaItem>(
+                  (r) => MultimediaItem.fromJson(Map<String, dynamic>.from(r)),
+                )
+                .toList()
           : null,
-      syncData: json['syncData'] != null ? Map<String, String>.from(json['syncData']) : null,
+      syncData: json['syncData'] != null
+          ? Map<String, String>.from(json['syncData'])
+          : null,
       vpnStatus: _parseVpnStatus(json['vpnStatus']),
       isAdult: json['isAdult'] ?? false,
       nextAiring: json['nextAiring'] != null
@@ -196,14 +198,16 @@ class MultimediaItem {
     if (raw == null) return ShowStatus.ongoing;
     final str = raw.toString().toLowerCase();
     if (str.contains('completed')) return ShowStatus.completed;
-    if (str.contains('upcoming') || str.contains('soon')) return ShowStatus.upcoming;
+    if (str.contains('upcoming') || str.contains('soon'))
+      return ShowStatus.upcoming;
     return ShowStatus.ongoing;
   }
 
   static VpnStatus _parseVpnStatus(dynamic raw) {
     if (raw == null) return VpnStatus.none;
     final str = raw.toString().toLowerCase();
-    if (str.contains('needed') || str.contains('might')) return VpnStatus.mightBeNeeded;
+    if (str.contains('needed') || str.contains('might'))
+      return VpnStatus.mightBeNeeded;
     if (str.contains('torrent')) return VpnStatus.torrent;
     return VpnStatus.none;
   }
@@ -319,7 +323,11 @@ class MultimediaItem {
           provider == other.provider;
 
   @override
-  int get hashCode => url.hashCode ^ title.hashCode ^ posterUrl.hashCode ^ (provider?.hashCode ?? 0);
+  int get hashCode =>
+      url.hashCode ^
+      title.hashCode ^
+      posterUrl.hashCode ^
+      (provider?.hashCode ?? 0);
 }
 
 class Episode {
@@ -359,9 +367,13 @@ class Episode {
       url: json['url'] ?? '',
       season: json['season'] ?? 0,
       episode: json['episode'] ?? 0,
-      description: json['description'] != null ? _unescape.convert(json['description']) : null,
+      description: json['description'] != null
+          ? _unescape.convert(json['description'])
+          : null,
       posterUrl: json['posterUrl'],
-      headers: json['headers'] != null ? Map<String, String>.from(json['headers']) : null,
+      headers: json['headers'] != null
+          ? Map<String, String>.from(json['headers'])
+          : null,
       rating: (json['rating'] as num?)?.toDouble(),
       runtime: json['runtime'] ?? json['duration'],
       airDate: json['airDate'],

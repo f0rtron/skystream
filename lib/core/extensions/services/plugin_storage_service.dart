@@ -175,4 +175,17 @@ class PluginStorageService {
     return jsFile.path;
   }
 
+  /// Persists a dynamic settings schema to meta.json
+  Future<void> saveSettingsSchema(String packageName, List<dynamic> schema) async {
+    final rootDir = await _pluginsDir;
+    final metaFile = File(p.join(rootDir.path, packageName, 'meta.json'));
+
+    if (await metaFile.exists()) {
+      final content = await metaFile.readAsString();
+      final data = jsonDecode(content) as Map<String, dynamic>;
+      data['settingsSchema'] = schema;
+      await metaFile.writeAsString(jsonEncode(data));
+      debugPrint("PluginStorageService: Saved settings schema for $packageName");
+    }
+  }
 }

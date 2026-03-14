@@ -82,6 +82,19 @@ class JsBasedProvider extends SkyStreamProvider {
               // Standard v2: Every plugin strictly uses the injected manifest.
               const manifest = $manifestJson;
 
+              // Namespaced Storage API Parity
+              const getPreference = (key) => {
+                  return sendMessage('get_preference', JSON.stringify({ packageName: '$_packageName', key: key }));
+              };
+
+              const setPreference = (key, value) => {
+                  return sendMessage('set_preference', JSON.stringify({ packageName: '$_packageName', key: key, value: value }));
+              };
+
+              // Export to global scope if needed (backward compatibility)
+              globalThis.getPreference = getPreference;
+              globalThis.setPreference = setPreference;
+
               var exports = (function() {
                   $script
                   
@@ -105,11 +118,14 @@ class JsBasedProvider extends SkyStreamProvider {
       }
 
       try {
+        _jsEngine.currentPackageName = _packageName;
         await _jsEngine.loadScript(script);
+        _jsEngine.currentPackageName = null;
         debugPrint(
           "JsBasedProvider: Loaded namespaced script for $_packageName",
         );
       } catch (e) {
+        _jsEngine.currentPackageName = null;
         _error = "Eval: $e";
         debugPrint(
           "JsBasedProvider: CRITICAL - Eval failed for $_packageName: $e",
