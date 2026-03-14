@@ -17,12 +17,10 @@ class MetadataBar extends StatelessWidget {
       runSpacing: 8,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        if (item.year != null) 
-          _buildInfoText(context, item.year.toString()),
+        if (item.year != null) _buildInfoText(context, item.year.toString()),
         if (item.contentRating != null)
           _buildBorderedInfo(context, item.contentRating!),
-        if (item.duration != null)
-          _buildInfoText(context, "${item.duration}m"),
+        if (item.duration != null) _buildInfoText(context, "${item.duration}m"),
         if (item.score != null)
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -33,9 +31,9 @@ class MetadataBar extends StatelessWidget {
             ],
           ),
         if (item.playbackPolicy != null && item.playbackPolicy != "none")
-           _buildPlaybackBadge(context, item.playbackPolicy!),
-         if (item.isAdult)
-           _buildBorderedInfo(context, "18+", color: Colors.redAccent),
+          _buildPlaybackBadge(context, item.playbackPolicy!),
+        if (item.isAdult)
+          _buildBorderedInfo(context, "18+", color: Colors.redAccent),
       ],
     );
   }
@@ -72,31 +70,6 @@ class MetadataBar extends StatelessWidget {
     String label = policy;
     IconData icon = Icons.play_circle_outline_rounded;
 
-    final lowerPolicy = policy.toLowerCase();
-
-    if (lowerPolicy.contains('needed') || lowerPolicy.contains('might')) {
-      color = Colors.orange;
-      label = "VPN Possible";
-      icon = Icons.vpn_lock_rounded;
-    } else if (lowerPolicy.contains('torrent')) {
-      color = Colors.blue;
-      label = "Torrent (VPN Rec)";
-      icon = Icons.vpn_lock_rounded;
-    } else if (lowerPolicy.contains('external')) {
-      color = Colors.purpleAccent;
-      label = "External Only";
-      icon = Icons.launch_rounded;
-    } else if (lowerPolicy.contains('internal')) {
-      color = Colors.teal;
-      label = "Internal Only";
-      icon = Icons.verified_user_rounded;
-    } else {
-      // Fallback for custom strings: use a neutral color and basic play icon
-      color = Theme.of(context).colorScheme.primary;
-      // label is already 'policy'
-      icon = Icons.info_outline_rounded;
-    }
-    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
@@ -111,7 +84,11 @@ class MetadataBar extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -125,29 +102,39 @@ class NextAiringWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = DateTime.fromMillisecondsSinceEpoch(nextAiring.unixTime * 1000);
+    final date = DateTime.fromMillisecondsSinceEpoch(
+      nextAiring.unixTime * 1000,
+    );
     final formattedDate = DateFormat('MMM dd, yyyy (hh:mm a)').format(date);
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+        color: Theme.of(
+          context,
+        ).colorScheme.primaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.upcoming_rounded, size: 20, color: Theme.of(context).colorScheme.primary),
+              Icon(
+                Icons.upcoming_rounded,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               const SizedBox(width: 8),
               Text(
                 "Next episode airing",
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -182,7 +169,9 @@ class CastCarousel extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Text(
             "Cast",
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
         SizedBox(
@@ -199,10 +188,12 @@ class CastCarousel extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 35,
-                      backgroundImage: actor.image != null 
-                        ? CachedNetworkImageProvider(actor.image!) 
-                        : null,
-                      child: actor.image == null ? const Icon(Icons.person) : null,
+                      backgroundImage: actor.image != null
+                          ? CachedNetworkImageProvider(actor.image!)
+                          : null,
+                      child: actor.image == null
+                          ? const Icon(Icons.person)
+                          : null,
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -210,7 +201,9 @@ class CastCarousel extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     if (actor.role != null)
                       Text(
@@ -218,7 +211,9 @@ class CastCarousel extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).hintColor),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).hintColor,
+                        ),
                       ),
                   ],
                 ),
@@ -244,7 +239,9 @@ class TrailersSection extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Text(
             "Trailers & Extras",
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
         SizedBox(
@@ -266,31 +263,44 @@ class TrailersSection extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     CachedNetworkImage(
-                      imageUrl: "https://img.youtube.com/vi/${_extractYoutubeId(trailer.url)}/mqdefault.jpg",
+                      imageUrl:
+                          "https://img.youtube.com/vi/${_extractYoutubeId(trailer.url)}/mqdefault.jpg",
                       fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) => const Center(child: Icon(Icons.movie_rounded)),
+                      errorWidget: (_, __, ___) =>
+                          const Center(child: Icon(Icons.movie_rounded)),
                     ),
                     Container(
                       color: Colors.black26,
                       child: const Center(
-                        child: Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 48),
+                        child: Icon(
+                          Icons.play_circle_fill_rounded,
+                          color: Colors.white,
+                          size: 48,
+                        ),
                       ),
                     ),
                     Positioned(
                       bottom: 8,
                       left: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.black87,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text(
                           "Trailer",
-                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    )
+                    ),
                   ],
                 ),
               );
@@ -328,7 +338,9 @@ class RecommendationsCarousel extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Text(
             "More Like This",
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
         SizedBox(
@@ -350,7 +362,10 @@ class RecommendationsCarousel extends StatelessWidget {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: CachedNetworkImage(
-                            imageUrl: AppImageFallbacks.poster(item.posterUrl, label: item.title),
+                            imageUrl: AppImageFallbacks.poster(
+                              item.posterUrl,
+                              label: item.title,
+                            ),
                             fit: BoxFit.cover,
                             width: 110,
                           ),
@@ -361,7 +376,9 @@ class RecommendationsCarousel extends StatelessWidget {
                         item.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
