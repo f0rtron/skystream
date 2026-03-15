@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/tmdb_provider.dart';
-import '../../../../core/models/tmdb_item.dart';
+import '../../../../core/domain/entity/multimedia_item.dart';
 
 class DiscoverSearchState {
-  final List<TmdbItem> suggestions;
-  final List<TmdbItem> results;
+  final List<MultimediaItem> suggestions;
+  final List<MultimediaItem> results;
   final bool isLoading;
   final String query;
   final int page;
@@ -21,8 +21,8 @@ class DiscoverSearchState {
   });
 
   DiscoverSearchState copyWith({
-    List<TmdbItem>? suggestions,
-    List<TmdbItem>? results,
+    List<MultimediaItem>? suggestions,
+    List<MultimediaItem>? results,
     bool? isLoading,
     String? query,
     int? page,

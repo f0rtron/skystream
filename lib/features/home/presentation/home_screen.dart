@@ -16,7 +16,6 @@ import 'package:skystream/core/extensions/extension_manager.dart';
 import 'package:skystream/core/extensions/base_provider.dart';
 import 'package:skystream/core/domain/entity/multimedia_item.dart';
 import 'package:skystream/core/router/app_router.dart';
-import '../../../core/models/tmdb_item.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -206,7 +205,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   Widget _buildBody(
     BuildContext context,
-    AsyncValue<Map<String, List<dynamic>>> homeDataAsync,
+    AsyncValue<Map<String, List<MultimediaItem>>> homeDataAsync,
     List<dynamic> history,
     bool watchHistoryEnabled,
   ) {
@@ -262,18 +261,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   child: DiscoverCarousel(
                     movies: data['Trending']!
                         .take(7)
-                        .cast<MultimediaItem>()
-                        .map(_toTmdbItem)
                         .toList(),
                     scrollController: _scrollController,
-                    onTap: (tmdbItem) {
-                      final item = tmdbItem.sourceItem;
-                      if (item != null) {
-                        context.push(
-                          '/details',
-                          extra: DetailsRouteExtra(item: item),
-                        );
-                      }
+                    onTap: (item) {
+                      context.push(
+                        '/details',
+                        extra: DetailsRouteExtra(item: item),
+                      );
                     },
                   ),
                 )
@@ -282,18 +276,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   child: DiscoverCarousel(
                     movies: data.values.first
                         .take(7)
-                        .cast<MultimediaItem>()
-                        .map(_toTmdbItem)
                         .toList(),
                     scrollController: _scrollController,
-                    onTap: (tmdbItem) {
-                      final item = tmdbItem.sourceItem;
-                      if (item != null) {
-                        context.push(
-                          '/details',
-                          extra: DetailsRouteExtra(item: item),
-                        );
-                      }
+                    onTap: (item) {
+                      context.push(
+                        '/details',
+                        extra: DetailsRouteExtra(item: item),
+                      );
                     },
                   ),
                 ),
@@ -315,20 +304,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   return RepaintBoundary(
                     child: MediaHorizontalList(
                       title: entry.key,
-                      mediaList: entry.value
-                          .cast<MultimediaItem>()
-                          .map(_toTmdbItem)
-                          .toList(),
+                      mediaList: entry.value,
                       category: ViewAllCategory.trending,
                       showViewAll: false,
-                      onTap: (tmdbItem) {
-                        final item = tmdbItem.sourceItem;
-                        if (item != null) {
-                          context.push(
-                            '/details',
-                            extra: DetailsRouteExtra(item: item),
-                          );
-                        }
+                      onTap: (item) {
+                        context.push(
+                          '/details',
+                          extra: DetailsRouteExtra(item: item),
+                        );
                       },
                       heroTagPrefix: 'home',
                     ),
@@ -344,19 +327,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) => _buildErrorState(context, err.toString(), ref),
-    );
-  }
-
-  TmdbItem _toTmdbItem(MultimediaItem item) {
-    return TmdbItem(
-      id: item.url.hashCode,
-      title: item.title,
-      posterPath: item.posterUrl,
-      mediaType: item.contentType.name,
-      releaseDate: '',
-      voteAverage: 0.0,
-      overview: item.description ?? '',
-      sourceItem: item,
     );
   }
 
@@ -401,7 +371,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
-              onPressed: () => ref.refresh(homeDataProvider),
+              onPressed: () => ref.invalidate(homeDataProvider),
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),
             ),
@@ -492,72 +462,86 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                 .where((p) => p.supportedTypes.contains(filter))
                                 .toList();
 
-                      return ListView.builder(
-                        controller: scrollController,
-                        shrinkWrap: true,
-                        itemCount:
-                            (filter == null ? 1 : 0) + filteredProviders.length,
-                        itemBuilder: (context, index) {
-                          if (filter == null && index == 0) {
-                            return RadioListTile<String?>(
-                              title: const Text('None'),
-                              value: null,
-                              groupValue: activeProvider?.packageName,
-                              onChanged: (val) {
-                                ref
-                                    .read(activeProviderStateProvider.notifier)
-                                    .set(null);
-                                Navigator.pop(context);
-                                // ignore: unused_result
-                                ref.refresh(homeDataProvider);
-                              },
-                            );
-                          }
+                      return RadioGroup<String?>(
+                        groupValue: activeProvider?.packageName,
+                        onChanged: (val) {
+                          final selected = val == null
+                              ? null
+                              : providers.firstWhere(
+                                (p) => p.packageName == val,
+                              );
+                          ref
+                              .read(activeProviderStateProvider.notifier)
+                              .set(selected);
+                          Navigator.pop(context);
+                          ref.invalidate(homeDataProvider);
+                        },
+                        child: ListView.builder(
+                          controller: scrollController,
+                          shrinkWrap: true,
+                          itemCount:
+                              (filter == null ? 1 : 0) +
+                              filteredProviders.length,
+                          itemBuilder: (context, index) {
+                            if (filter == null && index == 0) {
+                              return ListTile(
+                                title: const Text('None'),
+                                leading: const Radio<String?>(value: null),
+                                onTap: () {
+                                  ref
+                                      .read(
+                                        activeProviderStateProvider.notifier,
+                                      )
+                                      .set(null);
+                                  Navigator.pop(context);
+                                  ref.invalidate(homeDataProvider);
+                                },
+                              );
+                            }
 
-                          final p =
-                              filteredProviders[filter == null
-                                  ? index - 1
-                                  : index];
-                          final isDebug = p.isDebug;
-                          return RadioListTile<String?>(
-                            title: Row(
-                              children: [
-                                Expanded(child: Text(p.name)),
-                                if (isDebug) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 4,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Text(
-                                      'DEBUG',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
+                            final p =
+                                filteredProviders[filter == null
+                                    ? index - 1
+                                    : index];
+                            final isDebug = p.isDebug;
+                            return ListTile(
+                              title: Row(
+                                children: [
+                                  Expanded(child: Text(p.name)),
+                                  if (isDebug) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        'DEBUG',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ],
-                              ],
-                            ),
-                            value: p.packageName,
-                            groupValue: activeProvider?.packageName,
-                            onChanged: (val) {
-                              ref
-                                  .read(activeProviderStateProvider.notifier)
-                                  .set(p);
-                              Navigator.pop(context);
-                              // ignore: unused_result
-                              ref.refresh(homeDataProvider);
-                            },
-                          );
-                        },
+                              ),
+                              leading: Radio<String?>(value: p.packageName),
+                              onTap: () {
+                                ref
+                                    .read(activeProviderStateProvider.notifier)
+                                    .set(p);
+                                Navigator.pop(context);
+                                ref.invalidate(homeDataProvider);
+                              },
+                            );
+                          },
+                        ),
                       );
                     },
                   ),

@@ -85,10 +85,7 @@ class DetailsController extends Notifier<DetailsState> {
   /// Loads details for [item]. Auto-play is not handled here; the caller
   /// (e.g. DetailsScreen) should trigger play after load completes when
   /// [autoPlay] is true, using [handlePlayPress] with its BuildContext.
-  Future<void> loadDetails(
-    MultimediaItem item, {
-    bool autoPlay = false,
-  }) async {
+  Future<void> loadDetails(MultimediaItem item, {bool autoPlay = false}) async {
     if (state.details is AsyncData) return;
 
     state = state.copyWith(details: const AsyncLoading());
@@ -133,10 +130,12 @@ class DetailsController extends Notifier<DetailsState> {
 
       if (provider != null) {
         final fetchedItem = await provider.getDetails(item.url);
-        final withProvider = fetchedItem.copyWith(provider: provider.packageName);
+        final withProvider = fetchedItem.copyWith(
+          provider: provider.packageName,
+        );
 
-      _processEpisodes(withProvider.episodes, withProvider, isInitial: true);
-      state = state.copyWith(details: AsyncData(withProvider));
+        _processEpisodes(withProvider.episodes, withProvider, isInitial: true);
+        state = state.copyWith(details: AsyncData(withProvider));
       } else {
         throw Exception("No provider selected or found for this item");
       }
@@ -145,10 +144,15 @@ class DetailsController extends Notifier<DetailsState> {
     }
   }
 
-  void _processEpisodes(List<Episode>? episodes, MultimediaItem contextItem, {bool isInitial = false}) {
+  void _processEpisodes(
+    List<Episode>? episodes,
+    MultimediaItem contextItem, {
+    bool isInitial = false,
+  }) {
     // Determine isMovie based on contentType if available
-    bool isMovie = contextItem.contentType == MultimediaContentType.movie ||
-                   contextItem.contentType == MultimediaContentType.livestream;
+    bool isMovie =
+        contextItem.contentType == MultimediaContentType.movie ||
+        contextItem.contentType == MultimediaContentType.livestream;
 
     if (episodes == null || episodes.isEmpty) {
       state = state.copyWith(isMovie: isMovie, seasonMap: {});
@@ -206,7 +210,7 @@ class DetailsController extends Notifier<DetailsState> {
 
     targetEpisode ??= allEpisodes.first;
 
-    // Auto-select season based on target episode ONLY if initial load 
+    // Auto-select season based on target episode ONLY if initial load
     // or if we haven't manually switched seasons yet (using state.selectedSeason as 1 as a weak hint)
     if (isInitial && targetEpisode.season > 0) {
       selectedSeason = targetEpisode.season;
@@ -241,6 +245,36 @@ class DetailsController extends Notifier<DetailsState> {
     MultimediaItem details, {
     Episode? specificEpisode,
   }) {
+    final urlToPlay =
+        specificEpisode?.url ??
+        state.targetEpisode?.url ??
+        details.episodes?.firstOrNull?.url;
+
+    if (urlToPlay == null || urlToPlay.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Please select a provider from "Available Sources" to watch.',
+                ),
+              ),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
+
     if (specificEpisode != null) {
       ref
           .read(playbackLauncherProvider)
@@ -274,7 +308,7 @@ class DetailsController extends Notifier<DetailsState> {
   }
 }
 
-final detailsControllerProvider =
-    NotifierProvider.autoDispose.family<DetailsController, DetailsState, String>(
+final detailsControllerProvider = NotifierProvider.autoDispose
+    .family<DetailsController, DetailsState, String>(
       (url) => DetailsController(url),
     );

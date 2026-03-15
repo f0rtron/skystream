@@ -11,7 +11,7 @@ import '../data/filter_provider.dart';
 import 'delegates/discover_search_delegate.dart';
 import '../../../../core/utils/layout_constants.dart';
 import '../../../../shared/widgets/shimmer_placeholder.dart';
-import '../../../../core/models/tmdb_item.dart';
+import '../../../../core/domain/entity/multimedia_item.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -270,7 +270,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
   }
 
   Widget _buildSection(
-    FutureProvider<List<TmdbItem>> provider,
+    FutureProvider<List<MultimediaItem>> provider,
     String title,
     ViewAllCategory category,
   ) {

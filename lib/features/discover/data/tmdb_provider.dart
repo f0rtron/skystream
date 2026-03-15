@@ -4,7 +4,7 @@ import 'language_provider.dart';
 import 'filter_provider.dart';
 
 import '../../../core/network/dio_client_provider.dart';
-import '../../../core/models/tmdb_item.dart';
+import '../../../core/domain/entity/multimedia_item.dart';
 import '../../../core/models/tmdb_genre.dart';
 
 final tmdbServiceProvider = Provider<TmdbService>((ref) {
@@ -17,7 +17,7 @@ final genresProvider = FutureProvider<List<TmdbGenre>>((ref) async {
   return service.getGenres(language: lang);
 });
 
-final trendingMoviesProvider = FutureProvider<List<TmdbItem>>((ref) async {
+final trendingMoviesProvider = FutureProvider<List<MultimediaItem>>((ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -29,7 +29,7 @@ final trendingMoviesProvider = FutureProvider<List<TmdbItem>>((ref) async {
   );
 });
 
-final popularMoviesProvider = FutureProvider<List<TmdbItem>>((ref) async {
+final popularMoviesProvider = FutureProvider<List<MultimediaItem>>((ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -41,7 +41,7 @@ final popularMoviesProvider = FutureProvider<List<TmdbItem>>((ref) async {
   );
 });
 
-final nowPlayingMoviesProvider = FutureProvider<List<TmdbItem>>((ref) async {
+final nowPlayingMoviesProvider = FutureProvider<List<MultimediaItem>>((ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -53,7 +53,7 @@ final nowPlayingMoviesProvider = FutureProvider<List<TmdbItem>>((ref) async {
   );
 });
 
-final topRatedMoviesProvider = FutureProvider<List<TmdbItem>>((ref) async {
+final topRatedMoviesProvider = FutureProvider<List<MultimediaItem>>((ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -65,7 +65,7 @@ final topRatedMoviesProvider = FutureProvider<List<TmdbItem>>((ref) async {
   );
 });
 
-final popularTVProvider = FutureProvider<List<TmdbItem>>((ref) async {
+final popularTVProvider = FutureProvider<List<MultimediaItem>>((ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -77,7 +77,7 @@ final popularTVProvider = FutureProvider<List<TmdbItem>>((ref) async {
   );
 });
 
-final topRatedTVProvider = FutureProvider<List<TmdbItem>>((ref) async {
+final topRatedTVProvider = FutureProvider<List<MultimediaItem>>((ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -89,7 +89,7 @@ final topRatedTVProvider = FutureProvider<List<TmdbItem>>((ref) async {
   );
 });
 
-final onTheAirTVProvider = FutureProvider<List<TmdbItem>>((ref) async {
+final onTheAirTVProvider = FutureProvider<List<MultimediaItem>>((ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -101,7 +101,7 @@ final onTheAirTVProvider = FutureProvider<List<TmdbItem>>((ref) async {
   );
 });
 
-final airingTodayTVProvider = FutureProvider<List<TmdbItem>>((ref) async {
+final airingTodayTVProvider = FutureProvider<List<MultimediaItem>>((ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -113,7 +113,7 @@ final airingTodayTVProvider = FutureProvider<List<TmdbItem>>((ref) async {
   );
 });
 
-final discoverHeroMovieProvider = FutureProvider<List<TmdbItem>>((ref) async {
+final discoverHeroMovieProvider = FutureProvider<List<MultimediaItem>>((ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -154,7 +154,10 @@ final discoverHeroMovieProvider = FutureProvider<List<TmdbItem>>((ref) async {
           ).take(3).map((g) => g['name']).join(' • ');
         }
 
-        return movie.copyWith(logoUrl: logoUrl, genresStr: genresStr);
+        return movie.copyWith(
+          logoUrl: logoUrl,
+          tags: genresStr != null ? [genresStr] : null,
+        );
       }),
     );
 

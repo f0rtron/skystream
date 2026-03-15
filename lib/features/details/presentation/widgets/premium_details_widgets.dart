@@ -152,9 +152,9 @@ class MetadataBar extends StatelessWidget {
   }
 
   Widget _buildPlaybackBadge(BuildContext context, String policy) {
-    Color color = Theme.of(context).colorScheme.secondary;
-    String label = policy;
-    IconData icon = Icons.play_circle_outline_rounded;
+    final color = Theme.of(context).colorScheme.secondary;
+    final label = policy;
+    const icon = Icons.play_circle_outline_rounded;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -261,11 +261,11 @@ class CastCarousel extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: 120,
+          height: 160,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: cast.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 16),
+            separatorBuilder: (_, _) => const SizedBox(width: 16),
             itemBuilder: (context, index) {
               final actor = cast[index];
               return SizedBox(
@@ -335,7 +335,7 @@ class TrailersSection extends StatelessWidget {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: trailers.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 16),
+            separatorBuilder: (_, _) => const SizedBox(width: 16),
             itemBuilder: (context, index) {
               final trailer = trailers[index];
               return Container(
@@ -352,7 +352,7 @@ class TrailersSection extends StatelessWidget {
                       imageUrl:
                           "https://img.youtube.com/vi/${_extractYoutubeId(trailer.url)}/mqdefault.jpg",
                       fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) =>
+                      errorWidget: (_, _, _) =>
                           const Center(child: Icon(Icons.movie_rounded)),
                     ),
                     Container(
@@ -434,7 +434,7 @@ class RecommendationsCarousel extends StatelessWidget {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final item = items[index];
               return InkWell(

@@ -190,42 +190,47 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
             ),
           ],
         ),
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.episode.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 4),
-              if ((widget.episode.runtime ?? 0) > 0)
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  "${widget.episode.runtime} min",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              if (widget.episode.description != null && widget.episode.description!.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  widget.episode.description!,
-                  maxLines: 2,
+                  widget.episode.name,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
                   ),
                 ),
+                const SizedBox(height: 4),
+                if ((widget.episode.runtime ?? 0) > 0)
+                  Text(
+                    "${widget.episode.runtime} min",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                if (widget.episode.description != null &&
+                    widget.episode.description!.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Expanded(
+                    child: Text(
+                      widget.episode.description!,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ],

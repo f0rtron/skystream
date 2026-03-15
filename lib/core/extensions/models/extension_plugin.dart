@@ -105,7 +105,7 @@ class ExtensionPlugin {
       fileSize: fileSize,
       manifest: manifest,
       customBaseUrl: customBaseUrl ?? this.customBaseUrl,
-      settingsSchema: settingsSchema ?? this.settingsSchema,
+      settingsSchema: settingsSchema,
     );
   }
 }

@@ -1,20 +1,20 @@
 import 'package:html_unescape/html_unescape.dart';
-import 'tmdb_item.dart';
+import '../domain/entity/multimedia_item.dart';
 import '../utils/image_fallbacks.dart';
 
 // Reuse unescape from parent or create local
 final _unescape = HtmlUnescape();
 
-class TmdbDetails extends TmdbItem {
+class TmdbDetails extends MultimediaItem {
   final int runtime;
   final String certification;
   final String director;
   final List<TmdbSeason> seasons;
-  final List<TmdbCast> cast;
+  final List<TmdbCast> tmdbCast;
   final List<String> genres;
-  final List<TmdbVideo> trailers;
+  final List<TmdbVideo> tmdbTrailers;
   final List<TmdbProductionCompany> productionCompanies;
-  final String status;
+  final String tmdbStatus;
   final int budget;
   final int revenue;
   final String tagline;
@@ -23,33 +23,42 @@ class TmdbDetails extends TmdbItem {
   final String releaseDateFull;
 
   TmdbDetails({
-    required super.id,
-    required super.mediaType,
+    required int id,
+    required String mediaType,
     required super.title,
-    super.posterPath,
-    super.backdropPath,
-    required super.releaseDate,
-    required super.voteAverage,
-    required super.overview,
+    String? posterPath,
+    String? backdropPath,
+    required String releaseDate,
+    required double voteAverage,
+    required String overview,
     super.logoUrl,
-    super.genresStr,
-    super.sourceItem,
+    String? genresStr,
+    dynamic sourceItem,
     required this.runtime,
     required this.certification,
     required this.director,
     required this.seasons,
-    required this.cast,
+    required this.tmdbCast,
     required this.genres,
-    required this.trailers,
+    required this.tmdbTrailers,
     required this.productionCompanies,
-    required this.status,
+    required this.tmdbStatus,
     required this.budget,
     required this.revenue,
     required this.tagline,
     required this.originCountry,
     required this.originalLanguage,
     required this.releaseDateFull,
-  });
+  }) : super(
+          url: '', // Resolved via provider
+          posterUrl: posterPath != null ? 'https://image.tmdb.org/t/p/w500$posterPath' : '',
+          bannerUrl: backdropPath != null ? 'https://image.tmdb.org/t/p/original$backdropPath' : null,
+          description: overview,
+          contentType: MultimediaItem.parseContentType(mediaType),
+          tmdbId: id,
+          score: voteAverage,
+          tags: genresStr?.split(' | '),
+        );
 
   factory TmdbDetails.fromJson(Map<String, dynamic> json, String languageCode) {
     // Determine media type
@@ -158,7 +167,7 @@ class TmdbDetails extends TmdbItem {
     final videos = List<Map<String, dynamic>>.from(
       json['videos'] != null ? json['videos']['results'] : [],
     );
-    final trailers = videos
+    final tmdbTrailers = videos
         .where(
           (v) =>
               v['site'] == 'YouTube' &&
@@ -174,7 +183,7 @@ class TmdbDetails extends TmdbItem {
         .map((p) => TmdbProductionCompany.fromJson(p))
         .toList();
 
-    final status = json['status'] ?? 'Unknown';
+    final tmdbStatus = json['status'] ?? 'Unknown';
     final budget = json['budget'] as num? ?? 0;
     final revenue = json['revenue'] as num? ?? 0;
     final tagline = json['tagline'] ?? '';
@@ -197,11 +206,11 @@ class TmdbDetails extends TmdbItem {
       certification: certification,
       director: director,
       seasons: seasons,
-      cast: cast,
+      tmdbCast: cast,
       genres: genres,
-      trailers: trailers,
+      tmdbTrailers: tmdbTrailers,
       productionCompanies: productionCompanies,
-      status: status,
+      tmdbStatus: tmdbStatus,
       budget: budget.toInt(),
       revenue: revenue.toInt(),
       tagline: tagline,

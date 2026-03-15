@@ -43,12 +43,15 @@ class JsEngineService {
   final ExtensionRepository _storage;
   final PluginStorageService _pluginStorage;
 
-  // Track the plugin currently being initialized to associate registerSettings calls
-  String? currentPackageName;
+  // Registration logic is now stateless to support parallel loading
 
   // Persistent callback registry to prevent memory leaks from dynamic listeners
   final Map<String, Completer<dynamic>> _pendingCallbacks = {};
   final Map<String, dynamic> _domRegistry = {};
+
+  // Dynamic pump tracking
+  int _activeAsyncCount = 0;
+  Timer? _centralPump;
 
   JsEngineService(this._storage, this._pluginStorage, this._dio) : _runtime = getJavascriptRuntime() {
     final bool hasCookieManager = _dio.interceptors.any(
@@ -58,9 +61,29 @@ class JsEngineService {
       _dio.interceptors.add(CookieManager(_cookieJar));
     }
     // DohInterceptor is provided globally by dioClientProvider
-    // DohInterceptor is provided globally by dioClientProvider
     // Defer polyfill injection to avoid blocking the UI thread
-    Future.microtask(() => _initPolyfills());
+    Future.microtask(() async {
+      _initPolyfills();
+      _startPump();
+    });
+  }
+
+  void _startPump() {
+    _centralPump?.cancel();
+    final interval = _activeAsyncCount > 0 ? 10 : 100;
+    _centralPump = Timer.periodic(Duration(milliseconds: interval), (_) {
+      _runtime.executePendingJob();
+    });
+  }
+
+  void _incrementAsync() {
+    _activeAsyncCount++;
+    if (_activeAsyncCount == 1) _startPump();
+  }
+
+  void _decrementAsync() {
+    _activeAsyncCount--;
+    if (_activeAsyncCount == 0) _startPump();
   }
 
   void _initPolyfills() {
@@ -275,13 +298,16 @@ class JsEngineService {
     // Native SDK Helpers
     _runtime.onMessage('register_settings', (dynamic args) async {
       if (kDebugMode) debugPrint("[JS SDK] Settings Registration: $args");
-      if (currentPackageName != null) {
-        try {
-          final schema = args is List ? args : jsonDecode(args.toString());
-          await _pluginStorage.saveSettingsSchema(currentPackageName!, schema);
-        } catch (e) {
-          debugPrint("Failed to save settings schema for $currentPackageName: $e");
+      try {
+        final Map<String, dynamic> data = args is Map ? Map<String, dynamic>.from(args) : jsonDecode(args.toString());
+        final String? packageName = data['packageName'];
+        final dynamic schema = data['schema'];
+        
+        if (packageName != null && schema != null) {
+          await _pluginStorage.saveSettingsSchema(packageName, schema);
         }
+      } catch (e) {
+        debugPrint("Failed to save settings schema: $e");
       }
     });
 
@@ -779,58 +805,53 @@ class JsEngineService {
        })();
      """;
 
+    _incrementAsync();
     _runtime.evaluate(evalWrapper);
 
-    Timer? pumpTimer;
-    pumpTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
-      if (completer.isCompleted) {
-        pumpTimer?.cancel();
-        return;
-      }
-      _runtime.executePendingJob();
-    });
-
+    dynamic result;
     try {
-      final result = await completer.future.timeout(
+      result = await completer.future.timeout(
         const Duration(seconds: 30),
         onTimeout: () {
           _pendingCallbacks.remove(callbackId);
           throw TimeoutException('Timeout executing $functionName');
         },
       );
+      _decrementAsync();
+    } catch (e) {
+      _decrementAsync();
+      rethrow;
+    }
 
-      // --- Post-processing (Success) ---
-      final bool isManifestRequest = functionName.endsWith("getManifest");
-      dynamic unwrapped;
+    // --- Post-processing (Success) ---
+    final bool isManifestRequest = functionName.endsWith("getManifest");
+    dynamic unwrapped;
 
-      if (result is String) {
-        if (result == "__dart_void__") {
-          unwrapped = null;
-        } else {
-          try {
-            unwrapped = jsonDecode(result);
-          } catch (e) {
-            unwrapped = result;
-          }
-        }
+    if (result is String) {
+      if (result == "__dart_void__") {
+        unwrapped = null;
       } else {
-        unwrapped = result;
-      }
-
-      if (!isManifestRequest && unwrapped is Map) {
-        final success = unwrapped['success'] ?? false;
-        if (!success) {
-          final code = unwrapped['errorCode'] ?? 'UNKNOWN_ERROR';
-          final message =
-              unwrapped['message'] ?? 'An unexpected plugin error occurred';
-          throw JsPluginException(code, message);
+        try {
+          unwrapped = jsonDecode(result);
+        } catch (e) {
+          unwrapped = result;
         }
-        return unwrapped['data'];
-      } else {
-        return unwrapped;
       }
-    } finally {
-      pumpTimer.cancel();
+    } else {
+      unwrapped = result;
+    }
+
+    if (!isManifestRequest && unwrapped is Map) {
+      final success = unwrapped['success'] ?? false;
+      if (!success) {
+        final code = unwrapped['errorCode'] ?? 'UNKNOWN_ERROR';
+        final message =
+            unwrapped['message'] ?? 'An unexpected plugin error occurred';
+        throw JsPluginException(code, message);
+      }
+      return unwrapped['data'];
+    } else {
+      return unwrapped;
     }
   }
 
@@ -839,6 +860,7 @@ class JsEngineService {
   }
 
   void dispose() {
+    _centralPump?.cancel();
     _runtime.dispose();
     _pendingCallbacks.clear();
   }

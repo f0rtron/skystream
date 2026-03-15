@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/models/tmdb_item.dart';
+import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../data/tmdb_provider.dart';
 import '../../data/language_provider.dart';
 import '../../data/filter_provider.dart';
@@ -7,7 +7,7 @@ import '../view_all_screen.dart'; // for ViewAllCategory
 
 class ViewAllState {
   final ViewAllCategory? category;
-  final List<TmdbItem> items;
+  final List<MultimediaItem> items;
   final int page;
   final bool isLoading;
   final bool hasMore;
@@ -22,7 +22,7 @@ class ViewAllState {
 
   ViewAllState copyWith({
     ViewAllCategory? category,
-    List<TmdbItem>? items,
+    List<MultimediaItem>? items,
     int? page,
     bool? isLoading,
     bool? hasMore,
@@ -49,7 +49,7 @@ class ViewAllController extends Notifier<ViewAllState> {
     return ViewAllState(category: categoryArg);
   }
 
-  void init(List<TmdbItem> initialItems) {
+  void init(List<MultimediaItem> initialItems) {
     if (state.items.isEmpty && state.page == 1) {
       state = state.copyWith(items: List.from(initialItems));
     }
@@ -66,7 +66,7 @@ class ViewAllController extends Notifier<ViewAllState> {
       final filters = ref.read(discoverFilterProvider);
       final bool isEmpty = state.items.isEmpty;
       final nextPage = isEmpty ? 1 : state.page + 1;
-      List<TmdbItem> newItems = [];
+      List<MultimediaItem> newItems = [];
 
       switch (categoryArg) {
         case ViewAllCategory.popularMovies:

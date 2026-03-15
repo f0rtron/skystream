@@ -91,9 +91,14 @@ class JsBasedProvider extends SkyStreamProvider {
                   return sendMessage('set_preference', JSON.stringify({ packageName: '$_packageName', key: key, value: value }));
               };
 
+              const registerSettings = (schema) => {
+                  return sendMessage('register_settings', JSON.stringify({ packageName: '$_packageName', schema: schema }));
+              };
+
               // Export to global scope if needed (backward compatibility)
               globalThis.getPreference = getPreference;
               globalThis.setPreference = setPreference;
+              globalThis.registerSettings = registerSettings;
 
               var exports = (function() {
                   $script
@@ -118,14 +123,11 @@ class JsBasedProvider extends SkyStreamProvider {
       }
 
       try {
-        _jsEngine.currentPackageName = _packageName;
         await _jsEngine.loadScript(script);
-        _jsEngine.currentPackageName = null;
         debugPrint(
           "JsBasedProvider: Loaded namespaced script for $_packageName",
         );
       } catch (e) {
-        _jsEngine.currentPackageName = null;
         _error = "Eval: $e";
         debugPrint(
           "JsBasedProvider: CRITICAL - Eval failed for $_packageName: $e",

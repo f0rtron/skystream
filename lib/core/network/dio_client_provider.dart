@@ -19,6 +19,7 @@ final dioClientProvider = Provider<Dio>((ref) {
   dio.httpClientAdapter = IOHttpClientAdapter(
     createHttpClient: () {
       final client = HttpClient();
+      client.maxConnectionsPerHost = 10;
       client
           .connectionFactory = (Uri uri, String? proxyHost, int? proxyPort) async {
         final host = uri.host;

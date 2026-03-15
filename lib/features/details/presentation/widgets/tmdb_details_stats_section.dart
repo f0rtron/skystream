@@ -18,7 +18,7 @@ class TmdbDetailsStatsSection extends StatelessWidget {
     final theme = Theme.of(context);
     final textColor = theme.colorScheme.onSurface;
     final tagline = data.tagline;
-    final status = data.status;
+    final status = data.tmdbStatus;
     final releaseDateFull = data.releaseDateFull;
     final originalLanguage = data.originalLanguage;
     final originCountry = data.originCountry;

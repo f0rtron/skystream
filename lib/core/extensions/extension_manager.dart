@@ -49,7 +49,7 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
     }
 
     // Batch load background providers to avoid UI stutter
-    final newProviders = <SkyStreamProvider>[];
+    final parallelLoads = <Future<SkyStreamProvider?>>[];
 
     for (final plugin in sortedPlugins) {
       final existingList = state.where((p) => p.packageName == plugin.packageName);
@@ -68,18 +68,21 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
 
       if (needsLoad) {
         if (plugin.packageName == activePackageName) {
+          // Priority load for active provider
           await _loadPlugin(plugin, addToState: true);
         } else {
-          // Stagger loading slightly to not freeze UI
-          await Future.delayed(const Duration(milliseconds: 10));
-          final p = await _loadPlugin(plugin, addToState: false);
-          if (p != null) newProviders.add(p);
+          // Background providers loaded in parallel
+          parallelLoads.add(_loadPlugin(plugin, addToState: false));
         }
       }
     }
 
-    if (newProviders.isNotEmpty) {
-      state = [...state, ...newProviders];
+    if (parallelLoads.isNotEmpty) {
+      final results = await Future.wait(parallelLoads);
+      final loaded = results.whereType<SkyStreamProvider>().toList();
+      if (loaded.isNotEmpty) {
+        state = [...state, ...loaded];
+      }
     }
 
     // Unload Removed Plugins

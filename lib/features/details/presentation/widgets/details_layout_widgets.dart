@@ -229,7 +229,7 @@ class DetailsDesktopEpisodeGrid extends ConsumerWidget {
             maxCrossAxisExtent: 320,
             mainAxisSpacing: 16,
             crossAxisSpacing: 16,
-            childAspectRatio: 1.1,
+            childAspectRatio: 1.0,
           ),
           itemCount: episodes.length,
           itemBuilder: (context, index) {

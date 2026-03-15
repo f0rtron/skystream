@@ -37,7 +37,7 @@ class TmdbDetailsDesktopHero extends ConsumerWidget {
     final releaseDate = data.releaseDateFull;
     final year = releaseDate.isNotEmpty ? releaseDate.split('-')[0] : '';
     final rating = data.voteAverage.toStringAsFixed(1);
-    final genreText = data.genresStr ?? '';
+    final genreText = data.genresStr;
     final certification = data.certification;
     final director = data.director;
     final backdropImageUrl = data.backdropImageUrl;

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:skystream/core/utils/responsive_breakpoints.dart';
 
 import 'package:skystream/core/extensions/extension_manager.dart';
@@ -9,8 +8,7 @@ import 'package:skystream/core/domain/entity/multimedia_item.dart';
 import 'package:skystream/core/router/app_router.dart';
 import 'package:skystream/core/utils/image_fallbacks.dart';
 import 'package:skystream/shared/widgets/desktop_scroll_wrapper.dart';
-import 'package:skystream/shared/widgets/thumbnail_error_placeholder.dart';
-import '../../../../shared/widgets/cards_wrapper.dart';
+import 'package:skystream/shared/widgets/multimedia_card.dart';
 
 class SearchResultSection extends ConsumerStatefulWidget {
   final String providerName;
@@ -44,7 +42,6 @@ class _SearchResultSectionState extends ConsumerState<SearchResultSection> {
 
     final isLarge = context.isTabletOrLarger;
     // Matching MediaHorizontalList/ContinueWatchingSection dimensions
-    final double width = isLarge ? 200.0 : 130.0;
     final double listHeight = isLarge ? 350.0 : 230.0;
 
     return Column(
@@ -109,52 +106,13 @@ class _SearchResultSectionState extends ConsumerState<SearchResultSection> {
                 final uniqueTag =
                     'search_${widget.providerId}_${item.url}_$rIndex';
 
-                return RepaintBoundary(child: CardsWrapper(
+                return MultimediaCard(
                   key: ValueKey(item.url),
+                  imageUrl: AppImageFallbacks.poster(item.posterUrl, label: item.title),
+                  title: item.title,
+                  heroTag: uniqueTag,
                   onTap: () => context.push('/details', extra: DetailsRouteExtra(item: item)),
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    width: width,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Hero(
-                            tag: uniqueTag, // Added Hero tag support
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: CachedNetworkImage(
-                                imageUrl: AppImageFallbacks.poster(item.posterUrl, label: item.title),
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                memCacheWidth:
-                                    300, // P15: Optimize memory usage
-                                placeholder: (context, url) => Container(
-                                  color: Theme.of(context).dividerColor,
-                                ),
-                                errorWidget: (_, _, _) =>
-                                    const ThumbnailErrorPlaceholder(),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          item.title,
-                          maxLines: 1, // Matched Dashboard style
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.8),
-                            fontSize: isLarge ? 22 : 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ));
+                );
               },
             ),
           ),

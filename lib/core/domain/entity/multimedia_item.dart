@@ -105,6 +105,8 @@ class MultimediaItem {
   final NextAiring? nextAiring;
   final List<StreamResult>? streams;
 
+  final int? tmdbId;
+
   MultimediaItem({
     required this.title,
     required this.url,
@@ -130,9 +132,13 @@ class MultimediaItem {
     this.isAdult = false,
     this.nextAiring,
     this.streams,
+    this.tmdbId,
   });
 
   factory MultimediaItem.fromJson(Map<String, dynamic> json) {
+    if (json.containsKey('media_type') && json.containsKey('vote_average') && !json.containsKey('posterUrl')) {
+      return MultimediaItem.fromTmdbJson(json);
+    }
     final title = json['title'] != null ? _unescape.convert(json['title']) : '';
 
     final String? typeStr = json['type'] ?? json['contentType'];
@@ -171,7 +177,6 @@ class MultimediaItem {
       duration: json['duration'],
       status: _parseShowStatus(json['status'] ?? json['showStatus']),
       tags: json['tags'] != null ? List<String>.from(json['tags']) : null,
-      contentRating: json['contentRating'],
       cast: json['cast'] != null || json['actors'] != null
           ? ((json['cast'] ?? json['actors']) as List)
                 .map<Actor>((a) => Actor.fromJson(Map<String, dynamic>.from(a)))
@@ -199,6 +204,32 @@ class MultimediaItem {
       nextAiring: json['nextAiring'] != null
           ? NextAiring.fromJson(Map<String, dynamic>.from(json['nextAiring']))
           : null,
+      tmdbId: json['tmdbId'],
+    );
+  }
+
+  factory MultimediaItem.fromTmdbJson(Map<String, dynamic> json) {
+    final String mTypeStr = json['media_type'] ?? (json['title'] != null ? 'movie' : 'tv');
+    final title = _unescape.convert(json['title'] ?? json['name'] ?? 'Unknown');
+    final date = json['release_date'] ?? json['first_air_date'] ?? '';
+    final year = int.tryParse(date.split('-').first);
+    final posterPath = json['poster_path'];
+    final backdropPath = json['backdrop_path'];
+    
+    // Using simple logic for now, we'll eventually use AppImageFallbacks once we unify more
+    final posterUrl = posterPath != null ? 'https://image.tmdb.org/t/p/w500$posterPath' : '';
+    final bannerUrl = backdropPath != null ? 'https://image.tmdb.org/t/p/original$backdropPath' : posterUrl;
+
+    return MultimediaItem(
+      title: title,
+      url: '', // Needs detail resolving
+      posterUrl: posterUrl,
+      bannerUrl: bannerUrl,
+      description: json['overview'],
+      contentType: MultimediaItem.parseContentType(mTypeStr),
+      year: year,
+      score: (json['vote_average'] as num?)?.toDouble(),
+      tmdbId: json['id'] as int?,
     );
   }
 
@@ -206,8 +237,9 @@ class MultimediaItem {
     if (raw == null) return ShowStatus.ongoing;
     final str = raw.toString().toLowerCase();
     if (str.contains('completed')) return ShowStatus.completed;
-    if (str.contains('upcoming') || str.contains('soon'))
+    if (str.contains('upcoming') || str.contains('soon')) {
       return ShowStatus.upcoming;
+    }
     return ShowStatus.ongoing;
   }
 
@@ -231,6 +263,17 @@ class MultimediaItem {
         return MultimediaContentType.other;
     }
   }
+
+  // Compatibility getters for TmdbItem migration
+  int get id => tmdbId ?? 0;
+  String get mediaType => contentType == MultimediaContentType.series ? 'tv' : 'movie';
+  String get backdropImageUrl => bannerUrl ?? posterUrl;
+  String get posterImageUrl => posterUrl;
+  String get thumbnailImageUrl => posterUrl;
+  String get releaseDate => year?.toString() ?? '';
+  String get overview => description ?? '';
+  double get voteAverage => score ?? 0.0;
+  String get genresStr => tags?.join(' | ') ?? '';
 
   MultimediaItem copyWith({
     String? title,
@@ -281,7 +324,7 @@ class MultimediaItem {
       playbackPolicy: playbackPolicy ?? this.playbackPolicy,
       isAdult: isAdult ?? this.isAdult,
       nextAiring: nextAiring ?? this.nextAiring,
-      streams: streams ?? this.streams,
+      streams: streams ?? streams,
     );
   }
 

@@ -76,7 +76,7 @@ class _MovieCastListState extends State<MovieCastList> {
           ),
           const SizedBox(height: 16),
           SizedBox(
-            height: 140,
+            height: 160,
             child: ListView.builder(
               clipBehavior: Clip.none,
               scrollDirection: Axis.horizontal,

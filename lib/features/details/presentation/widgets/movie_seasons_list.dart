@@ -246,7 +246,7 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
             if (episodes.isEmpty) return const SizedBox.shrink();
 
             return SizedBox(
-              height: 240,
+              height: 300,
               child: DesktopScrollWrapper(
                 controller: _scrollController,
                 child: ListView.separated(

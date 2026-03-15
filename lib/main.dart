@@ -71,19 +71,14 @@ class _AppRootState extends State<AppRoot> {
   Future<void> _init() async {
     _storageService = StorageService();
     try {
-      await _storageService.init();
-
-      // OPTIMIZATION: Enable High Refresh Rate (120Hz/90Hz) on Android
-      if (Platform.isAndroid) {
-        try {
-          await FlutterDisplayMode.setHighRefreshRate();
-        } catch (e) {
-          debugPrint("Error setting high refresh rate: $e");
-        }
-      }
-
-      // Preload DoH settings synchronously
-      await DohService.instance.init();
+      await Future.wait([
+        _storageService.init(),
+        DohService.instance.init(),
+        if (Platform.isAndroid)
+          FlutterDisplayMode.setHighRefreshRate().catchError((e) {
+            debugPrint("Error setting high refresh rate: $e");
+          }),
+      ]);
 
       if (mounted) {
         setState(() {

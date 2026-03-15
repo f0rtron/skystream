@@ -1,6 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:skystream/shared/widgets/focusable_item.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:skystream/core/utils/responsive_breakpoints.dart';
@@ -9,7 +7,7 @@ import 'package:skystream/core/utils/image_fallbacks.dart';
 import 'package:skystream/core/utils/layout_constants.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../../shared/widgets/desktop_scroll_wrapper.dart';
-import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
+import '../../../../shared/widgets/multimedia_card.dart';
 
 class HomeSection extends ConsumerStatefulWidget {
   final String title;
@@ -35,9 +33,7 @@ class _HomeSectionState extends ConsumerState<HomeSection> {
 
     final isLarge = context.isTabletOrLarger;
 
-    final double width = isLarge ? 170 : 110;
-    final double posterHeight = width * 1.5; // 2:3 aspect ratio
-    final double totalHeight = posterHeight + 100; // Space for text and focus
+    final double totalHeight = isLarge ? 350.0 : 230.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,45 +68,12 @@ class _HomeSectionState extends ConsumerState<HomeSection> {
                   SizedBox(width: isLarge ? LayoutConstants.spacingLg : LayoutConstants.spacingSm),
               itemBuilder: (context, index) {
                 final item = widget.items[index];
-                return FocusableItem(
+                return MultimediaCard(
                   key: ValueKey(item.url),
+                  imageUrl: AppImageFallbacks.poster(item.posterUrl, label: item.title),
+                  title: item.title,
+                  heroTag: 'home_${item.url}_$index',
                   onTap: () => context.push('/details', extra: DetailsRouteExtra(item: item)),
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    width: width,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AspectRatio(
-                          aspectRatio: 2 / 3,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: CachedNetworkImage(
-                              imageUrl: AppImageFallbacks.poster(item.posterUrl, label: item.title),
-                              fit: BoxFit.cover,
-                              memCacheWidth: 350, // P15: Optimize memory
-                              placeholder: (context, url) => Container(
-                                color: Theme.of(context).dividerColor,
-                              ),
-                              errorWidget: (_, _, _) =>
-                                  const ThumbnailErrorPlaceholder(),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          item.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w500,
-                                fontSize: isLarge ? 15 : null,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
                 );
               },
             ),

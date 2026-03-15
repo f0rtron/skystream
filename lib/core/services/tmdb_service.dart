@@ -1,4 +1,4 @@
-import '../models/tmdb_item.dart';
+import '../domain/entity/multimedia_item.dart';
 import 'package:dio/dio.dart';
 import '../models/tmdb_genre.dart';
 import '../config/tmdb_config.dart';
@@ -30,7 +30,7 @@ class TmdbService {
 
   /// Shared pattern: use discover endpoint when filters are active, otherwise
   /// fall back to the simpler direct endpoint.
-  Future<List<TmdbItem>> _fetchWithFilterFallback({
+  Future<List<MultimediaItem>> _fetchWithFilterFallback({
     required String discoverPath,
     required String directPath,
     required String sortBy,
@@ -55,7 +55,7 @@ class TmdbService {
     return _getResults(directPath, language: language, page: page);
   }
 
-  Future<List<TmdbItem>> getTrending({
+  Future<List<MultimediaItem>> getTrending({
     String language = 'en-US', int? genreId, int? year,
     double? minRating, int page = 1,
   }) => _fetchWithFilterFallback(
@@ -64,7 +64,7 @@ class TmdbService {
     genreId: genreId, year: year, minRating: minRating, page: page,
   );
 
-  Future<List<TmdbItem>> getPopularMovies({
+  Future<List<MultimediaItem>> getPopularMovies({
     String language = 'en-US', int? genreId, int? year,
     double? minRating, int page = 1,
   }) => _getDiscoveryResults(
@@ -72,7 +72,7 @@ class TmdbService {
     genreId: genreId, year: year, minRating: minRating, page: page,
   );
 
-  Future<List<TmdbItem>> getTopRated({
+  Future<List<MultimediaItem>> getTopRated({
     String language = 'en-US', int? genreId, int? year,
     double? minRating, int page = 1,
   }) => _getDiscoveryResults(
@@ -80,7 +80,7 @@ class TmdbService {
     genreId: genreId, year: year, minRating: minRating, page: page,
   );
 
-  Future<List<TmdbItem>> getNowPlayingMovies({
+  Future<List<MultimediaItem>> getNowPlayingMovies({
     String language = 'en-US', int? genreId, int? year,
     double? minRating, int page = 1,
   }) {
@@ -96,7 +96,7 @@ class TmdbService {
     return _getResults('/movie/now_playing', language: language, page: page);
   }
 
-  Future<List<TmdbItem>> getTrendingMovies({
+  Future<List<MultimediaItem>> getTrendingMovies({
     String language = 'en-US', int? genreId, int? year,
     double? minRating, int page = 1,
   }) => _fetchWithFilterFallback(
@@ -105,7 +105,7 @@ class TmdbService {
     genreId: genreId, year: year, minRating: minRating, page: page,
   );
 
-  Future<List<TmdbItem>> getTrendingAllDay({
+  Future<List<MultimediaItem>> getTrendingAllDay({
     String language = 'en-US', int? genreId, int? year,
     double? minRating, int page = 1,
   }) => _fetchWithFilterFallback(
@@ -114,7 +114,7 @@ class TmdbService {
     genreId: genreId, year: year, minRating: minRating, page: page,
   );
 
-  Future<List<TmdbItem>> getOnTheAirTV({
+  Future<List<MultimediaItem>> getOnTheAirTV({
     String language = 'en-US', int? genreId, int? year,
     double? minRating, int page = 1,
   }) => _fetchWithFilterFallback(
@@ -123,7 +123,7 @@ class TmdbService {
     genreId: genreId, year: year, minRating: minRating, page: page,
   );
 
-  Future<List<TmdbItem>> getPopularTV({
+  Future<List<MultimediaItem>> getPopularTV({
     String language = 'en-US', int? genreId, int? year,
     double? minRating, int page = 1,
   }) => _getDiscoveryResults(
@@ -131,7 +131,7 @@ class TmdbService {
     genreId: genreId, year: year, minRating: minRating, page: page,
   );
 
-  Future<List<TmdbItem>> getTopRatedTV({
+  Future<List<MultimediaItem>> getTopRatedTV({
     String language = 'en-US', int? genreId, int? year,
     double? minRating, int page = 1,
   }) => _getDiscoveryResults(
@@ -139,7 +139,7 @@ class TmdbService {
     genreId: genreId, year: year, minRating: minRating, page: page,
   );
 
-  Future<List<TmdbItem>> getAiringTodayTV({
+  Future<List<MultimediaItem>> getAiringTodayTV({
     String language = 'en-US', int? genreId, int? year,
     double? minRating, int page = 1,
   }) => _fetchWithFilterFallback(
@@ -148,7 +148,7 @@ class TmdbService {
     genreId: genreId, year: year, minRating: minRating, page: page,
   );
 
-  Future<List<TmdbItem>> multiSearch({
+  Future<List<MultimediaItem>> multiSearch({
     required String query,
     String language = 'en-US',
     int page = 1,
@@ -286,12 +286,12 @@ class TmdbService {
         }
       }
 
-      return uniqueResults.map((i) => TmdbItem.fromJson(i)).toList();
+      return uniqueResults.map((i) => MultimediaItem.fromTmdbJson(i)).toList();
     }
     return [];
   }
 
-  Future<List<TmdbItem>> _getDiscoveryResults(
+  Future<List<MultimediaItem>> _getDiscoveryResults(
     String path,
     String fullLanguageCode,
     String sortBy, {
@@ -331,14 +331,14 @@ class TmdbService {
 
     if (response.statusCode == 200) {
       return (response.data['results'] as List)
-          .map((i) => TmdbItem.fromJson(i as Map<String, dynamic>))
+          .map((i) => MultimediaItem.fromTmdbJson(i as Map<String, dynamic>))
           .toList();
     }
     return [];
   }
 
   /// Helper to reduce boilerplate
-  Future<List<TmdbItem>> _getResults(
+  Future<List<MultimediaItem>> _getResults(
     String path, {
     String language = 'en-US',
     int page = 1,
@@ -353,7 +353,7 @@ class TmdbService {
     );
     if (response.statusCode == 200) {
       return (response.data['results'] as List)
-          .map((i) => TmdbItem.fromJson(i as Map<String, dynamic>))
+          .map((i) => MultimediaItem.fromTmdbJson(i as Map<String, dynamic>))
           .toList();
     }
     return [];

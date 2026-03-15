@@ -184,7 +184,7 @@ class _TmdbMovieDetailsScreenState
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
-                  onPressed: () => ref.refresh(movieDetailsProvider(params)),
+                  onPressed: () => ref.invalidate(movieDetailsProvider(params)),
                   icon: const Icon(Icons.refresh),
                   label: const Text("Retry"),
                 ),
@@ -199,8 +199,8 @@ class _TmdbMovieDetailsScreenState
   Widget _buildDesktopLayout(TmdbDetails data) {
     final isMovie = widget.mediaType == 'movie';
     final seasons = data.seasons;
-    final cast = data.cast;
-    final trailers = data.trailers;
+    final cast = data.tmdbCast;
+    final trailers = data.tmdbTrailers;
     final productionCompanies = data.productionCompanies;
 
     final theme = Theme.of(context);
@@ -273,12 +273,12 @@ class _TmdbMovieDetailsScreenState
     final tagline = data.tagline;
     final runtime = data.runtime;
     final releaseDate = data.releaseDateFull;
-    final status = data.status;
+    final status = data.tmdbStatus;
     final budget = data.budget;
     final genres = data.genres;
-    final cast = data.cast;
+    final cast = data.tmdbCast;
     final productionCompanies = data.productionCompanies;
-    final trailers = data.trailers;
+    final trailers = data.tmdbTrailers;
 
     final hours = runtime ~/ 60;
     final minutes = runtime % 60;

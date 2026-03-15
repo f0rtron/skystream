@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import '../../../shared/widgets/cards_wrapper.dart';
 import '../../details/presentation/tmdb_movie_details_screen.dart';
-import '../../../../shared/widgets/shimmer_placeholder.dart';
-import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 import '../../../../core/utils/responsive_breakpoints.dart';
-import '../../../../core/models/tmdb_item.dart';
+import '../../../../shared/widgets/multimedia_card.dart';
+import '../../../../shared/widgets/shimmer_placeholder.dart';
+import '../../../../core/domain/entity/multimedia_item.dart';
 import 'controllers/view_all_controller.dart';
 
 enum ViewAllCategory {
@@ -22,7 +20,7 @@ enum ViewAllCategory {
 
 class ViewAllScreen extends ConsumerStatefulWidget {
   final String title;
-  final List<TmdbItem> initialMediaList;
+  final List<MultimediaItem> initialMediaList;
   final ViewAllCategory category;
 
   const ViewAllScreen({
@@ -150,7 +148,10 @@ class _ViewAllScreenState extends ConsumerState<ViewAllScreen> {
                 'view_all_${widget.category.name}_${item.id}_$index';
             final mediaType = item.mediaType;
 
-            return RepaintBoundary(child: CardsWrapper(
+            return MultimediaCard(
+              imageUrl: imageUrl,
+              title: itemTitle,
+              heroTag: uniqueTag,
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
@@ -163,43 +164,7 @@ class _ViewAllScreenState extends ConsumerState<ViewAllScreen> {
                   ),
                 );
               },
-              borderRadius: BorderRadius.circular(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Hero(
-                      tag: uniqueTag,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: CachedNetworkImage(
-                          imageUrl: imageUrl,
-                          memCacheWidth: 350,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                            placeholder: (_, _) => ShimmerPlaceholder(borderRadius: 12),
-                          errorWidget: (_, _, _) =>
-                              const ThumbnailErrorPlaceholder(),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    itemTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.8),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ));
+            );
           },
         ),
       ),

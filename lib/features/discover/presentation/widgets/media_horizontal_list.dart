@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/utils/layout_constants.dart';
 import '../../../../shared/widgets/cards_wrapper.dart';
 import '../../../details/presentation/tmdb_movie_details_screen.dart';
-import '../../../../shared/widgets/desktop_scroll_wrapper.dart'; // Import DesktopScrollWrapper
+import '../../../../shared/widgets/desktop_scroll_wrapper.dart';
 import '../../../../core/utils/responsive_breakpoints.dart';
-import '../../../../shared/widgets/shimmer_placeholder.dart';
-import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
-import '../view_all_screen.dart'; // Import ViewAllScreen
-import '../../../../core/models/tmdb_item.dart';
+import '../../../../shared/widgets/multimedia_card.dart';
+import '../view_all_screen.dart';
+import '../../../../core/domain/entity/multimedia_item.dart';
 
 class MediaHorizontalList extends StatefulWidget {
   final String title;
-  final List<TmdbItem> mediaList;
+  final List<MultimediaItem> mediaList;
   final ViewAllCategory category;
-  final void Function(TmdbItem)? onTap;
+  final void Function(MultimediaItem)? onTap;
   final bool showViewAll;
   final String? heroTagPrefix;
 
@@ -52,7 +50,6 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
     if (widget.mediaList.isEmpty) return const SizedBox.shrink();
 
     final isDesktop = context.isDesktop;
-    final cardWidth = isDesktop ? 200.0 : 130.0;
     final listHeight = isDesktop ? 350.0 : 230.0;
 
     return Column(
@@ -171,7 +168,10 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
                     '${prefix}_${widget.title}_${item.id}_${itemTitle.hashCode}_$index';
                 final mediaType = item.mediaType;
 
-                return RepaintBoundary(child: CardsWrapper(
+                return MultimediaCard(
+                  imageUrl: imageUrl,
+                  title: itemTitle,
+                  heroTag: uniqueTag,
                   onTap: () {
                     if (widget.onTap != null) {
                       widget.onTap!(item);
@@ -188,48 +188,7 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
                       );
                     }
                   },
-                  child: SizedBox(
-                    width: cardWidth, // Fixed width for poster
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Poster Image
-                        Expanded(
-                          child: Hero(
-                            tag: uniqueTag,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: CachedNetworkImage(
-                                imageUrl: imageUrl,
-                                memCacheWidth: 350, // Optimize memory usage
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                placeholder: (context, url) =>
-                                    ShimmerPlaceholder(borderRadius: 12),
-                                errorWidget: (_, _, _) =>
-                                    ThumbnailErrorPlaceholder(label: itemTitle),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: LayoutConstants.spacingXs),
-                        // Title below poster
-                        Text(
-                          itemTitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.8),
-                            fontSize: isDesktop ? 22 : 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ));
+                );
               },
             ),
           ),

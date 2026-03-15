@@ -6,12 +6,12 @@ import '../../../../core/utils/layout_constants.dart';
 import '../../../../shared/widgets/cards_wrapper.dart';
 import '../../../details/presentation/tmdb_movie_details_screen.dart';
 import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
-import '../../../../core/models/tmdb_item.dart';
+import '../../../../core/domain/entity/multimedia_item.dart';
 
 class DiscoverCarousel extends StatefulWidget {
-  final List<TmdbItem> movies;
+  final List<MultimediaItem> movies;
   final ScrollController? scrollController;
-  final void Function(TmdbItem)? onTap;
+  final void Function(MultimediaItem)? onTap;
 
   const DiscoverCarousel({
     super.key,
@@ -179,7 +179,7 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
     );
   }
 
-  void _navigateToDetails(BuildContext context, TmdbItem movie) {
+  void _navigateToDetails(BuildContext context, MultimediaItem movie) {
     // Determine type: 'title' usually implies movie, 'name' implies TV
     // But better to check 'media_type' if available (trending/search provides it),
     // fallback to title check.
@@ -198,7 +198,7 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
 
   Widget _buildCarouselItem(
     BuildContext context,
-    TmdbItem movie,
+    MultimediaItem movie,
     double height,
   ) {
     final imageUrl = movie.backdropImageUrl;
@@ -208,42 +208,31 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
     final scaffoldColor = theme.scaffoldBackgroundColor;
 
     // Metadata parsing
-    final releaseDate = movie.releaseDate;
-    final year = releaseDate.isNotEmpty ? releaseDate.split('-')[0] : '';
-    // final isMovie = movie.mediaType == 'movie'; // Removed as unused
+    final year = movie.year?.toString() ?? '';
+    final genres = movie.tags?.join(' • ') ?? '';
+    final provider = movie.provider;
 
     String? type;
-    // IconData? typeIcon; // Removed as unused
     final mType = movie.mediaType.toLowerCase();
 
     if (mType == 'movie') {
       type = "Movie";
-      // typeIcon = Icons.movie_outlined; // Removed as unused
     } else if (mType == 'series' || mType == 'tv') {
       type = "TV Show";
-      // typeIcon = Icons.tv; // Removed as unused
     } else if (mType == 'anime') {
       type = "Anime";
-      // typeIcon = Icons.animation; // Removed as unused
     } else if (mType == 'livestream') {
       type = "Live Stream";
-      // typeIcon = Icons.live_tv; // Removed as unused
     } else {
-      // Capitalize first letter as fallback
-      type = mType.isNotEmpty
-          ? mType[0].toUpperCase() + mType.substring(1)
-          : null;
-      // typeIcon = Icons.movie_outlined; // Removed as unused
+      type = mType.isNotEmpty ? mType[0].toUpperCase() + mType.substring(1) : null;
     }
 
-    final genres = movie.genresStr ?? '';
-    final provider = movie.sourceItem?.provider;
     final metadata = [
       if (provider != null && provider.isNotEmpty) provider,
-      if (type != null) type,
+      type,
       if (genres.isNotEmpty) genres,
       if (year.isNotEmpty) year,
-    ].join(' • ');
+    ].whereType<String>().join(' • ');
 
     // Use a locally scoped AnimatedBuilder if controller exists
     if (widget.scrollController == null) {
@@ -310,10 +299,10 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withOpacity(0.3),
+                          Colors.black.withValues(alpha: 0.3),
                           Colors.transparent,
-                          Colors.black.withOpacity(0.1),
-                          scaffoldColor.withOpacity(0.8),
+                          Colors.black.withValues(alpha: 0.1),
+                          scaffoldColor.withValues(alpha: 0.8),
                           scaffoldColor,
                         ],
                         stops: const [0.0, 0.4, 0.6, 0.85, 1.0],
@@ -371,7 +360,7 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                                       overflow: TextOverflow.ellipsis,
                                       style: theme.textTheme.labelSmall?.copyWith(
                                         color: theme.colorScheme.onSurface
-                                            .withOpacity(0.6),
+                                            .withValues(alpha: 0.6),
                                       ),
                                     ),
                                   ),
@@ -382,14 +371,14 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                                     Icons.calendar_today_rounded,
                                     size: 10,
                                     color: theme.colorScheme.onSurface
-                                        .withOpacity(0.5),
+                                        .withValues(alpha: 0.5),
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     year,
                                     style: theme.textTheme.labelSmall?.copyWith(
                                       color: theme.colorScheme.onSurface
-                                          .withOpacity(0.6),
+                                          .withValues(alpha: 0.6),
                                     ),
                                   ),
                                 ],
@@ -416,7 +405,7 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
     String title,
     String metadata,
     double height,
-    TmdbItem movie,
+    MultimediaItem movie,
   ) {
     return CardsWrapper(
       onTap: () {
@@ -450,9 +439,7 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  Theme.of(context).scaffoldBackgroundColor.withOpacity(
-                    0.8,
-                  ),
+                  Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8),
                   Theme.of(context).scaffoldBackgroundColor,
                 ],
                 stops: const [0.5, 0.85, 1.0],
@@ -476,7 +463,7 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.7),
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -545,9 +532,9 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withOpacity(0.5), width: 0.5),
+        border: Border.all(color: color.withValues(alpha: 0.5), width: 0.5),
       ),
       child: Text(
         label,
