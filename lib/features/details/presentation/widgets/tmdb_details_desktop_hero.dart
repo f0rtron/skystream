@@ -126,88 +126,22 @@ class TmdbDetailsDesktopHero extends StatelessWidget {
                           ),
                         ),
                       const SizedBox(height: 24),
-                      Row(
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          Text(
-                            year.isNotEmpty ? "$year  •  " : "",
-                            style: TextStyle(
-                              color: textSecondary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            durationText,
-                            style: TextStyle(
-                              color: textSecondary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: textSecondary),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              certification,
-                              style: TextStyle(
-                                color: textSecondary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF01B4E4),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              "TMDB",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            rating,
-                            style: const TextStyle(
-                              color: Color(0xFF01B4E4),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          if (director != "Unknown") ...[
-                            const SizedBox(width: 12),
-                            Container(
-                              width: 4,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: textSecondary,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              "Director: $director",
-                              style: TextStyle(
-                                color: textSecondary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                          _buildTmdbLogo(),
+                          _buildTopBadge(context, isMovie ? "MOVIE" : "TV SHOW"),
+                          if (year.isNotEmpty)
+                            _buildIconInfo(context, Icons.calendar_today_rounded, year, textColor),
+                          _buildIconInfo(context, Icons.star_rounded, rating, const Color(0xFF01B4E4)),
+                          if (durationText.isNotEmpty)
+                            _buildIconInfo(context, Icons.timer_outlined, durationText, textColor),
+                          if (certification.isNotEmpty)
+                            _buildBorderedInfo(context, certification, textColor),
+                          if (director != "Unknown")
+                            _buildIconInfo(context, isMovie ? Icons.movie_creation_outlined : Icons.person_outline, isMovie ? "Director: $director" : "Creator: $director", textColor),
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -289,6 +223,90 @@ class TmdbDetailsDesktopHero extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTmdbLogo() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFF01B4E4), // TMDB Blue
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Text(
+        "TMDB",
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w900,
+          fontSize: 10,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBadge(BuildContext context, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+          width: 0.5,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.primary,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIconInfo(BuildContext context, IconData icon, String text, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 14,
+          color: color.withValues(alpha: 0.5),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(
+            color: color.withValues(alpha: 0.8),
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBorderedInfo(BuildContext context, String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        border: Border.all(
+          color: color.withValues(alpha: 0.1),
+        ),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color.withValues(alpha: 0.7),
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }

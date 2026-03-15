@@ -5,7 +5,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/utils/layout_constants.dart';
 import '../../../../shared/widgets/cards_wrapper.dart';
 import '../../../details/presentation/tmdb_movie_details_screen.dart';
-import '../../../../shared/widgets/shimmer_placeholder.dart';
 import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 import '../../../../core/models/tmdb_item.dart';
 
@@ -205,40 +204,43 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
     final imageUrl = movie.backdropImageUrl;
     final title = movie.title;
     final logoUrl = movie.logoUrl;
+    final theme = Theme.of(context);
+    final scaffoldColor = theme.scaffoldBackgroundColor;
 
     // Metadata parsing
     final releaseDate = movie.releaseDate;
     final year = releaseDate.isNotEmpty ? releaseDate.split('-')[0] : '';
-    final isMovie = movie.mediaType == 'movie';
+    // final isMovie = movie.mediaType == 'movie'; // Removed as unused
 
     String? type;
-    IconData? typeIcon;
+    // IconData? typeIcon; // Removed as unused
     final mType = movie.mediaType.toLowerCase();
 
     if (mType == 'movie') {
       type = "Movie";
-      typeIcon = Icons.movie_outlined;
+      // typeIcon = Icons.movie_outlined; // Removed as unused
     } else if (mType == 'series' || mType == 'tv') {
       type = "TV Show";
-      typeIcon = Icons.tv;
+      // typeIcon = Icons.tv; // Removed as unused
     } else if (mType == 'anime') {
       type = "Anime";
-      typeIcon = Icons.animation;
+      // typeIcon = Icons.animation; // Removed as unused
     } else if (mType == 'livestream') {
       type = "Live Stream";
-      typeIcon = Icons.live_tv;
+      // typeIcon = Icons.live_tv; // Removed as unused
     } else {
       // Capitalize first letter as fallback
       type = mType.isNotEmpty
           ? mType[0].toUpperCase() + mType.substring(1)
           : null;
-      typeIcon = Icons.movie_outlined;
+      // typeIcon = Icons.movie_outlined; // Removed as unused
     }
 
     final genres = movie.genresStr ?? '';
-
+    final provider = movie.sourceItem?.provider;
     final metadata = [
-      ?type,
+      if (provider != null && provider.isNotEmpty) provider,
+      if (type != null) type,
       if (genres.isNotEmpty) genres,
       if (year.isNotEmpty) year,
     ].join(' • ');
@@ -250,7 +252,6 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
         imageUrl,
         logoUrl,
         title,
-        isMovie,
         metadata,
         height,
         movie,
@@ -283,7 +284,7 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // 1. Parallax Background
+                // 1. Background Image with Parallax
                 Transform.translate(
                   offset: Offset(0, parallaxOffset),
                   child: CachedNetworkImage(
@@ -293,84 +294,29 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                     width: double.infinity,
                     memCacheWidth:
                         1080, // High enough for quality, constrained for memory
-                    placeholder: (context, url) => const ShimmerPlaceholder(),
+                    placeholder:
+                        (context, url) => Container(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                        ),
                     errorWidget: (_, _, _) => const ThumbnailErrorPlaceholder(),
                   ),
                 ),
 
-                // 2. Static Gradient
-                // Transform.translate(
-                //   offset: Offset(0, -1),
-                //   child: Container(
-                //     decoration: BoxDecoration(
-                //       gradient: LinearGradient(
-                //         begin: Alignment.topCenter,
-                //         end: Alignment.bottomCenter,
-                //         colors: [
-                //           Theme.of(
-                //             context,
-                //           ).scaffoldBackgroundColor.withValues(alpha: 0.9),
-                //           Theme.of(
-                //             context,
-                //           ).scaffoldBackgroundColor.withValues(alpha: 0.7),
-                //           Theme.of(
-                //             context,
-                //           ).scaffoldBackgroundColor.withValues(alpha: 0.5),
-                //           Theme.of(
-                //             context,
-                //           ).scaffoldBackgroundColor.withValues(alpha: 0.0),
-                //           Theme.of(context).scaffoldBackgroundColor,
-                //         ],
-                //         stops: const [0.0, 0.1, 0.2, 0.3, 1],
-                //       ),
-                //     ),
-                //   ),
-                // ),
-                Transform.translate(
-                  offset: const Offset(0, 1),
+                // 2. Gradients for readability
+                Positioned.fill(
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          // Theme.of(
-                          //   context,
-                          // ).scaffoldBackgroundColor.withValues(alpha: 0.1),
-                          // Theme.of(
-                          //   context,
-                          // ).scaffoldBackgroundColor.withValues(alpha: 0.05),
-                          // Theme.of(
-                          //   context,
-                          // ).scaffoldBackgroundColor.withValues(alpha: 0.01),
-                          // Theme.of(
-                          //   context,
-                          // ).scaffoldBackgroundColor.withValues(alpha: 0.0),
-                          Theme.of(
-                            context,
-                          ).scaffoldBackgroundColor.withValues(alpha: 0.0),
-                          Theme.of(
-                            context,
-                          ).scaffoldBackgroundColor.withValues(alpha: 0.4),
-                          Theme.of(
-                            context,
-                          ).scaffoldBackgroundColor.withValues(alpha: 0.8),
-                          Theme.of(
-                            context,
-                          ).scaffoldBackgroundColor.withValues(alpha: 0.9),
-                          Theme.of(context).scaffoldBackgroundColor,
+                          Colors.black.withOpacity(0.3),
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.1),
+                          scaffoldColor.withOpacity(0.8),
+                          scaffoldColor,
                         ],
-                        stops: const [
-                          // 0.0,
-                          // 0.05,
-                          // 0.07,
-                          // 0.3,
-                          0.6,
-                          0.7,
-                          0.8,
-                          0.9,
-                          1.0,
-                        ],
+                        stops: const [0.0, 0.4, 0.6, 0.85, 1.0],
                       ),
                     ),
                   ),
@@ -399,42 +345,56 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                           else
                             _buildTitleFallback(title),
 
-                          // Metadata Row
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              if (type != null) ...[
-                                Icon(
-                                  typeIcon,
-                                  color: Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.7),
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 6),
-                              ],
-                              Flexible(
-                                child: Text(
-                                  metadata,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    shadows: [
-                                      if (Theme.of(context).brightness ==
-                                          Brightness.dark)
-                                        const Shadow(
-                                          color: Colors.black,
-                                          blurRadius: 4,
-                                        ),
-                                    ],
+                          // Metadata Row (Premium Layout)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (provider != null && provider.isNotEmpty) ...[
+                                  _buildMiniBadge(
+                                    context,
+                                    provider.toUpperCase(),
+                                    isProvider: true,
                                   ),
-                                ),
-                              ),
-                            ],
+                                  const SizedBox(width: 8),
+                                ],
+                                if (type != null) ...[
+                                  _buildMiniBadge(context, type.toUpperCase()),
+                                  const SizedBox(width: 12),
+                                ],
+                                if (genres.isNotEmpty) ...[
+                                  Flexible(
+                                    child: Text(
+                                      genres,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.labelSmall?.copyWith(
+                                        color: theme.colorScheme.onSurface
+                                            .withOpacity(0.6),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                ],
+                                if (year.isNotEmpty) ...[
+                                  Icon(
+                                    Icons.calendar_today_rounded,
+                                    size: 10,
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.5),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    year,
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.onSurface
+                                          .withOpacity(0.6),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -454,7 +414,6 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
     String imageUrl,
     String? logoUrl,
     String title,
-    bool isMovie,
     String metadata,
     double height,
     TmdbItem movie,
@@ -478,6 +437,11 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
             height: height,
             width: double.infinity,
             memCacheWidth: 1080,
+            placeholder:
+                (context, url) => Container(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                ),
+            errorWidget: (_, _, _) => const ThumbnailErrorPlaceholder(),
           ),
           Container(
             decoration: BoxDecoration(
@@ -485,25 +449,20 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Theme.of(
-                    context,
-                  ).scaffoldBackgroundColor.withValues(alpha: 0.0),
-                  Theme.of(
-                    context,
-                  ).scaffoldBackgroundColor.withValues(alpha: 0.0),
-                  Theme.of(
-                    context,
-                  ).scaffoldBackgroundColor.withValues(alpha: 0.9),
+                  Colors.transparent,
+                  Theme.of(context).scaffoldBackgroundColor.withOpacity(
+                    0.8,
+                  ),
                   Theme.of(context).scaffoldBackgroundColor,
                 ],
-                stops: const [0.0, 0.4, 0.85, 1.0],
+                stops: const [0.5, 0.85, 1.0],
               ),
             ),
           ),
           Positioned(
             left: 24,
             right: 24,
-            bottom: 30, // Adjusted from 50
+            bottom: 40,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -511,10 +470,13 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                   _buildLogo(logoUrl, title)
                 else
                   _buildTitleFallback(title),
+                const SizedBox(height: 8),
                 Text(
                   metadata,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
               ],
@@ -532,8 +494,8 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
         height: 140,
         width: 300,
         fit: BoxFit.contain,
-        placeholderBuilder: (context) =>
-            const SizedBox(height: 140, width: 300),
+        placeholderBuilder:
+            (context) => const SizedBox(height: 140, width: 300),
       );
     }
     return CachedNetworkImage(
@@ -566,6 +528,34 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
             if (Theme.of(context).brightness == Brightness.dark)
               const Shadow(color: Colors.black, blurRadius: 10),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiniBadge(
+    BuildContext context,
+    String label, {
+    bool isProvider = false,
+  }) {
+    final theme = Theme.of(context);
+    final color =
+        isProvider ? theme.colorScheme.primary : theme.colorScheme.secondary;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withOpacity(0.5), width: 0.5),
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: color,
+          fontSize: 8,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.5,
         ),
       ),
     );

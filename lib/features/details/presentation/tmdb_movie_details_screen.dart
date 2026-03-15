@@ -438,73 +438,22 @@ class _TmdbMovieDetailsScreenState
                 ProviderSearchSection(query: title),
                 const SizedBox(height: 24),
 
-                // Metadata Row: 2026  1H 56M  [PG-13]
-                Row(
+                // Metadata Row: [TMDB] MOVIE/TV  2026  1H 56M  [PG-13]
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Text(
-                      year,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(width: 20),
                     _buildTmdbLogo(),
-                    const SizedBox(width: 8),
-                    Text(
-                      rating,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    if (runtime > 0) ...[
-                      Text(
-                        durationText,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                    ],
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        certification,
-                        style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.7),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    if (!isMovie && data.seasons.isNotEmpty) ...[
-                      const SizedBox(width: 20),
-                      Text(
-                        "${data.seasons.length} Seasons",
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                    _buildTopBadge(context, isMovie ? "MOVIE" : "TV SHOW"),
+                    _buildIconInfo(context, Icons.calendar_today_rounded, year),
+                    _buildIconInfo(context, Icons.star_rounded, rating, iconColor: const Color(0xFF01B4E4)),
+                    if (runtime > 0)
+                      _buildIconInfo(context, Icons.timer_outlined, durationText),
+                    if (certification.isNotEmpty)
+                      _buildBorderedInfo(context, certification),
+                    if (!isMovie && data.seasons.isNotEmpty)
+                      _buildIconInfo(context, Icons.layers_rounded, "${data.seasons.length} Seasons"),
                   ],
                 ),
 
@@ -674,6 +623,72 @@ class _TmdbMovieDetailsScreenState
           color: Colors.white,
           fontWeight: FontWeight.w900,
           fontSize: 10,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBadge(BuildContext context, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+          width: 0.5,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.primary,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIconInfo(BuildContext context, IconData icon, String text, {Color? iconColor}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 14,
+          color: iconColor ?? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBorderedInfo(BuildContext context, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+        ),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

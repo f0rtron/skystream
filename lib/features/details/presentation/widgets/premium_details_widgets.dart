@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:skystream/core/domain/entity/multimedia_item.dart';
 import 'package:skystream/core/utils/image_fallbacks.dart';
 import 'package:intl/intl.dart';
+import 'details_layout_widgets.dart';
 
 class MetadataBar extends StatelessWidget {
   final MultimediaItem item;
@@ -13,22 +14,30 @@ class MetadataBar extends StatelessWidget {
     // theme and context used in helper methods
 
     return Wrap(
-      spacing: 8,
+      spacing: 12,
       runSpacing: 8,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        if (item.year != null) _buildInfoText(context, item.year.toString()),
+        if (item.provider != null && item.provider!.isNotEmpty)
+          DetailsProviderChip(providerName: item.provider!),
+        _buildBorderedInfo(
+          context,
+          item.contentType.name.toUpperCase(),
+          color: Theme.of(context).colorScheme.primary,
+          isFilled: true,
+        ),
+        if (item.year != null)
+          _buildIconInfo(context, Icons.calendar_today_rounded, item.year.toString()),
         if (item.contentRating != null)
           _buildBorderedInfo(context, item.contentRating!),
-        if (item.duration != null) _buildInfoText(context, "${item.duration}m"),
+        if (item.duration != null)
+          _buildIconInfo(context, Icons.timer_outlined, "${item.duration}m"),
         if (item.score != null)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.star_rounded, size: 16, color: Colors.amber),
-              const SizedBox(width: 4),
-              _buildInfoText(context, item.score!.toStringAsFixed(1)),
-            ],
+          _buildIconInfo(
+            context,
+            Icons.star_rounded,
+            item.score!.toStringAsFixed(1),
+            iconColor: const Color(0xFF01B4E4),
           ),
         if (item.playbackPolicy != null && item.playbackPolicy != "none")
           _buildPlaybackBadge(context, item.playbackPolicy!),
@@ -41,27 +50,83 @@ class MetadataBar extends StatelessWidget {
   Widget _buildInfoText(BuildContext context, String text) {
     return Text(
       text,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-        fontWeight: FontWeight.w500,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
       ),
     );
   }
 
-  Widget _buildBorderedInfo(BuildContext context, String text, {Color? color}) {
+  Widget _buildBorderedInfo(
+    BuildContext context,
+    String text, {
+    Color? color,
+    bool isFilled = false,
+  }) {
+    final theme = Theme.of(context);
+    final themeColor = color ?? theme.colorScheme.onSurface;
+    
+    if (isFilled) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: themeColor.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: themeColor.withValues(alpha: 0.3),
+            width: 0.5,
+          ),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: themeColor,
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.5,
+          ),
+        ),
+      );
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        border: Border.all(color: color ?? Theme.of(context).dividerColor),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        border: Border.all(
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+        ),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: color ?? Theme.of(context).colorScheme.onSurfaceVariant,
+        style: TextStyle(
+          color: themeColor.withValues(alpha: 0.7),
+          fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
       ),
+    );
+  }
+
+  Widget _buildIconInfo(
+    BuildContext context,
+    IconData icon,
+    String text, {
+    Color? iconColor,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 14,
+          color: iconColor ?? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+        ),
+        const SizedBox(width: 4),
+        _buildInfoText(context, text),
+      ],
     );
   }
 

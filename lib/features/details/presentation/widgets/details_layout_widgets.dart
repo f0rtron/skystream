@@ -373,32 +373,56 @@ class DetailsProviderChip extends ConsumerWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Theme.of(context).dividerColor),
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+          width: 0.5,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.extension, size: 14, color: Theme.of(context).hintColor),
+          Icon(
+            Icons.extension_rounded,
+            size: 14,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           const SizedBox(width: 4),
           Text(
-            displayName,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+            displayName.toUpperCase(),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
+            ),
           ),
           if (isDebug) ...[
-            const SizedBox(width: 4),
+            const SizedBox(width: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.2),
+                color: Colors.redAccent.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: const Text('DEBUG', style: TextStyle(fontSize: 8)),
+              child: const Text(
+                'DEBUG',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ],
