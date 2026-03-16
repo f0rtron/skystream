@@ -110,7 +110,7 @@ class PlayerController extends Notifier<PlayerState> {
   late String _videoUrl;
   Timer? _torrentPollTimer;
   bool _isPolling = false;
-  
+
   // Track last saved position for threshold-based saving
   Duration _lastSavedPosition = Duration.zero;
   static const double _saveThresholdPercent = 0.05; // 5% of video
@@ -122,7 +122,7 @@ class PlayerController extends Notifier<PlayerState> {
   StreamSubscription? _positionSub;
   StreamSubscription? _bufferingSub;
   StreamSubscription? _progressSub;
-  
+
   final List<DateTime> _bufferDepletionTimes = [];
   Timer? _retryTimer;
 
@@ -198,7 +198,6 @@ class PlayerController extends Notifier<PlayerState> {
     });
   }
 
-
   void _setupBufferingMonitor() {
     _bufferingSub?.cancel();
     _bufferingSub = _player.stream.buffering.listen((isBuffering) {
@@ -221,7 +220,7 @@ class PlayerController extends Notifier<PlayerState> {
 
   void _handleBufferStall() {
     if (_isLiveStream(_videoUrl)) return;
-    
+
     final now = DateTime.now();
     _bufferDepletionTimes.add(now);
 
@@ -1172,7 +1171,6 @@ class PlayerController extends Notifier<PlayerState> {
       debugPrint("Timeout waiting for duration or seek failed: $e");
     }
   }
-
 }
 
 final playerControllerProvider =
