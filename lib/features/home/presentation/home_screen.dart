@@ -76,130 +76,128 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final history = ref.watch(watchHistoryProvider);
     final generalSettings = ref.watch(generalSettingsProvider);
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: _isScrolledNotifier,
-      builder: (context, isScrolled, child) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        final overlayStyle = isDark
-            ? SystemUiOverlayStyle.light
-            : SystemUiOverlayStyle.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final overlayStyle = isDark
+        ? SystemUiOverlayStyle.light
+        : SystemUiOverlayStyle.dark;
 
-        return Scaffold(
-          extendBodyBehindAppBar: true,
-          appBar: AppBar(
-            systemOverlayStyle: overlayStyle,
-            forceMaterialTransparency: true,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            flexibleSpace: AnimatedContainer(
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        systemOverlayStyle: overlayStyle,
+        forceMaterialTransparency: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: ValueListenableBuilder<bool>(
+          valueListenable: _isScrolledNotifier,
+          builder: (context, isScrolled, child) {
+            return AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               color: isScrolled
                   ? Theme.of(context).scaffoldBackgroundColor
                   : Colors.transparent,
-            ),
-            title: const Text('SkyStream'),
-          ),
-          floatingActionButton: ValueListenableBuilder<bool>(
-            valueListenable: _isFabExtended,
-            builder: (context, isFabExtended, _) {
-              return Material(
-                elevation: 4,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Theme.of(context).dialogTheme.backgroundColor
-                    : Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () => _showProviderSelector(context, ref),
-                  child: Container(
-                    height: 56,
-                    constraints: const BoxConstraints(minWidth: 56),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isFabExtended ? 16 : 0,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.extension,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        AnimatedSize(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                          child: SizedBox(
-                            width: isFabExtended ? null : 0,
-                            child: isFabExtended
-                                ? Padding(
-                                    padding: const EdgeInsets.only(left: 12),
-                                    child: Builder(
-                                      builder: (context) {
-                                        final active = ref.watch(
-                                          activeProviderStateProvider,
-                                        );
-                                        final isDebug =
-                                            active?.isDebug ?? false;
-                                        return Row(
-                                          children: [
-                                            Text(
-                                              active?.name ?? 'None',
-                                              style: TextStyle(
-                                                color: Theme.of(
-                                                  context,
-                                                ).colorScheme.onSurface,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.fade,
-                                              softWrap: false,
-                                            ),
-                                            if (isDebug) ...[
-                                              const SizedBox(width: 8),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 4,
-                                                      vertical: 2,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.red,
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
-                                                ),
-                                                child: const Text(
-                                                  'DEBUG',
-                                                  style: TextStyle(
-                                                    fontSize: 10,
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                  )
-                                : const SizedBox.shrink(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+            );
+          },
+        ),
+        title: const Text('SkyStream'),
+      ),
+      floatingActionButton: ValueListenableBuilder<bool>(
+        valueListenable: _isFabExtended,
+        builder: (context, isFabExtended, _) {
+          return Material(
+            elevation: 4,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Theme.of(context).dialogTheme.backgroundColor
+                : Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => _showProviderSelector(context, ref),
+              child: Container(
+                height: 56,
+                constraints: const BoxConstraints(minWidth: 56),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isFabExtended ? 16 : 0,
                 ),
-              );
-            },
-          ),
-          body: _buildBody(
-            context,
-            homeDataAsync,
-            history,
-            generalSettings.watchHistoryEnabled,
-          ),
-        );
-      },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.extension,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      child: SizedBox(
+                        width: isFabExtended ? null : 0,
+                        child: isFabExtended
+                            ? Padding(
+                                padding: const EdgeInsets.only(left: 12),
+                                child: Builder(
+                                  builder: (context) {
+                                    final active = ref.watch(
+                                      activeProviderStateProvider,
+                                    );
+                                    final isDebug = active?.isDebug ?? false;
+                                    return Row(
+                                      children: [
+                                        Text(
+                                          active?.name ?? 'None',
+                                          style: TextStyle(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.fade,
+                                          softWrap: false,
+                                        ),
+                                        if (isDebug) ...[
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red,
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: const Text(
+                                              'DEBUG',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    );
+                                  },
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+      body: _buildBody(
+        context,
+        homeDataAsync,
+        history,
+        generalSettings.watchHistoryEnabled,
+      ),
     );
   }
 
@@ -259,9 +257,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               if (data.containsKey('Trending'))
                 SliverToBoxAdapter(
                   child: DiscoverCarousel(
-                    movies: data['Trending']!
-                        .take(7)
-                        .toList(),
+                    movies: data['Trending']!.take(7).toList(),
                     scrollController: _scrollController,
                     onTap: (item) {
                       context.push(
@@ -274,9 +270,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               else if (data.isNotEmpty)
                 SliverToBoxAdapter(
                   child: DiscoverCarousel(
-                    movies: data.values.first
-                        .take(7)
-                        .toList(),
+                    movies: data.values.first.take(7).toList(),
                     scrollController: _scrollController,
                     onTap: (item) {
                       context.push(
@@ -468,8 +462,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           final selected = val == null
                               ? null
                               : providers.firstWhere(
-                                (p) => p.packageName == val,
-                              );
+                                  (p) => p.packageName == val,
+                                );
                           ref
                               .read(activeProviderStateProvider.notifier)
                               .set(selected);

@@ -34,7 +34,6 @@ class PlayerState {
   final bool isReverting;
   final bool showNextEpisodeOverlay;
   final String? nextEpisodeTitle;
-  final double buffer; // 0.0 to 1.0 (buffer ahead as percentage of duration)
   final int retryCountdown; // seconds remaining before auto-retry
   final bool isAdaptiveBufferingActive;
 
@@ -54,7 +53,6 @@ class PlayerState {
     this.isReverting = false,
     this.showNextEpisodeOverlay = false,
     this.nextEpisodeTitle,
-    this.buffer = 0.0,
     this.retryCountdown = 0,
     this.isAdaptiveBufferingActive = false,
   });
@@ -75,7 +73,6 @@ class PlayerState {
     bool? isReverting,
     bool? showNextEpisodeOverlay,
     String? nextEpisodeTitle,
-    double? buffer,
     int? retryCountdown,
     bool? isAdaptiveBufferingActive,
   }) {
@@ -96,7 +93,6 @@ class PlayerState {
       showNextEpisodeOverlay:
           showNextEpisodeOverlay ?? this.showNextEpisodeOverlay,
       nextEpisodeTitle: nextEpisodeTitle ?? this.nextEpisodeTitle,
-      buffer: buffer ?? this.buffer,
       retryCountdown: retryCountdown ?? this.retryCountdown,
       isAdaptiveBufferingActive:
           isAdaptiveBufferingActive ?? this.isAdaptiveBufferingActive,
@@ -177,7 +173,10 @@ class PlayerController extends Notifier<PlayerState> {
       }
     }
 
-    state = state.copyWith(playerTitle: initialTitle);
+    state = state.copyWith(
+      playerTitle: initialTitle,
+      streamSubtitle: "Searching for sources...",
+    );
 
     _setupEventDrivenProgressSaving();
     _setupErrorListener();
@@ -209,12 +208,9 @@ class PlayerController extends Notifier<PlayerState> {
 
   void _setupProgressMonitor() {
     _progressSub?.cancel();
-    // Update buffer percentage for UI
+    // Progress monitor now only handles logic, UI uses StreamBuilder natively
     _progressSub = _player.stream.buffer.listen((buffer) {
-      final total = _player.state.duration.inMilliseconds;
-      if (total > 0) {
-        state = state.copyWith(buffer: buffer.inMilliseconds / total);
-      }
+      // Logic-only monitoring can go here if needed in future
     });
   }
 
@@ -352,6 +348,7 @@ class PlayerController extends Notifier<PlayerState> {
 
     try {
       if (_videoUrl.isNotEmpty) {
+        state = state.copyWith(streamSubtitle: "Initializing stream...");
         if (await _handleFallbackTorrent()) return;
 
         final streams = await activeProvider.loadStreams(_videoUrl);

@@ -53,7 +53,8 @@ class JsEngineService {
   int _activeAsyncCount = 0;
   Timer? _centralPump;
 
-  JsEngineService(this._storage, this._pluginStorage, this._dio) : _runtime = getJavascriptRuntime() {
+  JsEngineService(this._storage, this._pluginStorage, this._dio)
+    : _runtime = getJavascriptRuntime() {
     final bool hasCookieManager = _dio.interceptors.any(
       (i) => i is CookieManager,
     );
@@ -166,20 +167,30 @@ class JsEngineService {
 
     _runtime.onMessage('http_request', (dynamic args) {
       // We don't await here to let the bridge continue immediately
-      _handleHttp(args).then((result) {
-        final Map<String, dynamic> data = args is Map ? Map<String, dynamic>.from(args) : jsonDecode(args.toString());
-        final String? callbackId = data['id'];
-        if (callbackId != null) {
-          final String jsonResult = jsonEncode(result);
-          _runtime.evaluate("_resolveDartAsync('$callbackId', $jsonResult, false)");
-        }
-      }).catchError((e) {
-        final Map<String, dynamic> data = args is Map ? Map<String, dynamic>.from(args) : jsonDecode(args.toString());
-        final String? callbackId = data['id'];
-        if (callbackId != null) {
-          _runtime.evaluate("_resolveDartAsync('$callbackId', ${jsonEncode(e.toString())}, true)");
-        }
-      });
+      _handleHttp(args)
+          .then((result) {
+            final Map<String, dynamic> data = args is Map
+                ? Map<String, dynamic>.from(args)
+                : jsonDecode(args.toString());
+            final String? callbackId = data['id'];
+            if (callbackId != null) {
+              final String jsonResult = jsonEncode(result);
+              _runtime.evaluate(
+                "_resolveDartAsync('$callbackId', $jsonResult, false)",
+              );
+            }
+          })
+          .catchError((e) {
+            final Map<String, dynamic> data = args is Map
+                ? Map<String, dynamic>.from(args)
+                : jsonDecode(args.toString());
+            final String? callbackId = data['id'];
+            if (callbackId != null) {
+              _runtime.evaluate(
+                "_resolveDartAsync('$callbackId', ${jsonEncode(e.toString())}, true)",
+              );
+            }
+          });
       return null;
     });
 
@@ -189,10 +200,14 @@ class JsEngineService {
     });
     _runtime.onMessage('get_storage', (dynamic args) {
       _handleStorage(args, false).then((value) {
-        final Map<String, dynamic> data = args is Map ? Map<String, dynamic>.from(args) : jsonDecode(args.toString());
+        final Map<String, dynamic> data = args is Map
+            ? Map<String, dynamic>.from(args)
+            : jsonDecode(args.toString());
         final String? callbackId = data['id'];
         if (callbackId != null) {
-          _runtime.evaluate("_resolveDartAsync('$callbackId', ${jsonEncode(value)}, false)");
+          _runtime.evaluate(
+            "_resolveDartAsync('$callbackId', ${jsonEncode(value)}, false)",
+          );
         }
       });
       return null;
@@ -200,7 +215,9 @@ class JsEngineService {
 
     _runtime.onMessage('get_preference', (dynamic args) {
       try {
-        final Map<String, dynamic> data = args is Map ? Map<String, dynamic>.from(args) : jsonDecode(args.toString());
+        final Map<String, dynamic> data = args is Map
+            ? Map<String, dynamic>.from(args)
+            : jsonDecode(args.toString());
         final String packageName = data['packageName'];
         final String key = data['key'];
         return _storage.getExtensionData("$packageName:$key");
@@ -211,7 +228,9 @@ class JsEngineService {
 
     _runtime.onMessage('set_preference', (dynamic args) async {
       try {
-        final Map<String, dynamic> data = args is Map ? Map<String, dynamic>.from(args) : jsonDecode(args.toString());
+        final Map<String, dynamic> data = args is Map
+            ? Map<String, dynamic>.from(args)
+            : jsonDecode(args.toString());
         final String packageName = data['packageName'];
         final String key = data['key'];
         final dynamic value = data['value'];
@@ -246,10 +265,32 @@ class JsEngineService {
             ? Map<String, dynamic>.from(args)
             : jsonDecode(args);
         final String? html = data['html'];
-        final String id = "doc_${DateTime.now().microsecondsSinceEpoch}";
-        final doc = html_parser.parse(html ?? "");
-        _domRegistry[id] = doc;
-        return id;
+        final String? callbackId = data['id'];
+
+        if (callbackId != null) {
+          compute(_parseHtml, html ?? "").then((doc) {
+            final String id = "doc_${DateTime.now().microsecondsSinceEpoch}";
+            
+            if (_domRegistry.length > 50) {
+              final keys = _domRegistry.keys.toList();
+              for (int i = 0; i < 10; i++) {
+                _domRegistry.remove(keys[i]);
+              }
+            }
+            
+            _domRegistry[id] = doc;
+            _runtime.evaluate("_resolveDartAsync('$callbackId', ${jsonEncode(id)}, false)");
+          }).catchError((e) {
+            _runtime.evaluate("_resolveDartAsync('$callbackId', ${jsonEncode(e.toString())}, true)");
+          });
+          return null;
+        } else {
+          // Synchronous fallback (deprecated, but kept for extreme safety if id is missing)
+          final String id = "doc_${DateTime.now().microsecondsSinceEpoch}";
+          final doc = html_parser.parse(html ?? "");
+          _domRegistry[id] = doc;
+          return id;
+        }
       } catch (e) {
         if (kDebugMode) debugPrint("[JS DOM ERROR] Parse failed: $e");
         return null;
@@ -266,16 +307,18 @@ class JsEngineService {
         final bool multi = data['multi'] ?? false;
 
         if (nodeId == null || query == null) {
-           if (kDebugMode) debugPrint("[DOM Query Error] nodeId or query is null");
-           return null;
+          if (kDebugMode) {
+            debugPrint("[DOM Query Error] nodeId or query is null");
+          }
+          return null;
         }
 
         final node = _domRegistry[nodeId];
         if (node == null) return null;
 
         if (multi) {
-          final List<html_dom.Element> elements = (node is html_dom.Document) 
-              ? node.querySelectorAll(query) 
+          final List<html_dom.Element> elements = (node is html_dom.Document)
+              ? node.querySelectorAll(query)
               : (node as html_dom.Element).querySelectorAll(query);
           return elements.map((e) => _serializeElement(e)).toList();
         } else {
@@ -299,10 +342,12 @@ class JsEngineService {
     _runtime.onMessage('register_settings', (dynamic args) async {
       if (kDebugMode) debugPrint("[JS SDK] Settings Registration: $args");
       try {
-        final Map<String, dynamic> data = args is Map ? Map<String, dynamic>.from(args) : jsonDecode(args.toString());
+        final Map<String, dynamic> data = args is Map
+            ? Map<String, dynamic>.from(args)
+            : jsonDecode(args.toString());
         final String? packageName = data['packageName'];
         final dynamic schema = data['schema'];
-        
+
         if (packageName != null && schema != null) {
           await _pluginStorage.saveSettingsSchema(packageName, schema);
         }
@@ -313,19 +358,25 @@ class JsEngineService {
 
     _runtime.onMessage('solve_captcha', (dynamic args) {
       if (kDebugMode) debugPrint("[JS SDK] Captcha Solve Requested: $args");
-      final Map<String, dynamic> data = args is Map ? Map<String, dynamic>.from(args) : jsonDecode(args.toString());
+      final Map<String, dynamic> data = args is Map
+          ? Map<String, dynamic>.from(args)
+          : jsonDecode(args.toString());
       final String? callbackId = data['id'];
       if (callbackId != null) {
-        _runtime.evaluate("_resolveDartAsync('$callbackId', 'mock_captcha_token', false)");
+        _runtime.evaluate(
+          "_resolveDartAsync('$callbackId', 'mock_captcha_token', false)",
+        );
       }
       return null;
     });
 
     // Crypto Bridge
     _runtime.onMessage('crypto_decrypt_aes', (dynamic args) {
-      final Map<String, dynamic> data = args is Map ? Map<String, dynamic>.from(args) : jsonDecode(args.toString());
+      final Map<String, dynamic> data = args is Map
+          ? Map<String, dynamic>.from(args)
+          : jsonDecode(args.toString());
       final String? callbackId = data['id'];
-      
+
       try {
         String normalizeB64(String input) {
           String cleaned = input.replaceAll(RegExp(r'\s+'), '');
@@ -347,11 +398,15 @@ class JsEngineService {
         final decrypted = encrypter.decrypt64(encryptedB64, iv: ivToken);
 
         if (callbackId != null) {
-          _runtime.evaluate("_resolveDartAsync('$callbackId', ${jsonEncode(decrypted)}, false)");
+          _runtime.evaluate(
+            "_resolveDartAsync('$callbackId', ${jsonEncode(decrypted)}, false)",
+          );
         }
       } catch (e) {
         if (callbackId != null) {
-          _runtime.evaluate("_resolveDartAsync('$callbackId', ${jsonEncode(e.toString())}, true)");
+          _runtime.evaluate(
+            "_resolveDartAsync('$callbackId', ${jsonEncode(e.toString())}, true)",
+          );
         }
       }
       return null;
@@ -555,12 +610,23 @@ class JsEngineService {
          }
       };
 
-      // JSDOM Polyfill
+      // JSDOM Polyfill (Async aware)
       globalThis.JSDOM = class JSDOM {
         constructor(html) {
-          var id = sendMessage('dom_parse', JSON.stringify({ html: html }));
-          this.window = { document: new JSDocument(id) };
+          this._initPromise = _dartAsyncCall('dom_parse', { html: html }).then((id) => {
+            this.window = { document: new JSDocument(id) };
+            return this;
+          });
         }
+        async waitForInit() {
+          return await this._initPromise;
+        }
+      };
+
+      globalThis.parseHtml = async function(html) {
+         const dom = new JSDOM(html);
+         await dom.waitForInit();
+         return dom.window.document;
       };
 
       class JSNode {
@@ -881,9 +947,10 @@ class JsEngineService {
 
   Map<String, dynamic>? _serializeElement(html_dom.Element? element) {
     if (element == null) return null;
-    final String nodeId = "node_${DateTime.now().microsecondsSinceEpoch}_${element.hashCode}";
+    final String nodeId =
+        "node_${DateTime.now().microsecondsSinceEpoch}_${element.hashCode}";
     _domRegistry[nodeId] = element;
-    
+
     return {
       'nodeId': nodeId,
       'tagName': element.localName,
@@ -893,4 +960,9 @@ class JsEngineService {
       'outerHTML': element.outerHtml,
     };
   }
+}
+
+// Global top-level function for compute() compatibility
+html_dom.Document _parseHtml(String html) {
+  return html_parser.parse(html);
 }

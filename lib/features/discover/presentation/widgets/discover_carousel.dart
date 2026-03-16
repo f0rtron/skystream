@@ -25,7 +25,7 @@ class DiscoverCarousel extends StatefulWidget {
 }
 
 class _DiscoverCarouselState extends State<DiscoverCarousel> {
-  int _currentIndex = 0;
+  final ValueNotifier<int> _currentIndexNotifier = ValueNotifier<int>(0);
   final CarouselSliderController _carouselController =
       CarouselSliderController();
   final ValueNotifier<double> _scrollOffset = ValueNotifier(0.0);
@@ -46,6 +46,7 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
   void dispose() {
     widget.scrollController?.removeListener(_onParentScroll);
     _scrollOffset.dispose();
+    _currentIndexNotifier.dispose();
     super.dispose();
   }
 
@@ -74,9 +75,7 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
               autoPlayCurve: Curves.fastOutSlowIn,
               scrollPhysics: const BouncingScrollPhysics(),
               onPageChanged: (index, reason) {
-                setState(() {
-                  _currentIndex = index;
-                });
+                _currentIndexNotifier.value = index;
               },
             ),
             itemBuilder: (context, index, realIndex) {
@@ -90,24 +89,28 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
             bottom: 20,
             left: 0,
             right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: widget.movies.asMap().entries.map((entry) {
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  width: _currentIndex == entry.key ? 24.0 : 8.0,
-                  height: 8.0,
-                  margin: const EdgeInsets.symmetric(horizontal: 4.0),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    color: Theme.of(context).colorScheme.onSurface.withValues(
-                      alpha: _currentIndex == entry.key
-                          ? 0.9
-                          : 0.3, // Slightly lower opacity for inactive
-                    ),
-                  ),
+            child: ValueListenableBuilder<int>(
+              valueListenable: _currentIndexNotifier,
+              builder: (context, currentIndex, _) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: widget.movies.asMap().entries.map((entry) {
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: currentIndex == entry.key ? 24.0 : 8.0,
+                      height: 8.0,
+                      margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                        color: Theme.of(context).colorScheme.onSurface
+                            .withValues(
+                              alpha: currentIndex == entry.key ? 0.9 : 0.3,
+                            ),
+                      ),
+                    );
+                  }).toList(),
                 );
-              }).toList(),
+              },
             ),
           ),
 
@@ -224,7 +227,9 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
     } else if (mType == 'livestream') {
       type = "Live Stream";
     } else {
-      type = mType.isNotEmpty ? mType[0].toUpperCase() + mType.substring(1) : null;
+      type = mType.isNotEmpty
+          ? mType[0].toUpperCase() + mType.substring(1)
+          : null;
     }
 
     final metadata = [
@@ -283,10 +288,9 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                     width: double.infinity,
                     memCacheWidth:
                         1080, // High enough for quality, constrained for memory
-                    placeholder:
-                        (context, url) => Container(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                        ),
+                    placeholder: (context, url) => Container(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                    ),
                     errorWidget: (_, _, _) => const ThumbnailErrorPlaceholder(),
                   ),
                 ),
@@ -340,7 +344,8 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                if (provider != null && provider.isNotEmpty) ...[
+                                if (provider != null &&
+                                    provider.isNotEmpty) ...[
                                   _buildMiniBadge(
                                     context,
                                     provider.toUpperCase(),
@@ -358,10 +363,11 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                                       genres,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.labelSmall?.copyWith(
-                                        color: theme.colorScheme.onSurface
-                                            .withValues(alpha: 0.6),
-                                      ),
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                            color: theme.colorScheme.onSurface
+                                                .withValues(alpha: 0.6),
+                                          ),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -426,10 +432,9 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
             height: height,
             width: double.infinity,
             memCacheWidth: 1080,
-            placeholder:
-                (context, url) => Container(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                ),
+            placeholder: (context, url) => Container(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            ),
             errorWidget: (_, _, _) => const ThumbnailErrorPlaceholder(),
           ),
           Container(
@@ -439,7 +444,9 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8),
+                  Theme.of(
+                    context,
+                  ).scaffoldBackgroundColor.withValues(alpha: 0.8),
                   Theme.of(context).scaffoldBackgroundColor,
                 ],
                 stops: const [0.5, 0.85, 1.0],
@@ -481,8 +488,8 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
         height: 140,
         width: 300,
         fit: BoxFit.contain,
-        placeholderBuilder:
-            (context) => const SizedBox(height: 140, width: 300),
+        placeholderBuilder: (context) =>
+            const SizedBox(height: 140, width: 300),
       );
     }
     return CachedNetworkImage(
@@ -526,8 +533,9 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
     bool isProvider = false,
   }) {
     final theme = Theme.of(context);
-    final color =
-        isProvider ? theme.colorScheme.primary : theme.colorScheme.secondary;
+    final color = isProvider
+        ? theme.colorScheme.primary
+        : theme.colorScheme.secondary;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

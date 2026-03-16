@@ -25,7 +25,7 @@ import '../player_gesture_handler.dart';
 
 class SkyStreamPlayerControls extends ConsumerStatefulWidget {
   final Player player;
-  final String title;
+  final String? title;
   final String? subtitle;
   final VoidCallback? onBackPointer;
   final List<StreamResult>? streams;
@@ -41,7 +41,7 @@ class SkyStreamPlayerControls extends ConsumerStatefulWidget {
   const SkyStreamPlayerControls({
     super.key,
     required this.player,
-    required this.title,
+    this.title,
     this.subtitle,
     this.onBackPointer,
     this.streams,
@@ -577,18 +577,29 @@ class SkyStreamPlayerControlsState
 
   @override
   Widget build(BuildContext context) {
+    // Watch relevant player state selectively, falling back to props for initial frame
+    final controllerTitle = ref.watch(playerControllerProvider.select((s) => s.playerTitle));
+    final title = controllerTitle.isEmpty ? (widget.title ?? "") : controllerTitle;
+    
+    final controllerSubtitle = ref.watch(playerControllerProvider.select((s) => s.streamSubtitle));
+    final subtitle = controllerSubtitle ?? widget.subtitle;
+    final streams = ref.watch(playerControllerProvider.select((s) => s.streams));
+    final currentStream = ref.watch(playerControllerProvider.select((s) => s.currentStream));
+    final externalSubtitles = ref.watch(playerControllerProvider.select((s) => s.externalSubtitles));
+    final torrentStatus = ref.watch(playerControllerProvider.select((s) => s.torrentStatus));
+    final showNextEpOverlay = ref.watch(playerControllerProvider.select((s) => s.showNextEpisodeOverlay));
+    final nextEpTitle = ref.watch(playerControllerProvider.select((s) => s.nextEpisodeTitle));
+
     // Guard against PiP or small window size
     final size = MediaQuery.sizeOf(context);
     final isSmallWindow = size.width < 300 || size.height < 200;
 
     if (_isInPip || isSmallWindow) return const SizedBox.shrink();
 
-    final playerState = ref.watch(playerControllerProvider);
-
     // Loading state: simplified UI
     if (widget.isLoading || _duration == Duration.zero) {
       if (!widget.forceShowControls) {
-        return _buildLoadingUI();
+        return _buildLoadingUI(title: title, subtitle: subtitle);
       }
     }
 
@@ -641,7 +652,17 @@ class SkyStreamPlayerControlsState
             child: Stack(
               children: [
                 // Locked state UI
-                if (_isLocked) _buildLockedUI() else _buildUnlockedUI(),
+                if (_isLocked) 
+                  _buildLockedUI() 
+                else 
+                  _buildUnlockedUI(
+                    title: title, 
+                    subtitle: subtitle, 
+                    torrentStatus: torrentStatus,
+                    streams: streams,
+                    currentStream: currentStream,
+                    externalSubtitles: externalSubtitles,
+                  ),
 
                 // Persistent buffering indicator
                 if (!_isLocked && (_isBuffering || widget.isLoading))
@@ -692,9 +713,9 @@ class SkyStreamPlayerControlsState
                 ),
 
                 // Next Episode Overlay (Persistent when triggered)
-                if (playerState.showNextEpisodeOverlay && playerState.nextEpisodeTitle != null)
+                if (showNextEpOverlay && nextEpTitle != null)
                   NextEpisodeOverlay(
-                    nextEpisodeTitle: playerState.nextEpisodeTitle!,
+                    nextEpisodeTitle: nextEpTitle,
                     onPlayNext: () => ref.read(playerControllerProvider.notifier).playNextEpisode(),
                     onDismiss: () => ref.read(playerControllerProvider.notifier).dismissNextEpisodeOverlay(),
                   ),
@@ -738,7 +759,14 @@ class SkyStreamPlayerControlsState
     );
   }
 
-  Widget _buildUnlockedUI() {
+  Widget _buildUnlockedUI({
+    required String title,
+    String? subtitle,
+    TorrentStatus? torrentStatus,
+    List<StreamResult>? streams,
+    StreamResult? currentStream,
+    List<SubtitleFile>? externalSubtitles,
+  }) {
     return AnimatedOpacity(
       opacity: _isVisible ? 1.0 : 0.0,
       duration: _animDuration,
@@ -748,21 +776,21 @@ class SkyStreamPlayerControlsState
           children: [
             // Top overlay (back button, title) - Extracted to component
             PlayerTopBar(
-              title: widget.title,
-              subtitle: widget.subtitle,
+              title: title,
+              subtitle: subtitle,
               onBack: widget.onBackPointer ?? () => Navigator.of(context).pop(),
               isTv: _isTv,
               backFocusNode: _backFocusNode,
             ),
 
             // Torrent Info Overlay
-            if (widget.torrentStatus != null && _showTorrentInfo)
+            if (torrentStatus != null && _showTorrentInfo)
               Positioned(
                 top: 80,
                 right: 20,
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 300),
-                  child: TorrentInfoWidget(status: widget.torrentStatus),
+                  child: TorrentInfoWidget(status: torrentStatus),
                 ),
               ),
 
@@ -797,14 +825,9 @@ class SkyStreamPlayerControlsState
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Time / Slider / Duration - Using StreamBuilder widget to avoid parent rebuilds
-                      PlayerProgressBar(
-                        player: widget.player,
-                        onSeekStart: _cancelHideTimer,
-                      ),
-
+                      // Progress bar with StreamBuilder
+                      PlayerProgressBar(player: widget.player, onSeekStart: _cancelHideTimer),
                       const SizedBox(height: 16),
-
                       // Actions Row
                       FocusTraversalGroup(
                         policy: OrderedTraversalPolicy(),
@@ -817,91 +840,78 @@ class SkyStreamPlayerControlsState
                                   minWidth: constraints.maxWidth,
                                 ),
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
-                                    if (widget.torrentStatus != null)
-                                      FocusTraversalOrder(
-                                        order: const NumericFocusOrder(1),
-                                        child: _buildActionButton(
-                                          icon: Icons.info_outline,
-                                          label: "Info",
-                                          onTap: () {
-                                            setState(
-                                              () => _showTorrentInfo =
-                                                  !_showTorrentInfo,
-                                            );
-                                          },
-                                        ),
-                                      ),
                                     FocusTraversalOrder(
-                                      order: const NumericFocusOrder(2),
+                                      order: const NumericFocusOrder(0),
                                       child: _buildActionButton(
-                                        icon: Icons.lock_open,
-                                        label: "Lock",
+                                        icon: _isLocked ? Icons.lock : Icons.lock_open,
+                                        label: _isLocked ? "Unlock" : "Lock",
                                         onTap: _toggleLock,
+                                        highlight: _isLocked,
                                       ),
                                     ),
                                     FocusTraversalOrder(
-                                      order: const NumericFocusOrder(3),
+                                      order: const NumericFocusOrder(1),
+                                      child: _buildActionButton(
+                                        icon: Icons.high_quality,
+                                        label: "Sources",
+                                        onTap: () => PlayerBottomSheets.showSourceSelection(
+                                          context: context,
+                                          streams: streams,
+                                          currentStream: currentStream,
+                                          onStreamSelected: (s) => ref.read(playerControllerProvider.notifier).changeStream(s),
+                                        ),
+                                      ),
+                                    ),
+                                    FocusTraversalOrder(
+                                      order: const NumericFocusOrder(2),
+                                      child: _buildActionButton(
+                                        icon: Icons.subtitles,
+                                        label: "Tracks",
+                                        onTap: () => PlayerBottomSheets.showTracksSelection(
+                                          context: context,
+                                          player: widget.player,
+                                          externalSubtitles: externalSubtitles,
+                                        ),
+                                      ),
+                                    ),
+                                    if (torrentStatus != null)
+                                      FocusTraversalOrder(
+                                        order: const NumericFocusOrder(3),
+                                        child: _buildActionButton(
+                                          icon: Icons.folder,
+                                          label: "Content",
+                                          onTap: () => PlayerBottomSheets.showContentSelection(
+                                            context: context,
+                                            torrentStatus: torrentStatus,
+                                            onTorrentFileSelected: (idx) => ref.read(playerControllerProvider.notifier).onTorrentFileSelected(idx),
+                                          ),
+                                        ),
+                                      ),
+                                    if (torrentStatus != null)
+                                      FocusTraversalOrder(
+                                        order: const NumericFocusOrder(4),
+                                        child: _buildActionButton(
+                                          icon: Icons.info_outline,
+                                          label: "Stats",
+                                          onTap: () {
+                                            setState(() => _showTorrentInfo = !_showTorrentInfo);
+                                          },
+                                          highlight: _showTorrentInfo,
+                                        ),
+                                      ),
+                                    FocusTraversalOrder(
+                                      order: const NumericFocusOrder(5),
                                       child: _buildActionButton(
                                         icon: Icons.aspect_ratio,
                                         label: "Resize",
                                         onTap: cycleResize,
                                       ),
                                     ),
-                                    FocusTraversalOrder(
-                                      order: const NumericFocusOrder(4),
-                                      child: _buildActionButton(
-                                        icon: Icons.playlist_play,
-                                        label: "Source",
-                                        onTap: () =>
-                                            PlayerBottomSheets.showSourceSelection(
-                                              context: context,
-                                              streams: widget.streams,
-                                              currentStream:
-                                                  widget.currentStream,
-                                              onStreamSelected:
-                                                  widget.onStreamSelected ??
-                                                  (_) {},
-                                            ),
-                                      ),
-                                    ),
-                                    if (_hasMultipleVideoFiles())
-                                      FocusTraversalOrder(
-                                        order: const NumericFocusOrder(5),
-                                        child: _buildActionButton(
-                                          icon: Icons.folder_open,
-                                          label: "Content",
-                                          onTap: () =>
-                                              PlayerBottomSheets.showContentSelection(
-                                                context: context,
-                                                torrentStatus:
-                                                    widget.torrentStatus,
-                                                onTorrentFileSelected:
-                                                    widget
-                                                        .onTorrentFileSelected ??
-                                                    (_) {},
-                                              ),
-                                        ),
-                                      ),
-                                    FocusTraversalOrder(
-                                      order: const NumericFocusOrder(6),
-                                      child: _buildActionButton(
-                                        icon: Icons.subtitles,
-                                        label: "Tracks",
-                                        onTap: () =>
-                                            PlayerBottomSheets.showTracksSelection(
-                                              context: context,
-                                              player: widget.player,
-                                              externalSubtitles:
-                                                  widget.externalSubtitles,
-                                            ),
-                                      ),
-                                    ),
                                     if (ref.read(playerControllerProvider.notifier).isSeries)
                                       FocusTraversalOrder(
-                                        order: const NumericFocusOrder(6.5),
+                                        order: const NumericFocusOrder(6),
                                         child: _buildActionButton(
                                           icon: Icons.skip_next,
                                           label: "Next",
@@ -976,30 +986,13 @@ class SkyStreamPlayerControlsState
     );
   }
 
-  bool _hasMultipleVideoFiles() {
-    if (widget.torrentStatus == null) return false;
-    final files = widget.torrentStatus!.data['file_stats'] as List<dynamic>?;
-    if (files == null) return false;
 
-    int count = 0;
-    for (var f in files) {
-      final path = (f['path'] as String? ?? "").toLowerCase();
-      if (path.endsWith(".mp4") ||
-          path.endsWith(".mkv") ||
-          path.endsWith(".avi") ||
-          path.endsWith(".mov")) {
-        count++;
-      }
-    }
-    return count > 1;
-  }
-
-  Widget _buildLoadingUI() {
+  Widget _buildLoadingUI({String? title, String? subtitle}) {
     return PlayerLoadingOverlay(
       onDoubleTap: _handleDoubleTap,
       onBack: () => Navigator.of(context).pop(),
-      title: widget.title,
-      subtitle: widget.subtitle,
+      title: title,
+      subtitle: subtitle,
     );
   }
 }

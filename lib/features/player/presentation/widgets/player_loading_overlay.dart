@@ -72,7 +72,7 @@ class PlayerLoadingOverlay extends StatelessWidget {
                 ],
                 const SizedBox(height: 22),
                 const Text(
-                  "Searching for the best available source…",
+                  "Finding the best available source…",
                   style: TextStyle(color: Colors.white54, fontSize: 14),
                   textAlign: TextAlign.center,
                 ),

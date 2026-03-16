@@ -246,10 +246,15 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
 
   @override
   Widget build(BuildContext context) {
-    final playerState = ref.watch(playerControllerProvider);
+    final errorMessage = ref.watch(
+      playerControllerProvider.select((s) => s.errorMessage),
+    );
+    final isLoading = ref.watch(
+      playerControllerProvider.select((s) => s.isLoading),
+    );
     final subtitleSettings = ref.watch(playerSettingsProvider).asData?.value;
 
-    if (playerState.errorMessage != null) {
+    if (errorMessage != null) {
       return Scaffold(
         body: Center(
           child: Column(
@@ -258,7 +263,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
               const Icon(Icons.error, color: Colors.red, size: 48),
               const SizedBox(height: 16),
               Text(
-                playerState.errorMessage!,
+                errorMessage,
                 style: Theme.of(context).textTheme.bodyLarge,
                 textAlign: TextAlign.center,
               ),
@@ -344,21 +349,13 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                         valueListenable: _forceShowControls,
                         builder: (_, forceShow, _) => SkyStreamPlayerControls(
                           key: _controlsKeyFinal,
-                          isLoading: playerState.isLoading,
+                          isLoading: isLoading,
                           forceShowControls: forceShow,
                           player: _player,
-                          title: playerState.playerTitle,
-                          subtitle: playerState.streamSubtitle,
-                          streams: playerState.streams,
-                          currentStream: playerState.currentStream,
-                          externalSubtitles: playerState.externalSubtitles,
-                          torrentStatus: playerState.torrentStatus,
-                          onStreamSelected: ref
-                              .read(playerControllerProvider.notifier)
-                              .changeStream,
-                          onTorrentFileSelected: ref
-                              .read(playerControllerProvider.notifier)
-                              .onTorrentFileSelected,
+                          title: widget.item.title,
+                          subtitle: ref.read(playerControllerProvider).streamSubtitle,
+                          // Most properties are now watched internally by controls
+                          // to further narrow rebuild scope.
                           onResize: _updateResizeMode,
                           onVisibilityChanged: (v) {
                             if (mounted) {
@@ -368,12 +365,12 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                         ),
                       ),
                     ),
-                    if (playerState.isLoading)
+                    if (isLoading)
                       ValueListenableBuilder<bool>(
                         valueListenable: _forceShowControls,
                         builder: (_, forceShow, child) {
                           if (forceShow) return const SizedBox.shrink();
-                          return _buildSkipButtonOverlay(playerState);
+                          return _buildSkipButtonOverlay();
                         },
                       ),
                   ],
@@ -386,7 +383,15 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
     );
   }
 
-  Widget _buildSkipButtonOverlay(PlayerState playerState) {
+  Widget _buildSkipButtonOverlay() {
+    final isManualSwitch = ref.read(
+      playerControllerProvider.select((s) => s.isManualSwitch),
+    );
+    final streams = ref.read(playerControllerProvider.select((s) => s.streams));
+    final currentIndex = ref.read(
+      playerControllerProvider.select((s) => s.currentStreamIndex),
+    );
+
     return Positioned.fill(
       child: GestureDetector(
         behavior: HitTestBehavior.translucent,
@@ -402,7 +407,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
               left: 0,
               right: 0,
               child: Center(
-                child: playerState.isManualSwitch
+                child: isManualSwitch
                     ? const SizedBox.shrink()
                     : CustomButton(
                         isPrimary: false,
@@ -419,7 +424,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                               const Icon(Icons.skip_next),
                               const SizedBox(width: 8),
                               Text(
-                                "Skip to manual source selection (${playerState.currentStreamIndex + 1}/${playerState.streams.length})",
+                                "Skip to manual source selection (${currentIndex + 1}/${streams.length})",
                               ),
                             ],
                           ),
