@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../../core/utils/image_fallbacks.dart';
+import '../../../../shared/widgets/cards_wrapper.dart';
+import '../../../../shared/widgets/shimmer_placeholder.dart';
 import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 import '../../../../shared/widgets/desktop_scroll_wrapper.dart';
 import '../../../../core/utils/responsive_breakpoints.dart';
 import '../../../../core/models/tmdb_details.dart';
 import '../tmdb_details_controller.dart';
-import '../../../../core/domain/entity/multimedia_item.dart';
-import '../details_controller.dart';
-import 'episode_card.dart';
 
 class MovieSeasonsList extends ConsumerStatefulWidget {
   final int movieId;
@@ -44,6 +44,24 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
     super.dispose();
   }
 
+  Widget _buildTmdbLogo(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0d253f),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Text(
+        "TMDB",
+        style: TextStyle(
+          color: Color(0xFF90cea1),
+          fontSize: 8,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.seasons.isEmpty) return const SizedBox.shrink();
@@ -77,7 +95,9 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
                       value: ref
                           .watch(tmdbDetailsControllerProvider(widget.movieId))
                           .selectedSeason,
-                      dropdownColor: Theme.of(context).colorScheme.surfaceContainer,
+                      dropdownColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainer,
                       underline: const SizedBox(),
                       style: TextStyle(color: widget.textColor),
                       icon: Icon(
@@ -178,7 +198,9 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
                                   fit: BoxFit.cover,
                                   width: double.infinity,
                                   errorWidget: (_, _, _) =>
-                                      ThumbnailErrorPlaceholder(label: season.name),
+                                      ThumbnailErrorPlaceholder(
+                                        label: season.name,
+                                      ),
                                 ),
                               ),
                             ),
@@ -246,7 +268,7 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
             if (episodes.isEmpty) return const SizedBox.shrink();
 
             return SizedBox(
-              height: 300,
+              height: 240,
               child: DesktopScrollWrapper(
                 controller: _scrollController,
                 child: ListView.separated(
@@ -257,33 +279,130 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
                   separatorBuilder: (_, _) => const SizedBox(width: 20),
                   itemBuilder: (context, index) {
                     final ep = episodes[index];
-
-                    final runtime = (ep['runtime'] as int?) ?? 0;
-                    
-                    final episode = Episode(
-                      name: ep['name'] ?? 'Episode ${ep['episode_number']}',
-                      url: '', // TMDB doesn't have URLs, but we handle play via controller
-                      season: ep['season_number'] ?? 0,
-                      episode: ep['episode_number'] ?? 0,
-                      description: ep['overview'],
-                      posterUrl: ep['still_path'],
-                      rating: (ep['vote_average'] as num?)?.toDouble(),
-                      runtime: runtime,
+                    final imageUrl = AppImageFallbacks.tmdbStill(
+                      ep['still_path'],
+                      label: ep['name'] ?? 'Episode',
                     );
+                    final voteAverage =
+                        (ep['vote_average'] as num?)?.toDouble() ?? 0.0;
+                    final runtime = ep['runtime'] as int? ?? 0;
+                    final hours = runtime ~/ 60;
+                    final minutes = runtime % 60;
+                    final runtimeText = hours > 0
+                        ? '${hours}h ${minutes}m'
+                        : '${minutes}m';
 
-                    // Get the base MultimediaItem from DetailsController
-                    final detailsState = ref.watch(detailsControllerProvider(widget.movieId.toString())); 
-                    final parentItem = detailsState.item ?? MultimediaItem(
-                      title: "Series", 
-                      url: widget.movieId.toString(), 
-                      posterUrl: ""
-                    );
-
-                    return EpisodeCard(
-                      episode: episode,
-                      parentItem: parentItem,
-                      width: 300,
-                      isHorizontal: true,
+                    return CardsWrapper(
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              "Please select a source from 'Available Sources' above to play.",
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: 300,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest
+                              .withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: CachedNetworkImage(
+                                imageUrl: imageUrl,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                placeholder: (context, url) =>
+                                    ShimmerPlaceholder.rectangular(
+                                      borderRadius: 8,
+                                    ),
+                                errorWidget: (_, _, _) =>
+                                    ThumbnailErrorPlaceholder(
+                                      label: ep['name'] ?? 'Episode',
+                                    ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "E${ep['episode_number']} • ${ep['name']}",
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      _buildTmdbLogo(context),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        voteAverage.toStringAsFixed(1),
+                                        style: TextStyle(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      if (runtime > 0)
+                                        Text(
+                                          runtimeText,
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: 0.7),
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    ep['overview'] ?? '',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.7),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -341,31 +460,119 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final ep = episodes[index];
-
+                    final imageUrl = AppImageFallbacks.tmdbStill(
+                      ep['still_path'],
+                      label: ep['name'] ?? 'Episode',
+                    );
+                    final voteAverage =
+                        (ep['vote_average'] as num?)?.toDouble() ?? 0.0;
                     final runtime = (ep['runtime'] as int?) ?? 0;
+                    final hours = runtime ~/ 60;
+                    final minutes = runtime % 60;
+                    final runtimeText = hours > 0
+                        ? '${hours}h ${minutes}m'
+                        : '${minutes}m';
 
-                    final episode = Episode(
-                      name: ep['name'] ?? 'Episode ${ep['episode_number']}',
-                      url: '', 
-                      season: ep['season_number'] ?? 0,
-                      episode: ep['episode_number'] ?? 0,
-                      description: ep['overview'],
-                      posterUrl: ep['still_path'],
-                      rating: (ep['vote_average'] as num?)?.toDouble(),
-                      runtime: runtime,
-                    );
-
-                    final detailsState = ref.watch(detailsControllerProvider(widget.movieId.toString()));
-                    final parentItem = detailsState.item ?? MultimediaItem(
-                      title: "Series", 
-                      url: widget.movieId.toString(), 
-                      posterUrl: ""
-                    );
-
-                    return EpisodeCard(
-                      episode: episode,
-                      parentItem: parentItem,
-                      isHorizontal: false,
+                    return CardsWrapper(
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              "Please select a source from 'Available Sources' above to play.",
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: CachedNetworkImage(
+                                imageUrl: imageUrl,
+                                width: 120,
+                                height: 68,
+                                fit: BoxFit.cover,
+                                errorWidget: (_, _, _) =>
+                                    ThumbnailErrorPlaceholder(
+                                      label: ep['name'] ?? 'Episode',
+                                      iconSize: 24,
+                                    ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "${ep['episode_number']}. ${ep['name']}",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      _buildTmdbLogo(context),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        voteAverage.toStringAsFixed(1),
+                                        style: TextStyle(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      if (runtime > 0)
+                                        Text(
+                                          runtimeText,
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: 0.7),
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    ep['overview'] ?? '',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.7),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     );
                   },
                 ),

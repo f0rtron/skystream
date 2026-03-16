@@ -9,15 +9,18 @@ import '../details_controller.dart';
 import 'package:skystream/core/extensions/extension_manager.dart';
 import 'episode_card.dart';
 
-class DetailsSeasonSelector extends ConsumerWidget {
-  final DetailsState state;
+class DetailsSeasonListWrapper extends ConsumerWidget {
+  const DetailsSeasonListWrapper({super.key, required this.itemUrl});
   final String itemUrl;
-
-  const DetailsSeasonSelector({super.key, required this.state, required this.itemUrl});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final seasons = state.seasonMap.keys.toList()..sort();
+    final seasonMap = ref.watch(detailsControllerProvider(itemUrl).select((s) => s.seasonMap));
+    if (seasonMap.keys.length <= 1) return const SizedBox.shrink();
+    
+    final selectedSeason = ref.watch(detailsControllerProvider(itemUrl).select((s) => s.selectedSeason));
+    final seasons = seasonMap.keys.toList()..sort();
+
     return SizedBox(
       height: 40,
       child: ListView.separated(
@@ -26,7 +29,7 @@ class DetailsSeasonSelector extends ConsumerWidget {
         separatorBuilder: (_, _) => const SizedBox(width: LayoutConstants.spacingXs),
         itemBuilder: (context, index) {
           final s = seasons[index];
-          final isSelected = s == state.selectedSeason;
+          final isSelected = s == selectedSeason;
           return FilterChip(
             label: Text("Season $s"),
             selected: isSelected,
@@ -50,21 +53,24 @@ class DetailsSeasonSelector extends ConsumerWidget {
 class DetailsActionButtons extends ConsumerWidget {
   final MultimediaItem item;
   final MultimediaItem? details;
-  final DetailsState state;
+  final String itemUrl;
   final bool vertical;
 
   const DetailsActionButtons({
     super.key,
     required this.item,
     required this.details,
-    required this.state,
+    required this.itemUrl,
     this.vertical = false,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final historyRepo = ref.watch(historyRepositoryProvider);
-    final targetEpisode = state.targetEpisode;
+    final targetEpisode = ref.watch(detailsControllerProvider(itemUrl).select((s) => s.targetEpisode));
+    final isLaunching = ref.watch(detailsControllerProvider(itemUrl).select((s) => s.isLaunching));
+    final isMovie = ref.watch(detailsControllerProvider(itemUrl).select((s) => s.isMovie));
+    
     final pos = targetEpisode != null 
         ? historyRepo.getEpisodePosition(targetEpisode.url)
         : historyRepo.getPosition(item.url);
@@ -75,7 +81,7 @@ class DetailsActionButtons extends ConsumerWidget {
     final bool isResuming = pos > 5000;
 
     String playLabel = isResuming ? 'Resume' : 'Play';
-    if (targetEpisode != null && !state.isMovie) {
+    if (targetEpisode != null && !isMovie) {
       playLabel = "$playLabel S${targetEpisode.season} E${targetEpisode.episode}";
     }
 
@@ -94,7 +100,7 @@ class DetailsActionButtons extends ConsumerWidget {
         padding: const EdgeInsets.all(LayoutConstants.spacingMd),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: state.isLaunching
+          children: isLaunching
               ? const [
                   SizedBox(
                     width: 20,
@@ -156,7 +162,7 @@ class DetailsActionButtons extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              "${(progress * 100).toInt()}% watched${!state.isMovie && targetEpisode != null ? ' (S${targetEpisode.season} E${targetEpisode.episode})' : ''}",
+              "${(progress * 100).toInt()}% watched${!isMovie && targetEpisode != null ? ' (S${targetEpisode.season} E${targetEpisode.episode})' : ''}",
               style: TextStyle(
                 fontSize: 10,
                 color: Theme.of(context).colorScheme.primary,
@@ -197,23 +203,26 @@ class DetailsActionButtons extends ConsumerWidget {
 }
 
 class DetailsDesktopEpisodeGrid extends ConsumerWidget {
-  final List<Episode> episodes;
   final MultimediaItem parentItem;
-  final DetailsState state;
+  final String itemUrl;
+  final bool isMovie;
 
   const DetailsDesktopEpisodeGrid({
     super.key,
-    required this.episodes,
     required this.parentItem,
-    required this.state,
+    required this.itemUrl,
+    required this.isMovie,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final episodes = ref.watch(detailsControllerProvider(itemUrl).select((s) {
+      return s.seasonMap[s.selectedSeason] ?? [];
+    }));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (!state.isMovie) ...[
+        if (!isMovie) ...[
           Text(
             "Episodes",
             style: Theme.of(
@@ -247,23 +256,26 @@ class DetailsDesktopEpisodeGrid extends ConsumerWidget {
 }
 
 class DetailsEpisodeList extends ConsumerWidget {
-  final List<Episode> episodes;
   final MultimediaItem parentItem;
-  final DetailsState state;
+  final String itemUrl;
+  final bool isMovie;
 
   const DetailsEpisodeList({
     super.key,
-    required this.episodes,
     required this.parentItem,
-    required this.state,
+    required this.itemUrl,
+    required this.isMovie,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final episodes = ref.watch(detailsControllerProvider(itemUrl).select((s) {
+      return s.seasonMap[s.selectedSeason] ?? [];
+    }));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (!state.isMovie) ...[
+        if (!isMovie) ...[
           Text(
             "Episodes",
             style: Theme.of(

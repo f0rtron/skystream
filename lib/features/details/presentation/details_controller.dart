@@ -245,36 +245,6 @@ class DetailsController extends Notifier<DetailsState> {
     MultimediaItem details, {
     Episode? specificEpisode,
   }) {
-    final urlToPlay =
-        specificEpisode?.url ??
-        state.targetEpisode?.url ??
-        details.episodes?.firstOrNull?.url;
-
-    if (urlToPlay == null || urlToPlay.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.info_outline, color: Colors.white),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Please select a provider from "Available Sources" to watch.',
-                ),
-              ),
-            ],
-          ),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          duration: const Duration(seconds: 4),
-        ),
-      );
-      return;
-    }
-
     if (specificEpisode != null) {
       ref
           .read(playbackLauncherProvider)

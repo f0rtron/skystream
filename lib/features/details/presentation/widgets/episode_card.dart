@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
@@ -38,10 +39,9 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> {
     // if it was watched stand-alone, or just check if it matches the 'last watched' episode in history.
     
     final historyRepo = ref.watch(historyRepositoryProvider);
-    final historyItem = ref.watch(watchHistoryProvider).cast<HistoryItem?>().firstWhere(
-      (h) => h?.item.url == widget.parentItem.url,
-      orElse: () => null,
-    );
+    final historyItem = ref.watch(watchHistoryProvider.select(
+      (list) => list.whereType<HistoryItem>().firstWhereOrNull((h) => h.item.url == widget.parentItem.url),
+    ));
 
     final epPos = historyRepo.getEpisodePosition(widget.episode.url);
     final epDur = historyRepo.getEpisodeDuration(widget.episode.url);

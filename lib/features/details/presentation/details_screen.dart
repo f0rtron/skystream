@@ -62,8 +62,9 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
     final libraryNotifier = ref.read(libraryProvider.notifier);
     final isLarge = context.isTabletOrLarger;
 
-    final state = ref.watch(detailsControllerProvider(widget.item.url));
-    final details = state.details.value;
+    final detailsAsync = ref.watch(detailsControllerProvider(widget.item.url).select((s) => s.details));
+    final details = detailsAsync.value;
+    final isMovie = ref.watch(detailsControllerProvider(widget.item.url).select((s) => s.isMovie));
     final item = details ?? widget.item;
 
     return Scaffold(
@@ -157,8 +158,8 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                 vertical: 16.0,
               ),
               child: isLarge
-                  ? _buildDesktopLayout(context, item, details, state)
-                  : _buildMobileLayout(context, item, details, state),
+                  ? _buildDesktopLayout(context, item, details, detailsAsync, isMovie)
+                  : _buildMobileLayout(context, item, details, detailsAsync, isMovie),
             ),
           ),
         ],
@@ -170,7 +171,8 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
     BuildContext context,
     MultimediaItem item,
     MultimediaItem? details,
-    DetailsState state,
+    AsyncValue<MultimediaItem?> detailsState,
+    bool isMovie,
   ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,7 +200,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
               DetailsActionButtons(
                 item: widget.item,
                 details: details,
-                state: state,
+                itemUrl: widget.item.url,
                 vertical: true,
               ),
             ],
@@ -231,7 +233,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
               const SizedBox(height: 16),
               MetadataBar(
                 item: item,
-                isLoading: state.details is AsyncLoading,
+                isLoading: detailsState is AsyncLoading,
               ),
               const SizedBox(height: 24),
               if (item.nextAiring != null) ...[
@@ -255,23 +257,22 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              if (state.details is AsyncLoading)
+              if (detailsState is AsyncLoading)
                 const Center(child: CircularProgressIndicator())
-              else if (state.details is AsyncError)
+              else if (detailsState is AsyncError)
                 Text(
-                  "Error: ${state.details.error}",
+                  "Error: ${detailsState.error}",
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 )
-              else if (state.isMovie)
+              else if (isMovie)
                 const SizedBox.shrink() // Movies don't need an episode list
               else if (details?.episodes != null) ...[
-                if (state.seasonMap.keys.length > 1)
-                  DetailsSeasonSelector(state: state, itemUrl: widget.item.url),
+                DetailsSeasonListWrapper(itemUrl: widget.item.url), 
                 const SizedBox(height: 16),
                 DetailsDesktopEpisodeGrid(
-                  episodes: state.seasonMap[state.selectedSeason] ?? [],
                   parentItem: item,
-                  state: state,
+                  itemUrl: widget.item.url,
+                  isMovie: isMovie,
                 ),
               ] else
                 const Text("No episodes found."),
@@ -312,7 +313,8 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
     BuildContext context,
     MultimediaItem item,
     MultimediaItem? details,
-    DetailsState state,
+    AsyncValue<MultimediaItem?> detailsState,
+    bool isMovie,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,7 +365,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                   const SizedBox(height: 8),
                   MetadataBar(
                     item: item,
-                    isLoading: state.details is AsyncLoading,
+                    isLoading: detailsState is AsyncLoading,
                   ),
                 ],
               ),
@@ -371,7 +373,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
           ],
         ),
         const SizedBox(height: 24),
-        DetailsActionButtons(item: widget.item, details: details, state: state),
+        DetailsActionButtons(item: widget.item, details: details, itemUrl: widget.item.url),
         if (item.nextAiring != null) ...[
           const SizedBox(height: 16),
           NextAiringWidget(nextAiring: item.nextAiring!),
@@ -392,28 +394,27 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
           ),
         ),
         const SizedBox(height: 32),
-        if (state.details is AsyncLoading)
+        if (detailsState is AsyncLoading)
           Container(
             height: 100,
             alignment: Alignment.center,
             child: const CircularProgressIndicator(),
           )
-        else if (state.details is AsyncError)
+        else if (detailsState is AsyncError)
           Container(
             padding: const EdgeInsets.all(16),
             color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
-            child: Text("Error: ${state.details.error}"),
+            child: Text("Error: ${detailsState.error}"),
           )
-        else if (state.isMovie)
+        else if (isMovie)
           const SizedBox.shrink()
         else if (details?.episodes != null) ...[
-          if (state.seasonMap.keys.length > 1)
-            DetailsSeasonSelector(state: state, itemUrl: widget.item.url),
+          DetailsSeasonListWrapper(itemUrl: widget.item.url),
           const SizedBox(height: 16),
           DetailsEpisodeList(
-            episodes: state.seasonMap[state.selectedSeason] ?? [],
             parentItem: item,
-            state: state,
+            itemUrl: widget.item.url,
+            isMovie: isMovie,
           ),
         ] else
           const Text("No episodes found."),

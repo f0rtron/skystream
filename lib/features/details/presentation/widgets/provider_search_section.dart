@@ -14,8 +14,8 @@ import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 
 // Delegates to the shared searchAllProviders() function — no duplicated
 // fan-out, mapping, or filtering logic.
-final _providerSearchProvider = FutureProvider.family
-    .autoDispose<SearchAggregateState, String>((ref, query) async {
+final _providerSearchProvider = StreamProvider.family
+    .autoDispose<SearchAggregateState, String>((ref, query) {
       ref.watch(extensionManagerProvider);
       final manager = ref.read(extensionManagerProvider.notifier);
       // Collect the final emission from the incremental stream
@@ -23,11 +23,11 @@ final _providerSearchProvider = FutureProvider.family
       var cancelled = false;
       ref.onDispose(() => cancelled = true);
 
-      return await searchAllProviders(
+      return searchAllProviders(
         query,
         manager,
         isCancelled: () => cancelled,
-      ).last;
+      );
     });
 
 class ProviderSearchSection extends ConsumerStatefulWidget {
@@ -98,6 +98,18 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
           }
 
           if (allItems.isEmpty) {
+            if (state.isLoading) {
+              return const SizedBox(
+                height: 140,
+                child: Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              );
+            }
             return Container(
               height: 140,
               alignment: Alignment.center,
