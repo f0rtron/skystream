@@ -43,7 +43,7 @@ class UpdateService {
       }
     } catch (e) {
       // Fail silently or log error
-      debugPrint('Update check failed: $e');
+      if (kDebugMode) debugPrint('Update check failed: $e');
     }
     return null;
   }
@@ -71,7 +71,7 @@ class UpdateService {
 
       return File(savePath);
     } catch (e) {
-      debugPrint('Download failed: $e');
+      if (kDebugMode) debugPrint('Download failed: $e');
       return null;
     }
   }

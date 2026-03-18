@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
@@ -84,10 +85,7 @@ class DetailsController extends Notifier<DetailsState> {
 
   void setSeason(int season) {
     if (state.seasonMap.containsKey(season)) {
-      state = state.copyWith(
-        selectedSeason: season,
-        selectedRangeIndex: 0,
-      );
+      state = state.copyWith(selectedSeason: season, selectedRangeIndex: 0);
     }
   }
 
@@ -100,10 +98,7 @@ class DetailsController extends Notifier<DetailsState> {
   }
 
   void setDubStatus(DubStatus status) {
-    state = state.copyWith(
-      selectedDubStatus: status,
-      selectedRangeIndex: 0,
-    );
+    state = state.copyWith(selectedDubStatus: status, selectedRangeIndex: 0);
   }
 
   void setLaunching(bool value) {
@@ -152,7 +147,7 @@ class DetailsController extends Notifier<DetailsState> {
             (p) => p.packageName == item.provider || p.name == item.provider,
           );
         } catch (e) {
-          debugPrint('DetailsController.loadDetails: $e');
+          if (kDebugMode) debugPrint('DetailsController.loadDetails: $e');
         }
       }
 
@@ -180,7 +175,10 @@ class DetailsController extends Notifier<DetailsState> {
     bool isInitial = false,
   }) {
     if (episodes == null || episodes.isEmpty) {
-      state = state.copyWith(isMovie: contextItem.contentType == MultimediaContentType.movie, seasonMap: {});
+      state = state.copyWith(
+        isMovie: contextItem.contentType == MultimediaContentType.movie,
+        seasonMap: {},
+      );
       return;
     }
 

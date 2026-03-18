@@ -1,6 +1,7 @@
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
@@ -36,9 +37,10 @@ class StorageService {
     try {
       return await Hive.openBox(boxName);
     } catch (e) {
-      debugPrint(
-        "Error opening Hive box '$boxName': $e. Deleting and recreating...",
-      );
+      if (kDebugMode)
+        debugPrint(
+          "Error opening Hive box '$boxName': $e. Deleting and recreating...",
+        );
       // If the box is corrupted or has unknown type IDs, delete it.
       try {
         await Hive.deleteBoxFromDisk(boxName);
@@ -240,7 +242,8 @@ class StorageService {
     await _historyBox.put(_getKey(item.url), entry);
 
     // If it's a series and we have an episode URL, save an episode-specific entry
-    if (item.contentType == MultimediaContentType.series && lastEpisodeUrl != null) {
+    if (item.contentType == MultimediaContentType.series &&
+        lastEpisodeUrl != null) {
       final episodeKey = "EP_${_getKey(lastEpisodeUrl)}";
       await _historyBox.put(episodeKey, entry);
     }
@@ -277,7 +280,7 @@ class StorageService {
       final key = _historyBox.keyAt(i) as String;
       // Filter out episode-specific entries from the main history list
       if (key.startsWith("EP_")) continue;
-      
+
       final map = Map<String, dynamic>.from(_historyBox.get(key));
       items.add(map);
     }
@@ -375,28 +378,28 @@ class StorageService {
         if (_libraryBox.isOpen) await _libraryBox.close();
         await Hive.deleteBoxFromDisk(kLibraryBox);
       } catch (e) {
-        debugPrint('Error deleting library box: $e');
+        if (kDebugMode) debugPrint('Error deleting library box: $e');
       }
       try {
         if (_settingsBox.isOpen) await _settingsBox.close();
         await Hive.deleteBoxFromDisk(kSettingsBox);
       } catch (e) {
-        debugPrint('Error deleting settings box: $e');
+        if (kDebugMode) debugPrint('Error deleting settings box: $e');
       }
       try {
         if (_historyBox.isOpen) await _historyBox.close();
         await Hive.deleteBoxFromDisk(kHistoryBox);
       } catch (e) {
-        debugPrint('Error deleting history box: $e');
+        if (kDebugMode) debugPrint('Error deleting history box: $e');
       }
       try {
         if (_extensionsBox.isOpen) await _extensionsBox.close();
         await Hive.deleteBoxFromDisk(kExtensionsBox);
       } catch (e) {
-        debugPrint('Error deleting extensions box: $e');
+        if (kDebugMode) debugPrint('Error deleting extensions box: $e');
       }
     } catch (e) {
-      debugPrint('Error clearing preferences: $e');
+      if (kDebugMode) debugPrint('Error clearing preferences: $e');
     }
   }
 
@@ -416,7 +419,7 @@ class StorageService {
       try {
         await DefaultCacheManager().emptyCache();
       } catch (e) {
-        debugPrint("Error clearing cache manager: $e");
+        if (kDebugMode) debugPrint("Error clearing cache manager: $e");
       }
 
       // Clear Temporary Directory
@@ -426,10 +429,10 @@ class StorageService {
           await tempDir.delete(recursive: true);
         }
       } catch (e) {
-        debugPrint("Error clearing temp dir: $e");
+        if (kDebugMode) debugPrint("Error clearing temp dir: $e");
       }
     } catch (e) {
-      debugPrint('Error deleting data: $e');
+      if (kDebugMode) debugPrint('Error deleting data: $e');
     }
   }
 }

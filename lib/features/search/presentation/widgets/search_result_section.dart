@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -108,10 +109,16 @@ class _SearchResultSectionState extends ConsumerState<SearchResultSection> {
 
                 return MultimediaCard(
                   key: ValueKey(item.url),
-                  imageUrl: AppImageFallbacks.poster(item.posterUrl, label: item.title),
+                  imageUrl: AppImageFallbacks.poster(
+                    item.posterUrl,
+                    label: item.title,
+                  ),
                   title: item.title,
                   heroTag: uniqueTag,
-                  onTap: () => context.push('/details', extra: DetailsRouteExtra(item: item)),
+                  onTap: () => context.push(
+                    '/details',
+                    extra: DetailsRouteExtra(item: item),
+                  ),
                 );
               },
             ),
@@ -132,7 +139,7 @@ class _SearchResultSectionState extends ConsumerState<SearchResultSection> {
         isDebug = true;
       }
     } catch (e) {
-      debugPrint('SearchResultSection._buildDebugTag: $e');
+      if (kDebugMode) debugPrint('SearchResultSection._buildDebugTag: $e');
     }
 
     if (!isDebug) return const SizedBox.shrink();

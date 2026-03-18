@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -15,10 +16,14 @@ class DetailsSeasonListWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final seasonMap = ref.watch(detailsControllerProvider(itemUrl).select((s) => s.seasonMap));
+    final seasonMap = ref.watch(
+      detailsControllerProvider(itemUrl).select((s) => s.seasonMap),
+    );
     if (seasonMap.keys.length <= 1) return const SizedBox.shrink();
-    
-    final selectedSeason = ref.watch(detailsControllerProvider(itemUrl).select((s) => s.selectedSeason));
+
+    final selectedSeason = ref.watch(
+      detailsControllerProvider(itemUrl).select((s) => s.selectedSeason),
+    );
     final seasons = seasonMap.keys.toList()..sort();
 
     return SizedBox(
@@ -26,15 +31,17 @@ class DetailsSeasonListWrapper extends ConsumerWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: seasons.length,
-        separatorBuilder: (_, _) => const SizedBox(width: LayoutConstants.spacingXs),
+        separatorBuilder: (_, _) =>
+            const SizedBox(width: LayoutConstants.spacingXs),
         itemBuilder: (context, index) {
           final s = seasons[index];
           final isSelected = s == selectedSeason;
           return FilterChip(
             label: Text("Season $s"),
             selected: isSelected,
-            onSelected: (_) =>
-                ref.read(detailsControllerProvider(itemUrl).notifier).setSeason(s),
+            onSelected: (_) => ref
+                .read(detailsControllerProvider(itemUrl).notifier)
+                .setSeason(s),
             backgroundColor: isSelected
                 ? Theme.of(context).colorScheme.primaryContainer
                 : null,
@@ -67,22 +74,29 @@ class DetailsActionButtons extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final historyRepo = ref.watch(historyRepositoryProvider);
-    final targetEpisode = ref.watch(detailsControllerProvider(itemUrl).select((s) => s.targetEpisode));
-    final isLaunching = ref.watch(detailsControllerProvider(itemUrl).select((s) => s.isLaunching));
-    final isMovie = ref.watch(detailsControllerProvider(itemUrl).select((s) => s.isMovie));
-    
-    final pos = targetEpisode != null 
+    final targetEpisode = ref.watch(
+      detailsControllerProvider(itemUrl).select((s) => s.targetEpisode),
+    );
+    final isLaunching = ref.watch(
+      detailsControllerProvider(itemUrl).select((s) => s.isLaunching),
+    );
+    final isMovie = ref.watch(
+      detailsControllerProvider(itemUrl).select((s) => s.isMovie),
+    );
+
+    final pos = targetEpisode != null
         ? historyRepo.getEpisodePosition(targetEpisode.url)
         : historyRepo.getPosition(item.url);
-    final dur = targetEpisode != null 
+    final dur = targetEpisode != null
         ? historyRepo.getEpisodeDuration(targetEpisode.url)
         : historyRepo.getDuration(item.url);
-    
+
     final bool isResuming = pos > 5000;
 
     String playLabel = isResuming ? 'Resume' : 'Play';
     if (targetEpisode != null && !isMovie) {
-      playLabel = "$playLabel S${targetEpisode.season} E${targetEpisode.episode}";
+      playLabel =
+          "$playLabel S${targetEpisode.season} E${targetEpisode.episode}";
     }
 
     final playBtn = CustomButton(
@@ -160,8 +174,12 @@ class DetailsActionButtons extends ConsumerWidget {
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 4,
-                backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.1),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary,
+                ),
               ),
             ),
             const SizedBox(height: 4),
@@ -229,7 +247,8 @@ class SliverDetailsDesktopEpisodeGrid extends ConsumerWidget {
     final detailsState = ref.watch(detailsControllerProvider(itemUrl));
     var episodes = detailsState.seasonMap[detailsState.selectedSeason] ?? [];
 
-    if (episodes.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (episodes.isEmpty)
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     // Apply Language Filter
     if (detailsState.selectedDubStatus != DubStatus.none) {
@@ -262,9 +281,9 @@ class SliverDetailsDesktopEpisodeGrid extends ConsumerWidget {
               children: [
                 Text(
                   "Episodes",
-                  style: Theme.of(
-                    context,
-                  ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 DetailsEpisodeFilterBar(
                   itemUrl: itemUrl,
@@ -316,7 +335,8 @@ class SliverDetailsEpisodeList extends ConsumerWidget {
     final detailsState = ref.watch(detailsControllerProvider(itemUrl));
     var episodes = detailsState.seasonMap[detailsState.selectedSeason] ?? [];
 
-    if (episodes.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (episodes.isEmpty)
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     // Apply Language Filter
     if (detailsState.selectedDubStatus != DubStatus.none) {
@@ -398,7 +418,8 @@ class DetailsEpisodeFilterBar extends ConsumerWidget {
     final bool isAscending = detailsState.isAscending;
     final DubStatus selectedDub = detailsState.selectedDubStatus;
 
-    final allEpisodes = detailsState.seasonMap[detailsState.selectedSeason] ?? [];
+    final allEpisodes =
+        detailsState.seasonMap[detailsState.selectedSeason] ?? [];
     final filteredEpisodes = selectedDub == DubStatus.none
         ? allEpisodes
         : allEpisodes.where((e) => e.dubStatus == selectedDub).toList();
@@ -437,13 +458,15 @@ class DetailsEpisodeFilterBar extends ConsumerWidget {
                     child: Center(
                       child: DropdownButton<int>(
                         value: selectedIndex,
-                        dropdownColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+                        dropdownColor: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHigh,
                         underline: const SizedBox(),
                         elevation: 4,
                         borderRadius: BorderRadius.circular(12),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                          fontWeight: FontWeight.bold,
+                        ),
                         icon: Icon(
                           Icons.keyboard_arrow_down_rounded,
                           size: 20,
@@ -451,7 +474,10 @@ class DetailsEpisodeFilterBar extends ConsumerWidget {
                         ),
                         items: List.generate(batchCount, (index) {
                           final start = index * batchSize + 1;
-                          final end = ((index + 1) * batchSize).clamp(1, filteredEpisodes.length);
+                          final end = ((index + 1) * batchSize).clamp(
+                            1,
+                            filteredEpisodes.length,
+                          );
                           return DropdownMenuItem(
                             value: index,
                             child: Text("$start-$end"),
@@ -459,7 +485,11 @@ class DetailsEpisodeFilterBar extends ConsumerWidget {
                         }),
                         onChanged: (val) {
                           if (val != null) {
-                            ref.read(detailsControllerProvider(itemUrl).notifier).setRangeIndex(val);
+                            ref
+                                .read(
+                                  detailsControllerProvider(itemUrl).notifier,
+                                )
+                                .setRangeIndex(val);
                           }
                         },
                       ),
@@ -479,7 +509,9 @@ class DetailsEpisodeFilterBar extends ConsumerWidget {
               ),
               child: InkWell(
                 borderRadius: BorderRadius.circular(10),
-                onTap: () => ref.read(detailsControllerProvider(itemUrl).notifier).toggleSort(),
+                onTap: () => ref
+                    .read(detailsControllerProvider(itemUrl).notifier)
+                    .toggleSort(),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Icon(
@@ -498,7 +530,11 @@ class DetailsEpisodeFilterBar extends ConsumerWidget {
     );
   }
 
-  Widget _buildLanguageToggle(BuildContext context, WidgetRef ref, DubStatus selected) {
+  Widget _buildLanguageToggle(
+    BuildContext context,
+    WidgetRef ref,
+    DubStatus selected,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainer,
@@ -511,13 +547,17 @@ class DetailsEpisodeFilterBar extends ConsumerWidget {
           _LanguageButton(
             label: "Sub",
             isSelected: selected == DubStatus.subbed,
-            onTap: () => ref.read(detailsControllerProvider(itemUrl).notifier).setDubStatus(DubStatus.subbed),
+            onTap: () => ref
+                .read(detailsControllerProvider(itemUrl).notifier)
+                .setDubStatus(DubStatus.subbed),
           ),
           const SizedBox(width: 4),
           _LanguageButton(
             label: "Dub",
             isSelected: selected == DubStatus.dubbed,
-            onTap: () => ref.read(detailsControllerProvider(itemUrl).notifier).setDubStatus(DubStatus.dubbed),
+            onTap: () => ref
+                .read(detailsControllerProvider(itemUrl).notifier)
+                .setDubStatus(DubStatus.dubbed),
           ),
         ],
       ),
@@ -562,19 +602,21 @@ class _LanguageButtonState extends State<_LanguageButton> {
               color: _isFocused
                   ? Colors.white
                   : (widget.isSelected
-                      ? Theme.of(context).colorScheme.primary.withAlpha(80)
-                      : Colors.transparent),
+                        ? Theme.of(context).colorScheme.primary.withAlpha(80)
+                        : Colors.transparent),
               width: _isFocused ? 2 : 1,
             ),
           ),
           child: Text(
             widget.label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: widget.isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
+              color: widget.isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+              fontWeight: widget.isSelected
+                  ? FontWeight.bold
+                  : FontWeight.normal,
+            ),
           ),
         ),
       ),
@@ -625,7 +667,7 @@ class DetailsProviderChip extends ConsumerWidget {
         isDebug = true;
       }
     } catch (e) {
-      debugPrint('DetailsProviderChip.build: $e');
+      if (kDebugMode) debugPrint('DetailsProviderChip.build: $e');
     }
 
     return Container(

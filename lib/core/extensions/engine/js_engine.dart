@@ -358,7 +358,7 @@ class JsEngineService {
           await _pluginStorage.saveSettingsSchema(packageName, schema);
         }
       } catch (e) {
-        debugPrint("Failed to save settings schema: $e");
+        if (kDebugMode) debugPrint("Failed to save settings schema: $e");
       }
     });
 
@@ -758,7 +758,7 @@ class JsEngineService {
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36";
       }
 
-      debugPrint("[JS HTTP] $method $url ($requestId)");
+      if (kDebugMode) debugPrint("[JS HTTP] $method $url ($requestId)");
 
       final response = await _dio.request(
         url,
@@ -773,7 +773,7 @@ class JsEngineService {
         ),
       );
 
-      debugPrint("[JS HTTP] Back $url ($requestId) -> ${response.statusCode}");
+      if (kDebugMode) debugPrint("[JS HTTP] Back $url ($requestId) -> ${response.statusCode}");
 
       final responseHeaders = response.headers.map.map(
         (k, v) => MapEntry(k, v.join(',')),

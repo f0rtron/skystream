@@ -76,7 +76,7 @@ class _AppRootState extends State<AppRoot> {
         DohService.instance.init(),
         if (Platform.isAndroid)
           FlutterDisplayMode.setHighRefreshRate().catchError((e) {
-            debugPrint("Error setting high refresh rate: $e");
+            if (kDebugMode) debugPrint("Error setting high refresh rate: $e");
           }),
       ]);
 
@@ -169,7 +169,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         UpdateDialog.show(navContext, state.release);
       }
     } catch (e) {
-      debugPrint("App update check failed: $e");
+      if (kDebugMode) debugPrint("App update check failed: $e");
     }
   }
 
@@ -192,7 +192,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         );
       }
     } catch (e) {
-      debugPrint("Auto-update failed: $e");
+      if (kDebugMode) debugPrint("Auto-update failed: $e");
     }
   }
 

@@ -180,7 +180,7 @@ class CloudflareBypass {
       try {
         await headless?.dispose();
       } catch (e) {
-        debugPrint('CloudflareBypass: headless dispose error: $e');
+        if (kDebugMode) debugPrint('CloudflareBypass: headless dispose error: $e');
       }
     }
 

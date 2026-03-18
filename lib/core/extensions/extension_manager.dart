@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'; // Contains ChangeNotifier
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'base_provider.dart';
@@ -33,10 +34,13 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
   }
 
   Future<void> _syncPlugins(List<ExtensionPlugin> installed) async {
-    debugPrint("ExtensionManager: Syncing ${installed.length} plugin");
+    if (kDebugMode)
+      debugPrint("ExtensionManager: Syncing ${installed.length} plugin");
     if (_engine == null || _storageService == null) return;
 
-    final activePackageName = ref.read(settingsRepositoryProvider).getActiveProviderId();
+    final activePackageName = ref
+        .read(settingsRepositoryProvider)
+        .getActiveProviderId();
 
     // Sort plugins: Active first
     final sortedPlugins = List<ExtensionPlugin>.from(installed);
@@ -52,7 +56,9 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
     final parallelLoads = <Future<SkyStreamProvider?>>[];
 
     for (final plugin in sortedPlugins) {
-      final existingList = state.where((p) => p.packageName == plugin.packageName);
+      final existingList = state.where(
+        (p) => p.packageName == plugin.packageName,
+      );
       final existing = existingList.isNotEmpty ? existingList.first : null;
 
       bool needsLoad = existing == null;
@@ -61,7 +67,9 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
         final oldVersion = existing.version;
         if (newVersion != oldVersion) {
           // Version changed, reload
-          state = state.where((p) => p.packageName != plugin.packageName).toList();
+          state = state
+              .where((p) => p.packageName != plugin.packageName)
+              .toList();
           needsLoad = true;
         }
       }
@@ -97,12 +105,14 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
     }
 
     if (providersToRemove.isNotEmpty) {
-      debugPrint(
-        "ExtensionManager: Unloading ${providersToRemove.length} providers",
-      );
+      if (kDebugMode)
+        debugPrint(
+          "ExtensionManager: Unloading ${providersToRemove.length} providers",
+        );
       final newState = List<SkyStreamProvider>.from(state);
       for (final p in providersToRemove) {
-        debugPrint("ExtensionManager: Removing ${p.packageName} (${p.name})");
+        if (kDebugMode)
+          debugPrint("ExtensionManager: Removing ${p.packageName} (${p.name})");
         newState.remove(p);
         // Also cleanup JS resources if needed
         if (p is JsBasedProvider) {
@@ -123,7 +133,10 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
     // Reload the provider to apply changes
     final currentProvider = getProvider(packageName);
     if (currentProvider != null) {
-      debugPrint("ExtensionManager: Custom base URL updated for $packageName. Reload recommended.");
+      if (kDebugMode)
+        debugPrint(
+          "ExtensionManager: Custom base URL updated for $packageName. Reload recommended.",
+        );
     }
   }
 
@@ -134,17 +147,21 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
     if (_engine == null || _storageService == null) return null;
     try {
       final path = await _storageService!.getPluginJsPath(plugin);
-      debugPrint("ExtensionManager: Loading JS from: $path");
+      if (kDebugMode) debugPrint("ExtensionManager: Loading JS from: $path");
 
       if (!path.startsWith('assets/')) {
         if (!await File(path).exists()) {
-          debugPrint("ExtensionManager: JS File does NOT exist at $path");
+          if (kDebugMode)
+            debugPrint("ExtensionManager: JS File does NOT exist at $path");
           return null;
         }
       }
 
       // Derive namespace from ID to ensure uniqueness
-      final namespace = plugin.packageName.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_');
+      final namespace = plugin.packageName.replaceAll(
+        RegExp(r'[^a-zA-Z0-9]'),
+        '_',
+      );
 
       final settings = ref.read(settingsRepositoryProvider);
       final customBaseUrl = settings.getCustomBaseUrl(plugin.packageName);
@@ -158,16 +175,18 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
         customBaseUrl: customBaseUrl,
       );
 
-      debugPrint("ExtensionManager: Waiting for init of $namespace");
+      if (kDebugMode)
+        debugPrint("ExtensionManager: Waiting for init of $namespace");
       await provider.waitForInit;
-      debugPrint("ExtensionManager: Init complete for ${plugin.packageName}");
+      if (kDebugMode)
+        debugPrint("ExtensionManager: Init complete for ${plugin.packageName}");
 
       if (addToState) {
         _addProvider(provider);
       }
       return provider;
     } catch (e) {
-      debugPrint("Failed to load plugin ${plugin.name}: $e");
+      if (kDebugMode) debugPrint("Failed to load plugin ${plugin.name}: $e");
       return null;
     }
   }
@@ -175,12 +194,16 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
   void _addProvider(SkyStreamProvider provider) {
     // Deduplicate by Package Name
     if (!state.any((p) => p.packageName == provider.packageName)) {
-      debugPrint(
-        "ExtensionManager: Adding provider to state: ${provider.name} (${provider.packageName})",
-      );
+      if (kDebugMode)
+        debugPrint(
+          "ExtensionManager: Adding provider to state: ${provider.name} (${provider.packageName})",
+        );
       state = [...state, provider];
     } else {
-      debugPrint("ExtensionManager: Provider ${provider.packageName} already in state.");
+      if (kDebugMode)
+        debugPrint(
+          "ExtensionManager: Provider ${provider.packageName} already in state.",
+        );
     }
   }
 
@@ -258,9 +281,10 @@ class ActiveProviderNotifier extends Notifier<SkyStreamProvider?> {
           // Plugins have loaded (or sync completed with zero plugins)
           // but the target provider is missing (removed/uninstalled).
           // Clear the stale setting.
-          debugPrint(
-            "ActiveProviderNotifier: Target provider '$_targetProviderId' not found after plugins loaded. Clearing.",
-          );
+          if (kDebugMode)
+            debugPrint(
+              "ActiveProviderNotifier: Target provider '$_targetProviderId' not found after plugins loaded. Clearing.",
+            );
           _targetProviderId = null;
           ref.read(settingsRepositoryProvider).setActiveProviderId(null);
           ref.read(providerResolutionLoadingProvider.notifier).set(false);
@@ -270,9 +294,10 @@ class ActiveProviderNotifier extends Notifier<SkyStreamProvider?> {
         final found = next.where((p) => p.packageName == currentPackageName);
 
         if (found.isEmpty) {
-          debugPrint(
-            "ActiveProviderNotifier: Active provider removed, showing provider selector.",
-          );
+          if (kDebugMode)
+            debugPrint(
+              "ActiveProviderNotifier: Active provider removed, showing provider selector.",
+            );
           state = null;
           _targetProviderId = currentPackageName;
           ref.read(providerResolutionLoadingProvider.notifier).set(false);

@@ -94,7 +94,7 @@ class ExtensionsController extends Notifier<ExtensionsState> {
             available[repo.url] = await _repositoryService.getRepoPlugins(repo);
           }
         } catch (e) {
-          debugPrint("Failed to load persisted repo $url: $e");
+          if (kDebugMode) debugPrint("Failed to load persisted repo $url: $e");
         }
       }
 
@@ -118,12 +118,12 @@ class ExtensionsController extends Notifier<ExtensionsState> {
       // Load Asset Plugins if enabled
       if (ref.read(settingsRepositoryProvider).getDevLoadAssets()) {
         final assetPlugins = await _loadAssetPlugins();
-        debugPrint(
+        if (kDebugMode) debugPrint(
           "ExtensionsController: Loaded ${assetPlugins.length} asset plugins",
         );
         plugins.addAll(assetPlugins);
       } else {
-        debugPrint("ExtensionsController: Asset loading disabled");
+        if (kDebugMode) debugPrint("ExtensionsController: Asset loading disabled");
       }
 
       state = state.copyWith(installedPlugins: plugins, isLoading: false);
@@ -158,7 +158,7 @@ class ExtensionsController extends Notifier<ExtensionsState> {
       }
       return plugins;
     } catch (e) {
-      debugPrint("Error loading asset plugins: $e");
+      if (kDebugMode) debugPrint("Error loading asset plugins: $e");
       return [];
     }
   }
@@ -186,7 +186,7 @@ class ExtensionsController extends Notifier<ExtensionsState> {
 
       return ExtensionPlugin.fromJson(json, 'LocalAssets');
     } catch (e) {
-      debugPrint("Error parsing json manifest for $jsFilePath: $e");
+      if (kDebugMode) debugPrint("Error parsing json manifest for $jsFilePath: $e");
       return null;
     }
   }
@@ -228,7 +228,7 @@ class ExtensionsController extends Notifier<ExtensionsState> {
     // Cycle Detection
     visitedUrls ??= {};
     if (visitedUrls.contains(url)) {
-      debugPrint("Recursion detected: skipping repeated repo $url");
+      if (kDebugMode) debugPrint("Recursion detected: skipping repeated repo $url");
       return;
     }
     visitedUrls.add(url);
@@ -239,7 +239,7 @@ class ExtensionsController extends Notifier<ExtensionsState> {
       if (repo != null) {
         // Handle Recursive Repositories (Megarepo)
         if (repo.includedRepos.isNotEmpty) {
-          debugPrint(
+          if (kDebugMode) debugPrint(
             "Repo ${repo.name} contains ${repo.includedRepos.length} included repos",
           );
           for (final subRepoUrl in repo.includedRepos) {
@@ -281,7 +281,7 @@ class ExtensionsController extends Notifier<ExtensionsState> {
       } else {
         // ... (Keep existing error logic, or simplify?)
         // Simplify: don't error out the whole state for one bad sub-repo
-        debugPrint("Failed to parse repository at $url");
+        if (kDebugMode) debugPrint("Failed to parse repository at $url");
         if (visitedUrls.length == 1) {
           // Only show error if it's the root call
           state = state.copyWith(

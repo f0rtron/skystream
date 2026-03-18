@@ -42,11 +42,11 @@ class LocalProxyService {
     try {
       _server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       _serverPort = _server!.port;
-      debugPrint("LocalProxyService: Started on port $_serverPort");
+      if (kDebugMode) debugPrint("LocalProxyService: Started on port $_serverPort");
 
       _server!.listen(_handleRequest);
     } catch (e) {
-      debugPrint("LocalProxyService: Failed to start server: $e");
+      if (kDebugMode) debugPrint("LocalProxyService: Failed to start server: $e");
     }
   }
 
@@ -110,12 +110,12 @@ class LocalProxyService {
       request.response.statusCode = HttpStatus.notFound;
       request.response.close();
     } catch (e) {
-      debugPrint("LocalProxyService: Server Error: $e");
+      if (kDebugMode) debugPrint("LocalProxyService: Server Error: $e");
       try {
         request.response.statusCode = HttpStatus.internalServerError;
         request.response.close();
       } catch (e) {
-        debugPrint('LocalProxyService._handleRequest: error response failed: $e');
+        if (kDebugMode) debugPrint('LocalProxyService._handleRequest: error response failed: $e');
       }
     }
   }
@@ -154,7 +154,7 @@ class LocalProxyService {
         final Map<String, dynamic> map = jsonDecode(decoded);
         map.forEach((key, value) => stickyHeaders[key] = value.toString());
       } catch (e) {
-        debugPrint("[PROXY] Failed to parse sticky headers: $e");
+        if (kDebugMode) debugPrint("[PROXY] Failed to parse sticky headers: $e");
       }
     }
 
@@ -165,7 +165,7 @@ class LocalProxyService {
         final decoded = utf8.decode(base64Url.decode(oBase64));
         options = ProxyOptions.fromJson(jsonDecode(decoded));
       } catch (e) {
-        debugPrint("[PROXY] Failed to parse options: $e");
+        if (kDebugMode) debugPrint("[PROXY] Failed to parse options: $e");
       }
     }
 
@@ -268,7 +268,7 @@ class LocalProxyService {
         await response.pipe(request.response);
       }
     } catch (e) {
-      debugPrint("LocalProxyService: Proxy Request Error: $e");
+      if (kDebugMode) debugPrint("LocalProxyService: Proxy Request Error: $e");
       request.response.statusCode = HttpStatus.badGateway;
       request.response.close();
     }
@@ -454,7 +454,7 @@ class LocalProxyService {
         return utf8.decode(bytes.take(7).toList(), allowMalformed: true).contains("#EXT");
       }
     } catch (e) {
-      debugPrint('LocalProxyService._isValidM3u8: $e');
+      if (kDebugMode) debugPrint('LocalProxyService._isValidM3u8: $e');
     }
     return false;
   }

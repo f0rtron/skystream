@@ -124,12 +124,12 @@ class JsBasedProvider extends SkyStreamProvider {
 
       try {
         await _jsEngine.loadScript(script);
-        debugPrint(
+        if (kDebugMode) debugPrint(
           "JsBasedProvider: Loaded namespaced script for $_packageName",
         );
       } catch (e) {
         _error = "Eval: $e";
-        debugPrint(
+        if (kDebugMode) debugPrint(
           "JsBasedProvider: CRITICAL - Eval failed for $_packageName: $e",
         );
       }
