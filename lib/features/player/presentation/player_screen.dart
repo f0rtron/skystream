@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -67,7 +68,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
 
     // Increase network timeout to allow TorrServer to pre-buffer
     if (_player.platform is NativePlayer) {
-      (_player.platform as NativePlayer).setProperty('network-timeout', '100');
+      (_player.platform as NativePlayer).setProperty('network-timeout', '120');
     }
     _videoController = VideoController(_player);
 
@@ -151,7 +152,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
           windowManager.setTitleBarStyle(TitleBarStyle.normal);
         }
       } catch (e) {
-        debugPrint('PlayerScreen.dispose: $e');
+        if (kDebugMode) debugPrint('PlayerScreen.dispose: $e');
       }
     }
     super.dispose();

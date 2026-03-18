@@ -24,7 +24,7 @@ class TorrentService {
         return TorrentStatus.fromMap(statusMap);
       }
     } catch (e) {
-      debugPrint("Error fetching status: $e");
+      if (kDebugMode) debugPrint("Error fetching status: $e");
     }
     return null;
   }
@@ -36,11 +36,11 @@ class TorrentService {
       if (port > 0) {
         _serverUrl = "http://127.0.0.1:$port";
         _isStarted = true;
-        debugPrint("Torrent Server started at $_serverUrl");
+        if (kDebugMode) debugPrint("Torrent Server started at $_serverUrl");
         await _configureSettings();
       }
     } catch (e) {
-      debugPrint("Failed to start torrent server: $e");
+      if (kDebugMode) debugPrint("Failed to start torrent server: $e");
       }
   }
 
@@ -62,10 +62,10 @@ class TorrentService {
        );
        
        if (response.statusCode == 200) {
-          debugPrint("TorrServer settings configured for streaming.");
+          if (kDebugMode) debugPrint("TorrServer settings configured for streaming.");
        }
      } catch(e) {
-        debugPrint("Failed to configure TorrServer settings: $e");
+        if (kDebugMode) debugPrint("Failed to configure TorrServer settings: $e");
      }
   }
 
@@ -102,7 +102,7 @@ class TorrentService {
       return "$_serverUrl/stream?link=$hash&index=$fileIndex&play";
 
     } catch (e) {
-      debugPrint("Error generating stream URL: $e");
+      if (kDebugMode) debugPrint("Error generating stream URL: $e");
       return null;
     }
   }
@@ -162,7 +162,7 @@ class TorrentService {
            if (selectedFile['id'] != null) {
               fileIndex = (selectedFile['id'] as num).toInt();
            }
-           debugPrint("Auto-selected first video file: ${selectedFile['path']} (Index: $fileIndex)");
+           if (kDebugMode) debugPrint("Auto-selected first video file: ${selectedFile['path']} (Index: $fileIndex)");
            return {'index': fileIndex, 'path': selectedFile['path']};
        }
        
@@ -195,7 +195,7 @@ class TorrentService {
           if (largestFile['id'] != null) {
              fileIndex = (largestFile['id'] as num).toInt();
           }
-          debugPrint("Fallback to largest file: ${largestFile['path']} (Index: $fileIndex)");
+          if (kDebugMode) debugPrint("Fallback to largest file: ${largestFile['path']} (Index: $fileIndex)");
           return {'index': fileIndex, 'path': largestFile['path']};
        }
        
@@ -226,7 +226,7 @@ class TorrentService {
            }
         }
       } catch (e) {
-        debugPrint("Failed to fetch playlist: $e");
+        if (kDebugMode) debugPrint("Failed to fetch playlist: $e");
       }
       return null;
   }
@@ -236,7 +236,7 @@ class TorrentService {
     
     // Use "Simplified" format for maximum compatibility
     final streamUrl = "$_serverUrl/stream?link=$_activeTorrentHash&index=$index&play";
-    debugPrint("Generated Stream URL for Index $index: $streamUrl");
+    if (kDebugMode) debugPrint("Generated Stream URL for Index $index: $streamUrl");
     return streamUrl;
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -145,7 +146,7 @@ class SkyStreamPlayerControlsState
     try {
       FlutterVolumeController.updateShowSystemUI(false);
     } catch (e) {
-      debugPrint("VolumeUI Error: $e");
+      if (kDebugMode) debugPrint("VolumeUI Error: $e");
     }
     _checkIpad();
     _isPlaying = widget.player.state.playing;
@@ -263,7 +264,7 @@ class SkyStreamPlayerControlsState
           if (mounted) setState(() => _isIpad = true);
         }
       } catch (e) {
-        debugPrint('SkyStreamPlayerControls._checkIpad: $e');
+        if (kDebugMode) debugPrint('SkyStreamPlayerControls._checkIpad: $e');
       }
     }
   }
@@ -282,12 +283,12 @@ class SkyStreamPlayerControlsState
     try {
       ScreenBrightness().resetApplicationScreenBrightness();
     } catch (e) {
-      debugPrint('Failed to reset brightness: $e');
+      if (kDebugMode) debugPrint('Failed to reset brightness: $e');
     }
     try {
       FlutterVolumeController.updateShowSystemUI(true);
     } catch (e) {
-      debugPrint('Failed to restore volume UI: $e');
+      if (kDebugMode) debugPrint('Failed to restore volume UI: $e');
     }
     SystemChrome.setPreferredOrientations([]); // Reset to system default
     super.dispose();
@@ -326,7 +327,8 @@ class SkyStreamPlayerControlsState
         return;
       }
     } catch (e) {
-      debugPrint('SkyStreamPlayerControls._handleDoubleTap: $e');
+      if (kDebugMode)
+        debugPrint('SkyStreamPlayerControls._handleDoubleTap: $e');
     }
 
     if (widget.isLoading || _duration == Duration.zero) return;
