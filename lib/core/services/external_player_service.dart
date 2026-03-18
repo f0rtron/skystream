@@ -197,13 +197,19 @@ class ExternalPlayerService {
     if (player.androidPackage != null) {
       final intentUri = Uri.parse(
         'intent:$videoUrl#Intent;'
+        'action=android.intent.action.VIEW;'
+        'category=android.intent.category.DEFAULT;'
         'type=video/*;'
         'package=${player.androidPackage};'
         '${title != null ? "S.title=${Uri.encodeComponent(title)};" : ""}'
         'end',
       );
-      if (await canLaunchUrl(intentUri)) {
+      try {
+        // Don't use canLaunchUrl for intent URIs — it doesn't work reliably
+        // on Android. Just attempt the launch directly.
         return await launchUrl(intentUri);
+      } catch (e) {
+        if (kDebugMode) debugPrint('Android intent launch failed: $e');
       }
     }
 
