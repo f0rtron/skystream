@@ -123,6 +123,20 @@ class ExternalPlayerService {
       desktopCommand: 'PotPlayerMini64',
     ),
     ExternalPlayer(
+      id: 'mpc_hc',
+      displayName: 'MPC-HC',
+      icon: Icons.play_circle_outline,
+      supportedPlatforms: {TargetPlatform.windows},
+      desktopCommand: 'mpc-hc64',
+    ),
+    ExternalPlayer(
+      id: 'mpc_be',
+      displayName: 'MPC-BE',
+      icon: Icons.play_circle_outline,
+      supportedPlatforms: {TargetPlatform.windows},
+      desktopCommand: 'mpc-be64',
+    ),
+    ExternalPlayer(
       id: 'celluloid',
       displayName: 'Celluloid',
       icon: Icons.movie,
@@ -241,9 +255,12 @@ class ExternalPlayerService {
         launchUrl =
             'infuse://x-callback-url/play?url=${Uri.encodeComponent(videoUrl)}';
       } else if (player.id == 'nplayer') {
-        // nPlayer replaces http:// with nplayer-http://
+        // nPlayer replaces the URL scheme: http→nplayer-http, https→nplayer-https
         launchUrl = videoUrl.replaceFirst(
-          RegExp(r'^https?://'),
+          RegExp(r'^https://'),
+          'nplayer-https://',
+        ).replaceFirst(
+          RegExp(r'^http://'),
           'nplayer-http://',
         );
       } else {
@@ -287,28 +304,64 @@ class ExternalPlayerService {
 
   // -- Windows: Process.run with command --
 
+  // Common installation paths for popular Windows players
+  static const _windowsPlayerPaths = <String, List<String>>{
+    'vlc': [
+      r'C:\Program Files\VideoLAN\VLC\vlc.exe',
+      r'C:\Program Files (x86)\VideoLAN\VLC\vlc.exe',
+    ],
+    'PotPlayerMini64': [
+      r'C:\Program Files\DAUM\PotPlayer\PotPlayerMini64.exe',
+      r'C:\Program Files (x86)\DAUM\PotPlayer\PotPlayerMini64.exe',
+    ],
+    'mpv': [
+      r'C:\Program Files\mpv\mpv.exe',
+      r'C:\Program Files (x86)\mpv\mpv.exe',
+    ],
+    'mpc-hc64': [
+      r'C:\Program Files\MPC-HC\mpc-hc64.exe',
+      r'C:\Program Files (x86)\MPC-HC\mpc-hc64.exe',
+    ],
+    'mpc-be64': [
+      r'C:\Program Files\MPC-BE x64\mpc-be64.exe',
+    ],
+  };
+
   Future<bool> _launchWindows(String videoUrl, ExternalPlayer player) async {
+    final command = player.desktopCommand;
+    if (command == null) return false;
     try {
-      if (player.desktopCommand != null) {
+      // 1. Try running by command name (works if it's in PATH)
+      try {
+        final result = await Process.run(command, [videoUrl]);
+        if (result.exitCode == 0) return true;
+      } catch (_) {
+        // Not in PATH — try common install directories
+      }
+
+      // 2. Try known install paths
+      final knownPaths = _windowsPlayerPaths[command] ?? [];
+      for (final exePath in knownPaths) {
         try {
-          // Try running the command directly (works if it's in PATH)
-          final result = await Process.run(player.desktopCommand!, [videoUrl]);
-          if (result.exitCode == 0) return true;
+          final f = File(exePath);
+          if (await f.exists()) {
+            final result = await Process.run(exePath, [videoUrl]);
+            if (result.exitCode == 0) return true;
+          }
         } catch (_) {
-          // Command not recognized or not in PATH, proceed to fallback
+          continue;
         }
       }
-      // Fallback: try vlc:// protocol handler
-      if (player.id == 'vlc') {
-        final uri = Uri.parse('vlc://${Uri.encodeComponent(videoUrl)}');
-        return await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-      if (player.id == 'potplayer') {
-         final uri = Uri.parse('potplayer://${Uri.encodeComponent(videoUrl)}');
-         if (await canLaunchUrl(uri)) {
-             return await launchUrl(uri, mode: LaunchMode.externalApplication);
-         }
-      }
+
+      // 3. Last resort: use Windows shell `start` to open with default handler
+      try {
+        final result = await Process.run(
+          'cmd',
+          ['/c', 'start', '', videoUrl],
+          runInShell: true,
+        );
+        return result.exitCode == 0;
+      } catch (_) {}
     } catch (e) {
       if (kDebugMode) debugPrint('Windows launch error: $e');
     }
