@@ -191,16 +191,11 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard>
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: Padding(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(100), // Stadium style
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: Colors.black45,
-                      color: Theme.of(context).colorScheme.primary,
-                      minHeight: 6,
-                    ),
-                  ),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: Colors.black26,
+                  color: Theme.of(context).colorScheme.primary,
+                  minHeight: 4,
                 ),
               ),
             if (statusBadge != null)
@@ -323,16 +318,19 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard>
               ),
               if (progress > 0)
                 Positioned(
-                  bottom: 6,
-                  left: 6,
-                  right: 6,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(100), // Stadium style
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(8),
+                      bottomRight: Radius.circular(8),
+                    ),
                     child: LinearProgressIndicator(
                       value: progress,
-                      backgroundColor: Colors.black45,
+                      backgroundColor: Colors.black26,
                       color: Theme.of(context).colorScheme.primary,
-                      minHeight: 5,
+                      minHeight: 3,
                     ),
                   ),
                 ),
@@ -396,13 +394,6 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard>
               ],
             ),
           ),
-          if (statusBadge == "WATCHING" || statusBadge == "NEXT")
-            Icon(
-              Icons.play_circle_fill,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          if (statusBadge == "WATCHED")
-            const Icon(Icons.check_circle_rounded, color: Colors.green),
         ],
       ),
     );
