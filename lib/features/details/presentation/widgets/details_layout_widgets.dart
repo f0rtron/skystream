@@ -165,31 +165,42 @@ class DetailsActionButtons extends ConsumerWidget {
     if (pos > 0 && dur > 0 && !isLivestream) {
       final progress = (pos / dur).clamp(0.0, 1.0);
       progressWidget = Padding(
-        padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+        padding: const EdgeInsets.only(bottom: 16.0, left: 8.0, right: 8.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(100), // Stadium style
               child: LinearProgressIndicator(
                 value: progress,
-                minHeight: 4,
+                minHeight: 6,
                 backgroundColor: Theme.of(
                   context,
-                ).colorScheme.primary.withValues(alpha: 0.1),
+                ).colorScheme.onSurface.withValues(alpha: 0.1),
                 valueColor: AlwaysStoppedAnimation<Color>(
                   Theme.of(context).colorScheme.primary,
                 ),
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              "${(progress * 100).toInt()}% watched${!isMovie && targetEpisode != null ? ' (S${targetEpisode.season} E${targetEpisode.episode})' : ''}",
-              style: TextStyle(
-                fontSize: 10,
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.bold,
-              ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(
+                  Icons.history_toggle_off_rounded,
+                  size: 14,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  "${(progress * 100).toInt()}% watched${!isMovie && targetEpisode != null ? ' • S${targetEpisode.season} E${targetEpisode.episode}' : ''}",
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -200,8 +211,8 @@ class DetailsActionButtons extends ConsumerWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          playBtn,
           progressWidget,
+          playBtn,
           if (!isLivestream) ...[
             const SizedBox(height: LayoutConstants.spacingSm),
             downloadBtn,
@@ -213,6 +224,7 @@ class DetailsActionButtons extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        progressWidget,
         Row(
           children: [
             Expanded(child: playBtn),
@@ -222,7 +234,6 @@ class DetailsActionButtons extends ConsumerWidget {
             ],
           ],
         ),
-        progressWidget,
       ],
     );
   }

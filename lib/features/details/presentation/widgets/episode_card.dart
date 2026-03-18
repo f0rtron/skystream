@@ -28,7 +28,8 @@ class EpisodeCard extends ConsumerStatefulWidget {
   ConsumerState<EpisodeCard> createState() => _EpisodeCardState();
 }
 
-class _EpisodeCardState extends ConsumerState<EpisodeCard> with SingleTickerProviderStateMixin {
+class _EpisodeCardState extends ConsumerState<EpisodeCard>
+    with SingleTickerProviderStateMixin {
   bool _isFocused = false;
   late final AnimationController _scaleController;
   late final Animation<double> _scaleAnimation;
@@ -64,15 +65,19 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    // For series, we store progress per episode URL sometimes, 
+    // For series, we store progress per episode URL sometimes,
     // but the Smart Auto-Advance stores the *series url* as the key with episode metadata.
-    // However, for individual episode cards, we might want to check the specific episode URL 
+    // However, for individual episode cards, we might want to check the specific episode URL
     // if it was watched stand-alone, or just check if it matches the 'last watched' episode in history.
-    
+
     final historyRepo = ref.watch(historyRepositoryProvider);
-    final historyItem = ref.watch(watchHistoryProvider.select(
-      (list) => list.whereType<HistoryItem>().firstWhereOrNull((h) => h.item.url == widget.parentItem.url),
-    ));
+    final historyItem = ref.watch(
+      watchHistoryProvider.select(
+        (list) => list.whereType<HistoryItem>().firstWhereOrNull(
+          (h) => h.item.url == widget.parentItem.url,
+        ),
+      ),
+    );
 
     final epPos = historyRepo.getEpisodePosition(widget.episode.url);
     final epDur = historyRepo.getEpisodeDuration(widget.episode.url);
@@ -94,7 +99,9 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> with SingleTickerProv
         // If the episode is current in history but doesn't have its own EP_ key yet,
         // it might be using the main series record.
         if (progress <= 0) {
-          progress = historyItem.duration > 0 ? historyItem.position / historyItem.duration : 0;
+          progress = historyItem.duration > 0
+              ? historyItem.position / historyItem.duration
+              : 0;
           if (progress > 0.02) {
             statusBadge = progress > 0.98 ? "WATCHED" : "WATCHING";
           } else {
@@ -119,7 +126,7 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> with SingleTickerProv
           duration: const Duration(milliseconds: 200),
           width: widget.width ?? (widget.isHorizontal ? 300 : double.infinity),
           decoration: BoxDecoration(
-            color: _isFocused 
+            color: _isFocused
                 ? colorScheme.primaryContainer.withValues(alpha: 0.3)
                 : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(12),
@@ -132,18 +139,37 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> with SingleTickerProv
           child: InkWell(
             onTap: () => ref
                 .read(detailsControllerProvider(widget.parentItem.url).notifier)
-                .handlePlayPress(context, widget.parentItem, specificEpisode: widget.episode),
+                .handlePlayPress(
+                  context,
+                  widget.parentItem,
+                  specificEpisode: widget.episode,
+                ),
             borderRadius: BorderRadius.circular(10),
-            child: widget.isHorizontal 
-                ? _buildHorizontalLayout(context, imageUrl, progress, statusBadge) 
-                : _buildVerticalLayout(context, imageUrl, progress, statusBadge),
+            child: widget.isHorizontal
+                ? _buildHorizontalLayout(
+                    context,
+                    imageUrl,
+                    progress,
+                    statusBadge,
+                  )
+                : _buildVerticalLayout(
+                    context,
+                    imageUrl,
+                    progress,
+                    statusBadge,
+                  ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHorizontalLayout(BuildContext context, String imageUrl, double progress, String? statusBadge) {
+  Widget _buildHorizontalLayout(
+    BuildContext context,
+    String imageUrl,
+    double progress,
+    String? statusBadge,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -154,10 +180,10 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> with SingleTickerProv
               child: CachedNetworkImage(
                 imageUrl: imageUrl,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => ShimmerPlaceholder.rectangular(borderRadius: 0),
-                errorWidget: (_, _, _) => ThumbnailErrorPlaceholder(
-                  label: widget.episode.name,
-                ),
+                placeholder: (context, url) =>
+                    ShimmerPlaceholder.rectangular(borderRadius: 0),
+                errorWidget: (_, _, _) =>
+                    ThumbnailErrorPlaceholder(label: widget.episode.name),
               ),
             ),
             if (progress > 0)
@@ -165,11 +191,16 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> with SingleTickerProv
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: LinearProgressIndicator(
-                  value: progress,
-                  backgroundColor: Colors.black26,
-                  color: Theme.of(context).colorScheme.primary,
-                  minHeight: 4,
+                child: Padding(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(100), // Stadium style
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      backgroundColor: Colors.black45,
+                      color: Theme.of(context).colorScheme.primary,
+                      minHeight: 6,
+                    ),
+                  ),
                 ),
               ),
             if (statusBadge != null)
@@ -177,10 +208,13 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> with SingleTickerProv
                 top: 8,
                 right: 8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: statusBadge == "WATCHED" 
-                        ? Colors.green 
+                    color: statusBadge == "WATCHED"
+                        ? Colors.green
                         : Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(4),
                   ),
@@ -262,7 +296,12 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> with SingleTickerProv
     );
   }
 
-  Widget _buildVerticalLayout(BuildContext context, String imageUrl, double progress, String? statusBadge) {
+  Widget _buildVerticalLayout(
+    BuildContext context,
+    String imageUrl,
+    double progress,
+    String? statusBadge,
+  ) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Row(
@@ -284,19 +323,16 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> with SingleTickerProv
               ),
               if (progress > 0)
                 Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
+                  bottom: 6,
+                  left: 6,
+                  right: 6,
                   child: ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(8),
-                      bottomRight: Radius.circular(8),
-                    ),
+                    borderRadius: BorderRadius.circular(100), // Stadium style
                     child: LinearProgressIndicator(
                       value: progress,
-                      backgroundColor: Colors.black26,
+                      backgroundColor: Colors.black45,
                       color: Theme.of(context).colorScheme.primary,
-                      minHeight: 3,
+                      minHeight: 5,
                     ),
                   ),
                 ),
@@ -323,11 +359,16 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> with SingleTickerProv
                     if (statusBadge != null) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
                         decoration: BoxDecoration(
-                          color: statusBadge == "WATCHED" 
-                              ? Colors.green.withValues(alpha: 0.8) 
-                              : Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                          color: statusBadge == "WATCHED"
+                              ? Colors.green.withValues(alpha: 0.8)
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.8),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -361,10 +402,7 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard> with SingleTickerProv
               color: Theme.of(context).colorScheme.primary,
             ),
           if (statusBadge == "WATCHED")
-            const Icon(
-              Icons.check_circle_rounded,
-              color: Colors.green,
-            ),
+            const Icon(Icons.check_circle_rounded, color: Colors.green),
         ],
       ),
     );
