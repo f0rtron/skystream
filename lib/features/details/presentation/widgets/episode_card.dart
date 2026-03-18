@@ -186,6 +186,27 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard>
                     ThumbnailErrorPlaceholder(label: widget.episode.name),
               ),
             ),
+            // Play Button Overlay
+            Positioned.fill(
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.play_arrow_rounded,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                ),
+              ),
+            ),
             if (progress > 0)
               Positioned(
                 bottom: 0,
@@ -316,6 +337,23 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard>
                   ),
                 ),
               ),
+              // Play Button Overlay (Vertical)
+              Positioned.fill(
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.play_arrow_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
               if (progress > 0)
                 Positioned(
                   bottom: 0,
@@ -354,31 +392,6 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard>
                         ),
                       ),
                     ),
-                    if (statusBadge != null) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusBadge == "WATCHED"
-                              ? Colors.green.withValues(alpha: 0.8)
-                              : Theme.of(
-                                  context,
-                                ).colorScheme.primary.withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          statusBadge,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
                 const SizedBox(height: 4),

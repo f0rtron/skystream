@@ -743,7 +743,7 @@ class PlayerController extends Notifier<PlayerState> {
       }
 
       // Handle Completion / Next Episode Logic
-      if (progress >= 98) {
+      if (progress >= 95) {
         if (!isSeries) {
           historyNotifier.removeFromHistory(_item.url);
           return;
@@ -773,7 +773,7 @@ class PlayerController extends Notifier<PlayerState> {
       }
 
       // Normal Progress Saving
-      if (progress > 2 || isSeries) {
+      if (progress > 5 || isSeries) {
         historyNotifier.saveProgress(
           itemToSave,
           pos,
