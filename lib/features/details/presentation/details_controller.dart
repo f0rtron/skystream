@@ -159,8 +159,14 @@ class DetailsController extends Notifier<DetailsState> {
           provider: provider.packageName,
         );
 
-        _processEpisodes(withProvider.episodes, withProvider, isInitial: true);
-        state = state.copyWith(details: AsyncData(withProvider));
+        final sortedEpisodes = _processEpisodes(
+          withProvider.episodes,
+          withProvider,
+          isInitial: true,
+        );
+        state = state.copyWith(
+          details: AsyncData(withProvider.copyWith(episodes: sortedEpisodes)),
+        );
       } else {
         throw Exception("No provider selected or found for this item");
       }
@@ -169,7 +175,7 @@ class DetailsController extends Notifier<DetailsState> {
     }
   }
 
-  void _processEpisodes(
+  List<Episode>? _processEpisodes(
     List<Episode>? episodes,
     MultimediaItem contextItem, {
     bool isInitial = false,
@@ -179,13 +185,10 @@ class DetailsController extends Notifier<DetailsState> {
         isMovie: contextItem.contentType == MultimediaContentType.movie,
         seasonMap: {},
       );
-      return;
+      return episodes;
     }
 
-    // Sort episodes ascending by episode number to ensure batching logic works
-    final sortedEpisodes = List<Episode>.from(episodes)
-      ..sort((a, b) => a.episode.compareTo(b.episode));
-    episodes = sortedEpisodes;
+    // Episodes are now automatically sorted by the MultimediaItem constructor
 
     // Determine isMovie based on contentType if available
     bool isMovie =
@@ -203,7 +206,7 @@ class DetailsController extends Notifier<DetailsState> {
         seasonMap: {1: episodes},
         selectedSeason: 1,
       );
-      return;
+      return episodes;
     }
 
     final Map<int, List<Episode>> seasonMap = {};
@@ -229,7 +232,7 @@ class DetailsController extends Notifier<DetailsState> {
         final dur = historyRepo.getEpisodeDuration(lastEpisodeUrl);
         final progress = dur > 0 ? pos / dur : 0;
 
-        if (progress > 0.98) {
+        if (progress > 0.95) {
           if (lastIndex + 1 < allEpisodes.length) {
             targetEpisode = allEpisodes[lastIndex + 1];
           } else {
@@ -268,6 +271,7 @@ class DetailsController extends Notifier<DetailsState> {
       targetEpisode: targetEpisode,
       selectedDubStatus: selectedDubStatus,
     );
+    return episodes;
   }
 
   void toggleLibrary() {

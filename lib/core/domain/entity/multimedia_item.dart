@@ -114,7 +114,7 @@ class MultimediaItem {
     this.logoUrl,
     this.description,
     this.contentType = MultimediaContentType.movie,
-    this.episodes,
+    List<Episode>? episodes,
     this.provider,
     this.headers,
     this.year,
@@ -132,7 +132,13 @@ class MultimediaItem {
     this.nextAiring,
     this.streams,
     this.tmdbId,
-  });
+  }) : episodes = episodes != null
+            ? (List<Episode>.from(episodes)
+              ..sort((a, b) {
+                if (a.season != b.season) return a.season.compareTo(b.season);
+                return a.episode.compareTo(b.episode);
+              }))
+            : null;
 
   factory MultimediaItem.fromJson(Map<String, dynamic> json) {
     if (json.containsKey('media_type') &&

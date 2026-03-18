@@ -147,8 +147,9 @@ class PlayerController extends Notifier<PlayerState> {
   }) async {
     state = const PlayerState(); // Reset stale state
     _player = player;
-    _item = item;
     _videoUrl = videoUrl;
+
+    _item = item;
 
     String initialTitle = item.title;
     // Resolve Episode Title if Series
