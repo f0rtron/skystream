@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
@@ -11,7 +12,7 @@ class PlayerPlatformService {
       const platform = MethodChannel('dev.akash.skystream.player/pip');
       await platform.invokeMethod('enterPip', {'isPlaying': isPlaying});
     } catch (e) {
-      debugPrint("PIP Error: $e");
+      if (kDebugMode) debugPrint("PIP Error: $e");
     }
   }
 
@@ -42,7 +43,7 @@ class PlayerPlatformService {
     try {
       if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) return;
     } catch (e) {
-      debugPrint('PlayerPlatformService.updateOrientation: $e');
+      if (kDebugMode) debugPrint('PlayerPlatformService.updateOrientation: $e');
     }
 
     if (width != null && height != null && width > 0 && height > 0) {
@@ -78,7 +79,7 @@ class PlayerPlatformService {
         return false;
       }
     } catch (e) {
-      debugPrint('PlayerPlatformService.toggleFullscreen: $e');
+      if (kDebugMode) debugPrint('PlayerPlatformService.toggleFullscreen: $e');
     }
     return false;
   }
