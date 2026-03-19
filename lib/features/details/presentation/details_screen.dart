@@ -47,7 +47,8 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
       if (!widget.autoPlay || _didTriggerAutoPlay) return;
       final prevState = prev ?? const DetailsState();
       final nextState = next;
-      if (prevState.details.isLoading != true || !nextState.details.hasValue) return;
+      if (prevState.details.isLoading != true || !nextState.details.hasValue)
+        return;
       final item = nextState.details.value!;
       _didTriggerAutoPlay = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -65,9 +66,13 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
     final libraryNotifier = ref.read(libraryProvider.notifier);
     final isLarge = context.isTabletOrLarger;
 
-    final detailsAsync = ref.watch(detailsControllerProvider(widget.item.url).select((s) => s.details));
+    final detailsAsync = ref.watch(
+      detailsControllerProvider(widget.item.url).select((s) => s.details),
+    );
     final details = detailsAsync.value;
-    final isMovie = ref.watch(detailsControllerProvider(widget.item.url).select((s) => s.isMovie));
+    final isMovie = ref.watch(
+      detailsControllerProvider(widget.item.url).select((s) => s.isMovie),
+    );
     final item = details ?? widget.item;
 
     return Scaffold(
@@ -76,8 +81,8 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
           SliverAppBar(
             pinned: true,
             expandedHeight: isLarge
-            ? LayoutConstants.detailsExpandedHeightDesktop
-            : LayoutConstants.detailsExpandedHeightMobile,
+                ? LayoutConstants.detailsExpandedHeightDesktop
+                : LayoutConstants.detailsExpandedHeightMobile,
             stretch: true,
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             flexibleSpace: FlexibleSpaceBar(
@@ -91,15 +96,21 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                   Hero(
                     tag: 'banner_${item.url}',
                     child: CachedNetworkImage(
-                      imageUrl: AppImageFallbacks.optional(item.bannerUrl) ??
-                        AppImageFallbacks.poster(item.posterUrl, label: item.title),
+                      imageUrl:
+                          AppImageFallbacks.optional(item.bannerUrl) ??
+                          AppImageFallbacks.poster(
+                            item.posterUrl,
+                            label: item.title,
+                          ),
                       fit: BoxFit.cover,
                       alignment: Alignment.topCenter,
                       memCacheWidth: 800, // P19: Optimize memory
                       placeholder: (context, url) =>
                           Container(color: Theme.of(context).dividerColor),
-                      errorWidget: (_, _, _) =>
-                          ThumbnailErrorPlaceholder(label: item.title, isBackdrop: true),
+                      errorWidget: (_, _, _) => ThumbnailErrorPlaceholder(
+                        label: item.title,
+                        isBackdrop: true,
+                      ),
                     ),
                   ),
                   Container(
@@ -155,9 +166,21 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
             ],
           ),
           if (isLarge)
-            ..._buildDesktopSlivers(context, item, details, detailsAsync, isMovie)
+            ..._buildDesktopSlivers(
+              context,
+              item,
+              details,
+              detailsAsync,
+              isMovie,
+            )
           else
-            ..._buildMobileSlivers(context, item, details, detailsAsync, isMovie),
+            ..._buildMobileSlivers(
+              context,
+              item,
+              details,
+              detailsAsync,
+              isMovie,
+            ),
         ],
       ),
     );
@@ -187,12 +210,16 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: CachedNetworkImage(
-                          imageUrl: AppImageFallbacks.poster(item.posterUrl, label: item.title),
+                          imageUrl: AppImageFallbacks.poster(
+                            item.posterUrl,
+                            label: item.title,
+                          ),
                           width: 250,
                           height: 375,
                           fit: BoxFit.cover,
                           memCacheWidth: 250, // P19: Optimize memory
-                          errorWidget: (_, _, _) => ThumbnailErrorPlaceholder(label: item.title),
+                          errorWidget: (_, _, _) =>
+                              ThumbnailErrorPlaceholder(label: item.title),
                         ),
                       ),
                     ),
@@ -225,9 +252,8 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                     else
                       Text(
                         item.title,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),
+                        style: Theme.of(context).textTheme.displaySmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                     const SizedBox(height: 16),
                     MetadataBar(
@@ -241,15 +267,14 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                     ],
                     Text(
                       'Synopsis',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 8),
                     const SizedBox(height: 8),
                     ExpandableText(
                       text: item.description ?? 'No description available.',
-                      maxLines: 4,
+                      maxLines: 10,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         fontSize: 16,
                         height: 1.5,
@@ -303,12 +328,16 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                 const SizedBox(height: 32),
                 TrailersSection(trailers: item.trailers!),
               ],
-              if (item.recommendations != null && item.recommendations!.isNotEmpty) ...[
+              if (item.recommendations != null &&
+                  item.recommendations!.isNotEmpty) ...[
                 const SizedBox(height: 32),
                 RecommendationsCarousel(
                   items: item.recommendations!,
                   onItemTap: (rec) {
-                    context.push('/details', extra: DetailsRouteExtra(item: rec));
+                    context.push(
+                      '/details',
+                      extra: DetailsRouteExtra(item: rec),
+                    );
                   },
                 ),
               ],
@@ -341,12 +370,17 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: CachedNetworkImage(
-                        imageUrl: AppImageFallbacks.poster(item.posterUrl, label: item.title),
+                        imageUrl: AppImageFallbacks.poster(
+                          item.posterUrl,
+                          label: item.title,
+                        ),
                         width: 100,
                         height: 150,
                         fit: BoxFit.cover,
-                        memCacheWidth: 200, // P19: Optimize memory (2x for retina)
-                        errorWidget: (_, _, _) => ThumbnailErrorPlaceholder(label: item.title),
+                        memCacheWidth:
+                            200, // P19: Optimize memory (2x for retina)
+                        errorWidget: (_, _, _) =>
+                            ThumbnailErrorPlaceholder(label: item.title),
                       ),
                     ),
                   ),
@@ -363,17 +397,15 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                             alignment: Alignment.centerLeft,
                             errorWidget: (_, _, _) => Text(
                               item.title,
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           )
                         else
                           Text(
                             item.title,
-                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.headlineMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         const SizedBox(height: 8),
                         MetadataBar(
@@ -386,7 +418,11 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              DetailsActionButtons(item: widget.item, details: details, itemUrl: widget.item.url),
+              DetailsActionButtons(
+                item: widget.item,
+                details: details,
+                itemUrl: widget.item.url,
+              ),
               if (item.nextAiring != null) ...[
                 const SizedBox(height: 16),
                 NextAiringWidget(nextAiring: item.nextAiring!),
@@ -414,7 +450,9 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
               else if (detailsState is AsyncError)
                 Container(
                   padding: const EdgeInsets.all(16),
-                  color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.error.withValues(alpha: 0.1),
                   child: Text("Error: ${detailsState.error}"),
                 )
               else if (!isMovie && details?.episodes != null)
@@ -445,12 +483,16 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                 const SizedBox(height: 32),
                 TrailersSection(trailers: item.trailers!),
               ],
-              if (item.recommendations != null && item.recommendations!.isNotEmpty) ...[
+              if (item.recommendations != null &&
+                  item.recommendations!.isNotEmpty) ...[
                 const SizedBox(height: 32),
                 RecommendationsCarousel(
                   items: item.recommendations!,
                   onItemTap: (rec) {
-                    context.push('/details', extra: DetailsRouteExtra(item: rec));
+                    context.push(
+                      '/details',
+                      extra: DetailsRouteExtra(item: rec),
+                    );
                   },
                 ),
               ],

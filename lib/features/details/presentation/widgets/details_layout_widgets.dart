@@ -136,9 +136,14 @@ class DetailsActionButtons extends ConsumerWidget {
       ),
     );
 
-    // Livestreams should not have download feature
+    // Download feature: only for single episode VOD content
     final isLivestream = item.contentType == MultimediaContentType.livestream;
-    final downloadBtn = isLivestream
+    final showDownload =
+        details?.episodes != null &&
+        details?.episodes?.length == 1 &&
+        !isLivestream;
+
+    final downloadBtn = !showDownload
         ? const SizedBox.shrink()
         : CustomButton(
             isPrimary: false,
@@ -213,7 +218,7 @@ class DetailsActionButtons extends ConsumerWidget {
         children: [
           progressWidget,
           playBtn,
-          if (!isLivestream) ...[
+          if (showDownload) ...[
             const SizedBox(height: LayoutConstants.spacingSm),
             downloadBtn,
           ],
@@ -228,7 +233,7 @@ class DetailsActionButtons extends ConsumerWidget {
         Row(
           children: [
             Expanded(child: playBtn),
-            if (!isLivestream) ...[
+            if (showDownload) ...[
               const SizedBox(width: LayoutConstants.spacingSm),
               Expanded(child: downloadBtn),
             ],
@@ -306,20 +311,53 @@ class SliverDetailsDesktopEpisodeGrid extends ConsumerWidget {
             ),
           ),
         ),
-        SliverGrid.builder(
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 320,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 1.0,
-          ),
-          itemCount: displayedEpisodes.length,
-          itemBuilder: (context, index) {
-            final ep = displayedEpisodes[index];
-            return EpisodeCard(
-              episode: ep,
-              parentItem: parentItem,
-              isHorizontal: true,
+        SliverLayoutBuilder(
+          builder: (context, constraints) {
+            final double crossAxisExtent = constraints.crossAxisExtent;
+            final int crossAxisCount = (crossAxisExtent / 480).ceil().clamp(
+              1,
+              5,
+            );
+            final int rowCount = (displayedEpisodes.length / crossAxisCount)
+                .ceil();
+
+            return SliverList.separated(
+              itemCount: rowCount,
+              separatorBuilder: (_, _) => const SizedBox(height: 16),
+              itemBuilder: (context, rowIndex) {
+                final int startIndex = rowIndex * crossAxisCount;
+                final int endIndex = (startIndex + crossAxisCount).clamp(
+                  0,
+                  displayedEpisodes.length,
+                );
+                final rowEpisodes = displayedEpisodes.sublist(
+                  startIndex,
+                  endIndex,
+                );
+
+                return IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var i = 0; i < crossAxisCount; i++)
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              left: i == 0 ? 0 : 8,
+                              right: i == crossAxisCount - 1 ? 0 : 8,
+                            ),
+                            child: i < rowEpisodes.length
+                                ? EpisodeCard(
+                                    episode: rowEpisodes[i],
+                                    parentItem: parentItem,
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
             );
           },
         ),
@@ -400,11 +438,7 @@ class SliverDetailsEpisodeList extends ConsumerWidget {
           separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final ep = displayedEpisodes[index];
-            return EpisodeCard(
-              episode: ep,
-              parentItem: parentItem,
-              isHorizontal: false,
-            );
+            return EpisodeCard(episode: ep, parentItem: parentItem);
           },
         ),
       ],

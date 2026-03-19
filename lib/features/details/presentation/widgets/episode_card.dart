@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../../core/storage/history_repository.dart';
 import '../../../../core/utils/image_fallbacks.dart';
-import '../../../../shared/widgets/shimmer_placeholder.dart';
 import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 import '../../../library/presentation/history_provider.dart';
 import '../details_controller.dart';
@@ -14,14 +13,12 @@ class EpisodeCard extends ConsumerStatefulWidget {
   final Episode episode;
   final MultimediaItem parentItem;
   final double? width;
-  final bool isHorizontal;
 
   const EpisodeCard({
     super.key,
     required this.episode,
     required this.parentItem,
     this.width,
-    this.isHorizontal = true,
   });
 
   @override
@@ -124,7 +121,7 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard>
         scale: _scaleAnimation,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          width: widget.width ?? (widget.isHorizontal ? 300 : double.infinity),
+          width: widget.width ?? double.infinity,
           decoration: BoxDecoration(
             color: _isFocused
                 ? colorScheme.primaryContainer.withValues(alpha: 0.3)
@@ -145,268 +142,116 @@ class _EpisodeCardState extends ConsumerState<EpisodeCard>
                   specificEpisode: widget.episode,
                 ),
             borderRadius: BorderRadius.circular(10),
-            child: widget.isHorizontal
-                ? _buildHorizontalLayout(
-                    context,
-                    imageUrl,
-                    progress,
-                    statusBadge,
-                  )
-                : _buildVerticalLayout(
-                    context,
-                    imageUrl,
-                    progress,
-                    statusBadge,
-                  ),
+            child: _buildLayout(context, imageUrl, progress, statusBadge),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHorizontalLayout(
-    BuildContext context,
-    String imageUrl,
-    double progress,
-    String? statusBadge,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Stack(
-          children: [
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.cover,
-                placeholder: (context, url) =>
-                    ShimmerPlaceholder.rectangular(borderRadius: 0),
-                errorWidget: (_, _, _) =>
-                    ThumbnailErrorPlaceholder(label: widget.episode.name),
-              ),
-            ),
-            // Play Button Overlay
-            Positioned.fill(
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      width: 1.5,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.play_arrow_rounded,
-                    color: Colors.white,
-                    size: 32,
-                  ),
-                ),
-              ),
-            ),
-            if (progress > 0)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: LinearProgressIndicator(
-                  value: progress,
-                  backgroundColor: Colors.black26,
-                  color: Theme.of(context).colorScheme.primary,
-                  minHeight: 4,
-                ),
-              ),
-            if (statusBadge != null)
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusBadge == "WATCHED"
-                        ? Colors.green
-                        : Theme.of(context).colorScheme.primary,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    statusBadge,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            Positioned(
-              bottom: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  "E${widget.episode.episode}",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.episode.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                if ((widget.episode.runtime ?? 0) > 0)
-                  Text(
-                    "${widget.episode.runtime} min",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                if (widget.episode.description != null &&
-                    widget.episode.description!.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Expanded(
-                    child: Text(
-                      widget.episode.description!,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildVerticalLayout(
+  Widget _buildLayout(
     BuildContext context,
     String imageUrl,
     double progress,
     String? statusBadge,
   ) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
+      padding: const EdgeInsets.all(10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Stack(
+          Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: CachedNetworkImage(
-                  imageUrl: imageUrl,
-                  width: 120,
-                  height: 68,
-                  fit: BoxFit.cover,
-                  errorWidget: (_, _, _) => ThumbnailErrorPlaceholder(
-                    label: widget.episode.name,
-                    iconSize: 24,
-                  ),
-                ),
-              ),
-              // Play Button Overlay (Vertical)
-              Positioned.fill(
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.play_arrow_rounded,
-                      color: Colors.white,
-                      size: 20,
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      width: 140,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, _, _) => ThumbnailErrorPlaceholder(
+                        label: widget.episode.name,
+                        iconSize: 24,
+                      ),
                     ),
                   ),
-                ),
-              ),
-              if (progress > 0)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(8),
-                      bottomRight: Radius.circular(8),
-                    ),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: Colors.black26,
-                      color: Theme.of(context).colorScheme.primary,
-                      minHeight: 3,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        "${widget.episode.episode}. ${widget.episode.name}",
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                  Positioned.fill(
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 24,
                         ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  widget.episode.description ?? "No description",
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  if (progress > 0)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(8),
+                          bottomRight: Radius.circular(8),
+                        ),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: Colors.black26,
+                          color: Theme.of(context).colorScheme.primary,
+                          minHeight: 3,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Expanded(
+                  child: Text(
+                    "${widget.episode.episode}. ${widget.episode.name}",
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              IconButton(
+                iconSize: 32,
+                icon: const Icon(Icons.file_download_outlined),
+                onPressed: () {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Coming soon')));
+                },
+              ),
+            ],
           ),
+          if (widget.episode.description != null &&
+              widget.episode.description!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              widget.episode.description!,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.3,
+              ),
+            ),
+          ],
         ],
       ),
     );
