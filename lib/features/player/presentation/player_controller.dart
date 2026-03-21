@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:media_kit/media_kit.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../../../../core/services/download_service.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../../core/extensions/base_provider.dart';
 import '../../../../core/extensions/extension_manager.dart';
@@ -336,13 +337,19 @@ class PlayerController extends Notifier<PlayerState> {
         if (remaining.inSeconds <= 15 &&
             remaining.inSeconds > 0 &&
             !state.showNextEpisodeOverlay) {
-          final currentEp = _item.episodes?.indexWhere(
-            (e) => e.url == _videoUrl,
-          );
-          if (currentEp != null &&
-              currentEp != -1 &&
-              currentEp < _item.episodes!.length - 1) {
-            final next = _item.episodes![currentEp + 1];
+          
+          // Use _episode if available, otherwise fallback to URL matching
+          int? currentIndex;
+          if (_episode != null) {
+            currentIndex = _item.episodes?.indexWhere((e) => e.url == _episode!.url);
+          } else {
+            currentIndex = _item.episodes?.indexWhere((e) => e.url == _videoUrl);
+          }
+
+          if (currentIndex != null &&
+              currentIndex != -1 &&
+              currentIndex < _item.episodes!.length - 1) {
+            final next = _item.episodes![currentIndex + 1];
             state = state.copyWith(
               showNextEpisodeOverlay: true,
               nextEpisodeTitle: next.name,
@@ -696,19 +703,33 @@ class PlayerController extends Notifier<PlayerState> {
   Future<void> playNextEpisode() async {
     if (_item.contentType != MultimediaContentType.series) return;
 
-    final currentIndex = _item.episodes?.indexWhere((e) => e.url == _videoUrl);
+    int? currentIndex;
+    if (_episode != null) {
+      currentIndex = _item.episodes?.indexWhere((e) => e.url == _episode!.url);
+    } else {
+      currentIndex = _item.episodes?.indexWhere((e) => e.url == _videoUrl);
+    }
+
     if (currentIndex != null &&
         currentIndex != -1 &&
         currentIndex < _item.episodes!.length - 1) {
       final nextEpisode = _item.episodes![currentIndex + 1];
 
-      // Update video URL and refresh
-      _videoUrl = nextEpisode.url;
+      // Smart Next Episode: Check for downloaded version
+      final downloadService = ref.read(downloadServiceProvider);
+      final localFile = await downloadService.getDownloadedFile(_item, episode: nextEpisode);
+      
+      final String finalUrl = localFile?.path ?? nextEpisode.url;
+      final bool isLocal = localFile != null;
+
+      // Update video URL and episode, then refresh
+      _videoUrl = finalUrl;
+      _episode = nextEpisode;
       state = state.copyWith(
         playerTitle: "${_item.title} - ${nextEpisode.name}",
         showNextEpisodeOverlay: false,
         isLoading: true,
-        streamSubtitle: "Fetching sources...",
+        streamSubtitle: isLocal ? "Local - Downloaded" : "Fetching sources...",
       );
 
       await _initStream();

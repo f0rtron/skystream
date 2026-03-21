@@ -81,14 +81,16 @@ void showGestureDialog(
           }
           Navigator.pop(context);
         },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: PlayerGesture.values.map((g) {
-            return RadioListTile<PlayerGesture>(
-              title: Text(g.name[0].toUpperCase() + g.name.substring(1)),
-              value: g,
-            );
-          }).toList(),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: PlayerGesture.values.map((g) {
+              return RadioListTile<PlayerGesture>(
+                title: Text(g.name[0].toUpperCase() + g.name.substring(1)),
+                value: g,
+              );
+            }).toList(),
+          ),
         ),
       ),
     ),
@@ -111,14 +113,16 @@ void showDurationDialog(BuildContext context, WidgetRef ref, int current) {
           ref.read(playerSettingsProvider.notifier).setSeekDuration(val);
           Navigator.pop(context);
         },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: options.map((sec) {
-            return RadioListTile<int>(
-              title: Text(formatSeekDuration(sec)),
-              value: sec,
-            );
-          }).toList(),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: options.map((sec) {
+              return RadioListTile<int>(
+                title: Text(formatSeekDuration(sec)),
+                value: sec,
+              );
+            }).toList(),
+          ),
         ),
       ),
     ),
@@ -168,14 +172,16 @@ void showReadaheadDialog(BuildContext context, WidgetRef ref, int current) {
           ref.read(playerSettingsProvider.notifier).setReadaheadSeconds(val);
           Navigator.pop(context);
         },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: options.map((sec) {
-            return RadioListTile<int>(
-              title: Text(formatReadahead(sec)),
-              value: sec,
-            );
-          }).toList(),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: options.map((sec) {
+              return RadioListTile<int>(
+                title: Text(formatReadahead(sec)),
+                value: sec,
+              );
+            }).toList(),
+          ),
         ),
       ),
     ),
@@ -454,13 +460,15 @@ void showThemeDialog(
           ref.read(themeModeProvider.notifier).setThemeMode(val);
           Navigator.pop(context);
         },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            buildThemeOption('System', ThemeMode.system),
-            buildThemeOption('Dark', ThemeMode.dark),
-            buildThemeOption('Light', ThemeMode.light),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              buildThemeOption('System', ThemeMode.system),
+              buildThemeOption('Dark', ThemeMode.dark),
+              buildThemeOption('Light', ThemeMode.light),
+            ],
+          ),
         ),
       ),
       actions: [

@@ -49,8 +49,11 @@ class DownloadsNotifier extends AsyncNotifier<List<DownloadItem>> {
     final List<DownloadItem> items = [];
 
     for (final record in records) {
-      // Skip non-download tasks if any
+      // Skip non-download tasks and cancelled/failed ones
       if (record.task is! DownloadTask) continue;
+      if (record.status == TaskStatus.canceled || record.status == TaskStatus.failed) {
+        continue;
+      }
 
       final metadata = await storage.getDownloadMetadata(record.task.taskId);
       if (metadata == null) continue;
@@ -91,18 +94,24 @@ class DownloadsNotifier extends AsyncNotifier<List<DownloadItem>> {
         newStatus = update.status;
       }
 
-      final updatedItem = DownloadItem(
-        task: existing.task,
-        status: newStatus,
-        progress: newProgress,
-        item: existing.item,
-        episode: existing.episode,
-        timestamp: existing.timestamp,
-      );
+      if (newStatus == TaskStatus.canceled || newStatus == TaskStatus.failed) {
+        // Remove from list if canceled or failed
+        final newList = List<DownloadItem>.from(currentList)..removeAt(index);
+        state = AsyncData(newList);
+      } else {
+        final updatedItem = DownloadItem(
+          task: existing.task,
+          status: newStatus,
+          progress: newProgress,
+          item: existing.item,
+          episode: existing.episode,
+          timestamp: existing.timestamp,
+        );
 
-      final newList = List<DownloadItem>.from(currentList);
-      newList[index] = updatedItem;
-      state = AsyncData(newList);
+        final newList = List<DownloadItem>.from(currentList);
+        newList[index] = updatedItem;
+        state = AsyncData(newList);
+      }
     } else {
       // If not in state, it might be a new download. Refresh to get metadata.
       state = AsyncData(await _refreshList());

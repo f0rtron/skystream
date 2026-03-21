@@ -309,6 +309,15 @@ class DownloadService {
     } else if (update.status == TaskStatus.failed ||
         update.status == TaskStatus.canceled) {
       _ref.read(activeDownloadsProvider.notifier).remove(trackingUrl);
+      _ref.read(downloadProgressProvider.notifier).remove(trackingUrl);
+
+      if (update.status == TaskStatus.canceled) {
+        // Cleanup database and metadata for cancelled tasks
+        FileDownloader().database.deleteRecordWithId(update.task.taskId);
+        _ref
+            .read(storageServiceProvider)
+            .removeDownloadMetadata(update.task.taskId);
+      }
     }
   }
 
@@ -318,6 +327,10 @@ class DownloadService {
       await FileDownloader().cancelTasksWithIds([taskId]);
       _ref.read(activeDownloadsProvider.notifier).remove(trackingUrl);
       _ref.read(downloadProgressProvider.notifier).remove(trackingUrl);
+      
+      // Proactive cleanup
+      await FileDownloader().database.deleteRecordWithId(taskId);
+      await _ref.read(storageServiceProvider).removeDownloadMetadata(taskId);
     } finally {
       // Small delay to let final updates clear
       Future.delayed(const Duration(milliseconds: 500), () {

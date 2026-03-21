@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -96,16 +97,18 @@ class EpisodeCard extends HookConsumerWidget {
     useEffect(() {
       if (!isDownloading) {
         Future.microtask(() {
-          ref.read(downloadedFilesProvider.notifier).checkFile(
-                parentItem,
-                episode: episode,
-              );
+          if (ref.context.mounted) {
+            ref
+                .read(downloadedFilesProvider.notifier)
+                .checkFile(parentItem, episode: episode);
+          }
         });
       }
       return null;
     }, [episode.url, isDownloading]);
 
     void onFocusChange(bool focused) {
+      if (!context.mounted) return;
       isFocused.value = focused;
       if (focused) {
         scaleController.forward();
@@ -126,7 +129,7 @@ class EpisodeCard extends HookConsumerWidget {
             width: width,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(8.0),
+              borderRadius: BorderRadius.circular(12.0),
               border: Border.all(
                 color: isFocused.value
                     ? Colors.white
@@ -144,120 +147,148 @@ class EpisodeCard extends HookConsumerWidget {
                   : null,
             ),
             clipBehavior: Clip.antiAlias,
-            child: Row(
+            padding: const EdgeInsets.all(LayoutConstants.spacingSm),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _buildThumbnail(context, progress, statusBadge),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(LayoutConstants.spacingMd),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                "E${episode.episode} • ${episode.name}",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: isFocused.value
-                                          ? Theme.of(context).colorScheme.primary
-                                          : null,
-                                    ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (downloadedFile != null)
-                              IconButton(
-                                icon: const Icon(Icons.check_circle_rounded,
-                                    color: Colors.green, size: 20),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                onPressed: () {
-                                  DownloadManagementDialog.show(
-                                    context,
-                                    details ?? parentItem,
-                                    downloadedFile,
-                                    episode: episode,
-                                  );
-                                },
-                              )
-                            else if (isDownloading)
-                              SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: InkWell(
-                                  onTap: () => DownloadProgressDialog.show(
-                                    context,
-                                    '${parentItem.title} - ${episode.name}',
-                                    episode.url,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(4.0),
-                                    child: downloadProgressData?.status ==
-                                            TaskStatus.paused
-                                        ? Icon(
-                                            Icons.pause_rounded,
-                                            size: 16,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                          )
-                                        : CircularProgressIndicator(
-                                            value: downloadProgress > 0
-                                                ? downloadProgress
-                                                : null,
-                                            strokeWidth: 2,
-                                          ),
-                                  ),
-                                ),
-                              )
-                            else
-                              IconButton(
-                                icon: const Icon(Icons.download_rounded, size: 20),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                onPressed: () {
-                                  ref.read(downloadLauncherProvider).launch(
-                                        context,
-                                        parentItem,
-                                        episodeUrl: episode.url,
-                                      );
-                                },
-                              ),
-                          ],
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildThumbnail(context, progress, statusBadge),
+                    const SizedBox(width: LayoutConstants.spacingMd),
+                    Expanded(
+                      child: Text(
+                        "${episode.episode}. ${episode.name.toUpperCase()}",
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: isFocused.value
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.white,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          episode.description ?? 'No description available.',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                                height: 1.3,
-                              ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: LayoutConstants.spacingXs),
+                    _buildActionButtons(
+                      context,
+                      ref,
+                      downloadedFile,
+                      isDownloading,
+                      downloadProgress,
+                      downloadProgressData,
+                      details,
+                    ),
+                  ],
+                ),
+                if (episode.description != null &&
+                    episode.description!.isNotEmpty) ...[
+                  const SizedBox(height: LayoutConstants.spacingSm),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: Text(
+                      episode.description!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                        height: 1.4,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildActionButtons(
+    BuildContext context,
+    WidgetRef ref,
+    File? downloadedFile,
+    bool isDownloading,
+    double downloadProgress,
+    DownloadProgressData? downloadProgressData,
+    MultimediaItem? details,
+  ) {
+    if (downloadedFile != null) {
+      return IconButton(
+        icon: const Icon(
+          Icons.download_done_sharp,
+          color: Colors.green,
+          size: 32,
+        ),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        onPressed: () {
+          DownloadManagementDialog.show(
+            context,
+            details ?? parentItem,
+            downloadedFile,
+            episode: episode,
+          );
+        },
+      );
+    } else if (isDownloading) {
+      return SizedBox(
+        width: 32,
+        height: 32,
+        child: InkWell(
+          onTap: () => DownloadProgressDialog.show(
+            context,
+            '${parentItem.title} - ${episode.name}',
+            episode.url,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(4.0),
+            child: downloadProgressData?.status == TaskStatus.paused
+                ? Icon(
+                    Icons.pause_rounded,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.primary,
+                  )
+                : Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        value: downloadProgress > 0 ? downloadProgress : null,
+                        strokeWidth: 2,
+                      ),
+                      Text(
+                        "${(downloadProgress * 100).toInt()}%", // Display the percentage
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      );
+    } else {
+      return IconButton(
+        icon: const Icon(
+          Icons.file_download_outlined,
+          size: 32,
+          color: Colors.white70,
+        ),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        onPressed: () {
+          ref
+              .read(downloadLauncherProvider)
+              .launch(context, parentItem, episodeUrl: episode.url);
+        },
+      );
+    }
   }
 
   Widget _buildThumbnail(
@@ -267,20 +298,26 @@ class EpisodeCard extends HookConsumerWidget {
   ) {
     return Stack(
       children: [
-        SizedBox(
-          width: 140,
-          child: CachedNetworkImage(
-            imageUrl: episode.posterUrl ?? '',
-            fit: BoxFit.cover,
-            errorWidget: (context, url, error) =>
-                const ThumbnailErrorPlaceholder(),
-            placeholder: (context, url) => Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: const Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            width: 140,
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: CachedNetworkImage(
+                imageUrl: episode.posterUrl ?? '',
+                fit: BoxFit.cover,
+                errorWidget: (context, url, error) =>
+                    const ThumbnailErrorPlaceholder(),
+                placeholder: (context, url) => Container(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -307,7 +344,9 @@ class EpisodeCard extends HookConsumerWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.9),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -324,11 +363,10 @@ class EpisodeCard extends HookConsumerWidget {
         Positioned.fill(
           child: Center(
             child: Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.4),
+                color: Colors.black.withValues(alpha: 0.6),
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
               ),
               child: const Icon(
                 Icons.play_arrow_rounded,
