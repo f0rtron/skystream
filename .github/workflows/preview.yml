@@ -69,7 +69,7 @@ jobs:
           echo "storeFile=release.jks" >> android/key.properties
         
       - name: Build Split APKs
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
 
       - name: Upload APKs
         uses: actions/upload-artifact@v4
@@ -95,7 +95,7 @@ jobs:
         
       - name: Build iOS (No Codesign)
         run: |
-          flutter build ios --release --no-codesign
+          flutter build ios --release --no-codesign --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
           mkdir -p Payload
           mv build/ios/iphoneos/Runner.app Payload/
           zip -r skystream-ios-unsigned.ipa Payload
@@ -142,7 +142,7 @@ jobs:
       # Build for a single architecture to reduce app size from ~430MB (universal) to ~270MB
       - name: Build macOS
         run: |
-          flutter build macos --release --config-only
+          flutter build macos --release --config-only --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
           cd macos
           xcodebuild -workspace Runner.xcworkspace \
             -configuration Release \
@@ -209,7 +209,7 @@ jobs:
           Get-ChildItem -File | Where-Object { $_.Name -ne "TorrServer-windows-amd64.exe" } | Remove-Item
           
       - name: Build Windows
-        run: flutter build windows --release
+        run: flutter build windows --release --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
         
       - name: Compress Release
         run: |
@@ -250,7 +250,7 @@ jobs:
           find . -type f ! -name "TorrServer-linux-amd64" -delete
           
       - name: Build Linux
-        run: flutter build linux --release
+        run: flutter build linux --release --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
         
       - name: Compress Release
         run: |

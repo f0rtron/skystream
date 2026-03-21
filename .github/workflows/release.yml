@@ -83,10 +83,10 @@ jobs:
           echo "storeFile=release.jks" >> android/key.properties
         
       - name: Build Split APKs
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
 
       - name: Build Universal APK
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
 
       - name: Rename APKs
         run: |
@@ -130,7 +130,7 @@ jobs:
         
       - name: Build iOS (No Codesign)
         run: |
-          flutter build ios --release --no-codesign
+          flutter build ios --release --no-codesign --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
           mkdir -p Payload
           mv build/ios/iphoneos/Runner.app Payload/
           zip -r skystream-ios-unsigned-${{ needs.version.outputs.version }}.ipa Payload
@@ -183,7 +183,7 @@ jobs:
       - name: Build macOS (${{ matrix.arch }})
         run: |
           # First, generate the Xcode project with flutter
-          flutter build macos --release --config-only
+          flutter build macos --release --config-only --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
           
           # Build using xcodebuild with single architecture
           cd macos
@@ -265,7 +265,7 @@ jobs:
           Get-ChildItem
           
       - name: Build Windows
-        run: flutter build windows --release
+        run: flutter build windows --release --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
         
       - name: Compress Release
         run: |
@@ -311,7 +311,7 @@ jobs:
           ls -la
           
       - name: Build Linux
-        run: flutter build linux --release
+        run: flutter build linux --release --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
         
       - name: Compress Release
         run: |
