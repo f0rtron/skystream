@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_torrent_server/flutter_torrent_server.dart';
 import '../utils/torrent_file_parser.dart';
+import '../utils/app_utils.dart';
 import '../models/torrent_status.dart';
 
 class TorrentService {
@@ -110,7 +111,7 @@ class TorrentService {
   Future<String> _prepareMagnetLink(String link) async {
       if (!link.startsWith("magnet:") && 
           !link.startsWith("http") && 
-          (link.startsWith("/") || link.contains(RegExp(r'\.torrent$')))) {
+          (AppUtils.isLocalFile(link) || link.contains(RegExp(r'\.torrent$')))) {
          try {
             return await TorrentFileParser.getMagnetLink(link);
          } catch (e) {

@@ -3,12 +3,11 @@ import 'package:background_downloader/background_downloader.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:skystream/core/utils/image_fallbacks.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
-import '../../../../core/router/app_router.dart';
 import '../../../../core/services/download_service.dart';
 import '../../../../core/utils/layout_constants.dart';
+import '../../../details/presentation/playback_launcher.dart';
 import '../downloads_provider.dart';
 
 class DownloadsTab extends ConsumerWidget {
@@ -480,13 +479,10 @@ class _DownloadItemTile extends ConsumerWidget {
     }
 
     if (context.mounted) {
-      context.push(
-        '/player',
-        extra: PlayerRouteExtra(
-          item: item.item,
-          videoUrl: file.path,
-          episode: item.episode,
-        ),
+      ref.read(playbackLauncherProvider).play(
+        context,
+        file.path,
+        baseItem: item.item,
       );
     }
   }

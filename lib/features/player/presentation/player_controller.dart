@@ -18,6 +18,7 @@ import '../../../../core/models/torrent_status.dart';
 import '../../../../core/storage/history_repository.dart';
 import '../../library/presentation/history_provider.dart';
 import '../../../../core/providers/device_info_provider.dart';
+import '../../../../core/utils/app_utils.dart';
 import '../../settings/presentation/player_settings_provider.dart';
 
 class PlayerState {
@@ -414,7 +415,7 @@ class PlayerController extends Notifier<PlayerState> {
     if (_item.provider == 'Remote' ||
         _item.provider == 'Local' ||
         _item.provider == 'Torrent' ||
-        (_videoUrl.startsWith('/') && File(_videoUrl).existsSync())) {
+        AppUtils.isLocalFile(_videoUrl)) {
       final isTorrent =
           _item.provider == 'Torrent' ||
           _videoUrl.startsWith("magnet:") ||

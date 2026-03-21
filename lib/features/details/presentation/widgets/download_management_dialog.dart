@@ -5,9 +5,8 @@ import 'package:skystream/core/domain/entity/multimedia_item.dart';
 import 'package:skystream/core/services/download_service.dart';
 import 'package:skystream/shared/widgets/custom_widgets.dart';
 import 'package:collection/collection.dart';
-import 'package:open_file/open_file.dart';
 import '../../../library/presentation/downloads_provider.dart';
-import '../../../settings/presentation/player_settings_provider.dart';
+import '../playback_launcher.dart';
 import '../details_controller.dart';
 import '../downloaded_file_provider.dart';
 
@@ -155,23 +154,11 @@ class DownloadManagementDialog extends HookConsumerWidget {
     WidgetRef ref,
     MultimediaItem details,
   ) {
-    final settings = ref.read(playerSettingsProvider).asData?.value;
-    final isExternal = settings?.preferredPlayer != null;
-
-    if (isExternal) {
-      // Use External Player
-      OpenFile.open(file.path);
-    } else {
-      // Use Internal Player
-      // We pass the local file path as the URL to the playback launcher
-      ref
-          .read(detailsControllerProvider(item.url).notifier)
-          .handlePlayPress(
-            context,
-            details,
-            specificEpisode: episode,
-            overrideUrl: file.path,
-          );
-    }
+    ref.read(playbackLauncherProvider).play(
+      context,
+      file.path,
+      baseItem: details,
+      detailedItem: details,
+    );
   }
 }

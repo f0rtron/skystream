@@ -14,6 +14,7 @@ import 'package:collection/collection.dart';
 import 'details_controller.dart';
 import '../../../core/services/download_service.dart';
 import '../../../shared/widgets/loading_dialog.dart';
+import '../../../core/utils/app_utils.dart';
 
 class PlaybackLauncher {
   final Ref _ref;
@@ -75,7 +76,7 @@ class PlaybackLauncher {
     String playerId,
   ) async {
     // If it's a local file, we can skip stream resolution
-    if (episodeDataUrl.startsWith('/') || episodeDataUrl.startsWith('file:')) {
+    if (AppUtils.isLocalFile(episodeDataUrl)) {
       final stream = StreamResult(
         url: episodeDataUrl,
         source: 'Local',

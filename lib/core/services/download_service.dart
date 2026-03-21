@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'package:collection/collection.dart';
 import 'package:permission_handler/permission_handler.dart'
     hide PermissionStatus;
@@ -487,7 +488,7 @@ class DownloadService {
       // Android, Windows, macOS, Linux: use absolute paths with BaseDirectory.root
       baseDir = BaseDirectory.root;
       if (isAndroid) {
-        taskDirectory = '${(await _getPublicDownloadsPath())}/$directory';
+        taskDirectory = p.join(await _getPublicDownloadsPath(), directory);
       } else {
         // Desktop: directory is already absolute (e.g. /Users/akash/Downloads/Skystream/Title)
         taskDirectory = directory;
@@ -513,7 +514,7 @@ class DownloadService {
     final String fullDirPath;
     if (isIOS) {
       final docsDir = await getApplicationDocumentsDirectory();
-      fullDirPath = '${docsDir.path}/$taskDirectory';
+      fullDirPath = p.join(docsDir.path, taskDirectory);
     } else {
       // Android/Desktop: taskDirectory is already absolute
       fullDirPath = taskDirectory;
@@ -552,12 +553,12 @@ class DownloadService {
     final publicDir = await _getPublicDownloadsPath();
 
     if (Platform.isAndroid || Platform.isIOS) {
-      path = "Skystream/$sanitizedTitle";
+      path = p.join("Skystream", sanitizedTitle);
       if (absolute) {
-        path = "$publicDir/$path";
+        path = p.join(publicDir, path);
       }
     } else {
-      path = "${dir.path}/Skystream/$sanitizedTitle";
+      path = p.join(dir.path, "Skystream", sanitizedTitle);
     }
 
     // Add Season subdirectory if it's a series and we have an episode
@@ -568,7 +569,7 @@ class DownloadService {
       final seasonCount =
           item.episodes?.map((e) => e.season).toSet().length ?? 0;
       if (seasonCount > 1) {
-        path = "$path/Season ${episode.season}";
+        path = p.join(path, "Season ${episode.season}");
       }
     }
 
@@ -603,7 +604,7 @@ class DownloadService {
     // Check common extensions
     final extensions = ['.mp4', '.mkv', '.webm', '.avi'];
     for (final ext in extensions) {
-      final file = File('$directoryPath/$baseName$ext');
+      final file = File(p.join(directoryPath, '$baseName$ext'));
       if (await file.exists()) {
         return file;
       }

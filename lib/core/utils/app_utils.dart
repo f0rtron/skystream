@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:app_restarter/app_restarter.dart';
-import '../../../../main.dart' as app_main;
 
 class AppUtils {
   static Future<void> restartApp(BuildContext context) async {
@@ -12,8 +11,17 @@ class AppUtils {
       if (kDebugMode) {
         debugPrint("AppRestarter failed: $e. Falling back to main().");
       }
-      // Fallback if package fails (e.g. context issue)
-      app_main.main();
     }
+  }
+
+  static bool isLocalFile(String path) {
+    if (path.isEmpty) return false;
+    // Android/Linux/macOS absolute
+    if (path.startsWith('/')) return true;
+    // Windows absolute (C:\ or D:/)
+    if (RegExp(r'^[a-zA-Z]:[\\/]').hasMatch(path)) return true;
+    // File URL
+    if (path.startsWith('file:')) return true;
+    return false;
   }
 }
