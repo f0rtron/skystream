@@ -88,8 +88,6 @@ class PlayerGestureHandler extends ChangeNotifier {
   ) async {
     if (isTv || isDesktop) return;
 
-    onHideControls();
-
     final x = details.globalPosition.dx;
     final settings = await getSettings();
 
@@ -185,7 +183,6 @@ class PlayerGestureHandler extends ChangeNotifier {
       if (details.globalPosition.dy > (screenHeight - 100 - bottomPadding)) {
         return; // Avoid conflict with seek bar
       }
-      onHideControls();
     }
 
     swipeSeekValue = getPosition();
@@ -265,8 +262,6 @@ class PlayerGestureHandler extends ChangeNotifier {
     }
 
     current = (await FlutterVolumeController.getVolume()) ?? 0.5;
-
-    onHideControls();
 
     showOSD = true;
     osdIcon = _getIconForValue(PlayerGesture.volume, current);

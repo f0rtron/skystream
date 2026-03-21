@@ -301,61 +301,55 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
             }
           },
           child: Scaffold(
-            body: MouseRegion(
-              onHover: (_) {
-                if (!_controlsVisible.value) {
-                  _controlsVisible.value = true;
-                }
-                _controlsKeyFinal.currentState?.onUserInteraction();
-              },
-              child: Focus(
-                autofocus: false,
-                onKeyEvent: _handleKey,
-                child: Stack(
-                  children: [
-                    RepaintBoundary(
-                      child: ValueListenableBuilder<BoxFit>(
-                        valueListenable: _videoFit,
-                        builder: (_, fit, child) => Center(
-                          child: Video(
-                            controller: _videoController,
-                            fit: fit,
-                            subtitleViewConfiguration:
-                                const SubtitleViewConfiguration(visible: false),
-                            controls: (state) => const SizedBox.shrink(),
-                          ),
+            body: Focus(
+              autofocus: false,
+              onKeyEvent: _handleKey,
+              child: Stack(
+                children: [
+                  RepaintBoundary(
+                    child: ValueListenableBuilder<BoxFit>(
+                      valueListenable: _videoFit,
+                      builder: (_, fit, child) => Center(
+                        child: Video(
+                          controller: _videoController,
+                          fit: fit,
+                          subtitleViewConfiguration:
+                              const SubtitleViewConfiguration(visible: false),
+                          controls: (state) => const SizedBox.shrink(),
                         ),
                       ),
                     ),
-                    Positioned(
-                      bottom: controlsVisible ? 120 : 20,
-                      left: 20,
-                      right: 20,
-                      child: SubtitleView(
-                        controller: _videoController,
-                        configuration: SubtitleViewConfiguration(
-                          style: TextStyle(
-                            fontSize: subtitleSettings?.subtitleSize ?? 22.0,
-                            color: Color(
-                              subtitleSettings?.subtitleColor ?? 0xFFFFFFFF,
-                            ),
-                            backgroundColor: Color(
-                              subtitleSettings?.subtitleBackgroundColor ??
-                                  0x00000000,
-                            ),
-                            shadows: const [
-                              Shadow(
-                                offset: Offset(0, 1),
-                                blurRadius: 2,
-                                color: Colors.black,
-                              ),
-                            ],
+                  ),
+                  Positioned(
+                    bottom: controlsVisible ? 120 : 20,
+                    left: 20,
+                    right: 20,
+                    child: SubtitleView(
+                      controller: _videoController,
+                      configuration: SubtitleViewConfiguration(
+                        style: TextStyle(
+                          fontSize: subtitleSettings?.subtitleSize ?? 22.0,
+                          color: Color(
+                            subtitleSettings?.subtitleColor ?? 0xFFFFFFFF,
                           ),
-                          padding: EdgeInsets.zero,
+                          backgroundColor: Color(
+                            subtitleSettings?.subtitleBackgroundColor ??
+                                0x00000000,
+                          ),
+                          shadows: const [
+                            Shadow(
+                              offset: Offset(0, 1),
+                              blurRadius: 2,
+                              color: Colors.black,
+                            ),
+                          ],
                         ),
+                        padding: EdgeInsets.zero,
                       ),
                     ),
-                    RepaintBoundary(
+                  ),
+                  Positioned.fill(
+                    child: RepaintBoundary(
                       child: ValueListenableBuilder<bool>(
                         valueListenable: _forceShowControls,
                         builder: (_, forceShow, _) => SkyStreamPlayerControls(
@@ -367,8 +361,6 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                           subtitle: ref
                               .read(playerControllerProvider)
                               .streamSubtitle,
-                          // Most properties are now watched internally by controls
-                          // to further narrow rebuild scope.
                           onResize: _updateResizeMode,
                           onVisibilityChanged: (v) {
                             if (mounted) {
@@ -378,16 +370,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                         ),
                       ),
                     ),
-                    if (isLoading)
-                      ValueListenableBuilder<bool>(
-                        valueListenable: _forceShowControls,
-                        builder: (_, forceShow, child) {
-                          if (forceShow) return const SizedBox.shrink();
-                          return _buildSkipButtonOverlay();
-                        },
-                      ),
-                  ],
-                ),
+                  ),
+                  if (isLoading)
+                    ValueListenableBuilder<bool>(
+                      valueListenable: _forceShowControls,
+                      builder: (_, forceShow, child) {
+                        if (forceShow) return const SizedBox.shrink();
+                        return _buildSkipButtonOverlay();
+                      },
+                    ),
+                ],
               ),
             ),
           ),

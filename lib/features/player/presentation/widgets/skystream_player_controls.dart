@@ -394,11 +394,13 @@ class SkyStreamPlayerControlsState
   }
 
   void onUserInteraction() {
-    if (!_isVisible) {
-      setState(() => _isVisible = true);
-      widget.onVisibilityChanged?.call(true);
+    if (mounted) {
+      if (!_isVisible) {
+        setState(() => _isVisible = true);
+        widget.onVisibilityChanged?.call(true);
+      }
+      _startHideTimer();
     }
-    _startHideTimer();
   }
 
   void _cancelHideTimer() {
@@ -638,7 +640,7 @@ class SkyStreamPlayerControlsState
         _startHideTimer();
       },
       onHover: (_) {
-        if (!_isVisible) {
+        if (!_isVisible && mounted) {
           setState(() => _isVisible = true);
           widget.onVisibilityChanged?.call(true);
         }
@@ -672,6 +674,8 @@ class SkyStreamPlayerControlsState
           },
           behavior: HitTestBehavior.translucent,
           child: Container(
+            width: double.infinity,
+            height: double.infinity,
             color: _isVisible ? Colors.black54 : Colors.transparent,
             child: Stack(
               children: [

@@ -34,6 +34,7 @@ class PlaybackLauncher {
     final episode = itemToCheck.episodes?.firstWhereOrNull((e) => e.url == url);
     final downloadService = _ref.read(downloadServiceProvider);
     final localFile = await downloadService.getDownloadedFile(itemToCheck, episode: episode);
+    if (!context.mounted) return;
 
     final String finalUrl = localFile?.path ?? url;
 
