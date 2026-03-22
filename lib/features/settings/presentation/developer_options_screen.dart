@@ -89,7 +89,7 @@ class _DeveloperOptionsScreenState
         if (profile.isTv) {
           return VirtualMouse(
             visible: true,
-            velocity: 5,
+            velocity: 3,
             pointerColor: Theme.of(context).colorScheme.primary,
             child: scaffold,
           );
@@ -188,7 +188,8 @@ class _DeveloperOptionsScreenState
                     title = uri.pathSegments.last;
                   }
                 } catch (e) {
-                  if (kDebugMode) debugPrint('DeveloperOptionsScreen: URI parse error: $e');
+                  if (kDebugMode)
+                    debugPrint('DeveloperOptionsScreen: URI parse error: $e');
                 }
 
                 Navigator.pop(context);

@@ -118,7 +118,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
           if (profile.isTv) {
             return VirtualMouse(
               visible: true,
-              velocity: 5,
+              velocity: 3,
               pointerColor: Theme.of(context).colorScheme.primary,
               child: sideNavScaffold,
             );
