@@ -7,6 +7,8 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import android.app.PictureInPictureParams
 import android.os.Build
+import androidx.core.content.FileProvider
+import java.io.File
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "dev.akash.skystream.player/pip"
@@ -103,9 +105,21 @@ class MainActivity : FlutterActivity() {
                 val title = call.argument<String>("title")
 
                 try {
+                    val uri = if (videoUrl.startsWith("file://") || (videoUrl.startsWith("/") && File(videoUrl).exists())) {
+                        val filePath = if (videoUrl.startsWith("file://")) {
+                            videoUrl.substring(7)
+                        } else {
+                            videoUrl
+                        }
+                        FileProvider.getUriForFile(this, "${applicationContext.packageName}.fileProvider", File(filePath))
+                    } else {
+                        Uri.parse(videoUrl)
+                    }
+
                     val intent = Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(Uri.parse(videoUrl), mimeType)
+                        setDataAndType(uri, mimeType)
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         if (!packageName.isNullOrEmpty()) setPackage(packageName)
                         if (!title.isNullOrEmpty()) {
                             putExtra("title", title)

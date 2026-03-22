@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:app_restarter/app_restarter.dart';
@@ -26,6 +27,9 @@ class AppUtils {
   }
 
   static String normalizeUrl(String url) {
+    if (url.isEmpty) return url;
+    if (Platform.isAndroid) return url;
+
     if (isLocalFile(url) && !url.startsWith('file:')) {
       if (url.startsWith('/')) {
         return 'file://$url';
