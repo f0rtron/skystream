@@ -49,6 +49,10 @@ class JsEngineService {
   final Map<String, Completer<dynamic>> _pendingCallbacks = {};
   final Map<String, dynamic> _domRegistry = {};
 
+  // Monotonic counter for callback IDs — avoids Windows clock-resolution collisions
+  // where DateTime.now().microsecondsSinceEpoch returns the same value for concurrent calls.
+  int _callbackCounter = 0;
+
   // Dynamic pump tracking
   int _activeAsyncCount = 0;
   Timer? _centralPump;
@@ -863,7 +867,7 @@ class JsEngineService {
       argsStr = args.map((e) => jsonEncode(e)).join(', ');
     }
 
-    final callbackId = "cb_${DateTime.now().microsecondsSinceEpoch}";
+    final callbackId = "cb_${_callbackCounter++}";
     final completer = Completer<dynamic>();
     _pendingCallbacks[callbackId] = completer;
 
