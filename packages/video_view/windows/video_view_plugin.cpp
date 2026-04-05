@@ -558,10 +558,9 @@ public:
 		mediaPlayer.IsVideoFrameServerEnabled(true);
 		mediaPlayer.CommandManager().IsEnabled(false);
 
-		// Native-parity buffering
-		auto session = mediaPlayer.PlaybackSession();
-		session.BufferingStrategy(MediaPlayerBufferingStrategy::Adaptive);
-		session.MaxBufferingTime(chrono::seconds(50));
+		// Fix: Improve playback stability by disabling auto-pause when the buffer is low.
+		// This achieves a similar "Adaptive" feel to other native players locally.
+		mediaPlayer.PlaybackSession().AutoPauseDisabled(true);
 	}
 
 	~VideoController() {
@@ -821,8 +820,8 @@ public:
 		const char* exts[] = { ".m3u8", ".mpd", ".ism/manifest" };
 		if (hasExtension(src, exts, 3)) {
 			auto weakThis = weak_from_this();
-			// Phase 7b: inject custom headers via Windows.Web.Http.HttpClient
-			Windows::Web::Http::HttpClient httpClient;
+			// Fix: Use winrt::Windows namespace to avoid ambiguity errors
+			winrt::Windows::Web::Http::HttpClient httpClient;
 			for (auto& [key, value] : headers) {
 				httpClient.DefaultRequestHeaders().TryAppendWithoutValidation(
 					to_hstring(key), to_hstring(value)
