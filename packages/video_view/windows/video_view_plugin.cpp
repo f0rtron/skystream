@@ -558,9 +558,6 @@ public:
 		mediaPlayer.IsVideoFrameServerEnabled(true);
 		mediaPlayer.CommandManager().IsEnabled(false);
 
-		// Fix: Improve playback stability by disabling auto-pause when the buffer is low.
-		// This achieves a similar "Adaptive" feel to other native players locally.
-		mediaPlayer.PlaybackSession().AutoPauseDisabled(true);
 	}
 
 	~VideoController() {
