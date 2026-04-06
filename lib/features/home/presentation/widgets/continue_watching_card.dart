@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:skystream/features/library/presentation/history_provider.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:skystream/core/router/app_router.dart';
 import 'package:skystream/core/utils/image_fallbacks.dart';
 import '../../../../core/extensions/extension_manager.dart';
+import '../../../../shared/widgets/loading_dialog.dart';
 
 class ContinueWatchingCard extends ConsumerWidget {
   final HistoryItem historyItem;
@@ -22,6 +24,66 @@ class ContinueWatchingCard extends ConsumerWidget {
     this.width = 280,
     this.isLarge = false,
   });
+
+  static String _normalizeMatchKey(String value) {
+    return value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  static MultimediaItem? _pickBestLiveMatch(
+    Iterable<MultimediaItem> candidates,
+    MultimediaItem target,
+  ) {
+    final normalizedTarget = _normalizeMatchKey(target.title);
+    if (normalizedTarget.isEmpty) return null;
+
+    final exactTitleMatches = candidates.where(
+      (candidate) =>
+          candidate.contentType == MultimediaContentType.livestream &&
+          _normalizeMatchKey(candidate.title) == normalizedTarget,
+    );
+
+    if (target.posterUrl.isNotEmpty) {
+      final posterMatch = exactTitleMatches.firstWhereOrNull(
+        (candidate) => candidate.posterUrl == target.posterUrl,
+      );
+      if (posterMatch != null) return posterMatch;
+    }
+
+    return exactTitleMatches.firstOrNull;
+  }
+
+  Future<MultimediaItem?> _resolveFreshLiveItem(
+    WidgetRef ref,
+    MultimediaItem item,
+  ) async {
+    final providerId = item.provider;
+    if (providerId == null || providerId.isEmpty) return null;
+
+    final manager = ref.read(extensionManagerProvider.notifier);
+    final provider = manager.getAllProviders().firstWhereOrNull(
+      (p) => p.packageName == providerId || p.name == providerId,
+    );
+    if (provider == null) return null;
+
+    try {
+      final results = await provider.search(item.title);
+      final match = _pickBestLiveMatch(results, item);
+      if (match != null) {
+        return match.copyWith(provider: provider.packageName);
+      }
+    } catch (_) {}
+
+    try {
+      final homeSections = await provider.getHome();
+      final flattened = homeSections.values.expand((items) => items);
+      final match = _pickBestLiveMatch(flattened, item);
+      if (match != null) {
+        return match.copyWith(provider: provider.packageName);
+      }
+    } catch (_) {}
+
+    return null;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,12 +102,34 @@ class ContinueWatchingCard extends ConsumerWidget {
     final providerName = providerObj?.name ?? item.provider;
 
     return FocusableItem(
-      onTap: () {
+      onTap: () async {
         if (item.contentType == MultimediaContentType.livestream) {
+          bool dialogDismissed = false;
+          bool canceled = false;
+          LoadingDialog.show(
+            context,
+            message: 'Refreshing live stream...',
+            onCancel: () {
+              canceled = true;
+              dialogDismissed = true;
+            },
+          );
+          final refreshedItem = await _resolveFreshLiveItem(ref, item);
+          if (!context.mounted || canceled) return;
+
+          if (!dialogDismissed) {
+            Navigator.of(context, rootNavigator: true).pop();
+            dialogDismissed = true;
+          }
+
+          final liveItem = refreshedItem ?? item;
+          if (!context.mounted || canceled) return;
+
           context.push(
             '/player',
-            extra: PlayerRouteExtra(item: item, videoUrl: item.url),
+            extra: PlayerRouteExtra(item: liveItem, videoUrl: liveItem.url),
           );
+          ref.read(watchHistoryProvider.notifier).removeFromHistory(item.url);
           return;
         }
 
