@@ -14,6 +14,7 @@ import '../../features/discover/presentation/view_all_screen.dart';
 import '../../features/player/presentation/player_screen.dart';
 import '../domain/entity/multimedia_item.dart';
 import 'package:skystream/shared/widgets/app_scaffold.dart';
+import '../../core/storage/settings_repository.dart';
 
 /// Typed extra for /details. Use when pushing: context.push('/details', extra: DetailsRouteExtra(...)).
 class DetailsRouteExtra {
@@ -65,9 +66,10 @@ final shellNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   ref.keepAlive();
+  final initial = ref.read(settingsRepositoryProvider).getDefaultHomeScreen();
 
   return GoRouter(
-    initialLocation: '/home',
+    initialLocation: initial,
     navigatorKey: rootNavigatorKey,
     routes: [
       StatefulShellRoute.indexedStack(

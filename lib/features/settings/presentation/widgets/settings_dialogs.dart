@@ -8,6 +8,62 @@ import '../../../../core/storage/settings_repository.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../../core/utils/app_utils.dart';
 import '../player_settings_provider.dart';
+import '../general_settings_provider.dart';
+
+/// Returns a human-readable label for a home screen route.
+String getHomeScreenLabel(String route) {
+  switch (route) {
+    case '/home':
+      return 'Home';
+    case '/discover':
+      return 'Discover';
+    case '/search':
+      return 'Search';
+    case '/library':
+      return 'Library';
+    default:
+      return 'Home';
+  }
+}
+
+/// Shows a dialog to pick the default home screen.
+void showDefaultHomeScreenDialog(
+  BuildContext context,
+  WidgetRef ref,
+  String current,
+) {
+  final options = [
+    {'label': 'Home', 'route': '/home'},
+    {'label': 'Discover', 'route': '/discover'},
+    {'label': 'Search', 'route': '/search'},
+    {'label': 'Library', 'route': '/library'},
+  ];
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      surfaceTintColor: Colors.transparent,
+      title: const Text('Default Home Screen'),
+      content: RadioGroup<String>(
+        groupValue: current,
+        onChanged: (val) {
+          if (val == null) return;
+          ref.read(generalSettingsProvider.notifier).setDefaultHomeScreen(val);
+          Navigator.pop(context);
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: options.map((opt) {
+            return RadioListTile<String>(
+              title: Text(opt['label']!),
+              value: opt['route']!,
+            );
+          }).toList(),
+        ),
+      ),
+    ),
+  );
+}
 
 /// Helper to create a theme-option RadioListTile.
 Widget buildThemeOption(String title, ThemeMode value) {

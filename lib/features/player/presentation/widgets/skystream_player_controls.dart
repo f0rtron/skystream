@@ -706,11 +706,24 @@ class SkyStreamPlayerControlsState
     final maxPlaybackSpeed = ref.watch(
       playerControllerProvider.select((s) => s.maxPlaybackSpeed),
     );
-    final isSeries = ref.watch(
-      playerControllerProvider.select(
-        (s) => ref.read(playerControllerProvider.notifier).isSeries,
-      ),
+    final isSeries = ref.read(playerControllerProvider.notifier).isSeries;
+    final uiPhase = ref.watch(
+      playerControllerProvider.select((s) => s.uiPhase),
     );
+    final sourceAttempts = ref.watch(
+      playerControllerProvider.select((s) => s.sourceAttempts),
+    );
+    final effectiveUiPhase = uiPhase.isIdle && widget.isLoading
+        ? PlaybackUiPhase(
+            kind: PlaybackUiPhaseKind.bootstrapping,
+            title: title,
+            subtitle: subtitle,
+            detail: "Preparing playback...",
+            fullscreenBlocking: true,
+            preserveCurrentFrame: false,
+            showBack: true,
+          )
+        : uiPhase;
 
     // Guard against PiP or small window size
     final size = MediaQuery.sizeOf(context);
@@ -718,11 +731,12 @@ class SkyStreamPlayerControlsState
 
     if (_isInPip || isSmallWindow) return const SizedBox.shrink();
 
-    // Loading state: simplified UI. If it's playing but duration is zero,
-    // it's likely an unsupported video (audio only) - show controls so user can see source info.
-    if (widget.isLoading || (_duration == Duration.zero && !_isPlaying)) {
+    if (effectiveUiPhase.fullscreenBlocking) {
       if (!widget.forceShowControls) {
-        return _buildLoadingUI(title: title, subtitle: subtitle);
+        return _buildLoadingUI(
+          phase: effectiveUiPhase,
+          sourceAttempts: sourceAttempts,
+        );
       }
     }
 
@@ -795,11 +809,7 @@ class SkyStreamPlayerControlsState
                   ),
 
                 // Persistent buffering indicator
-                PlayerBufferingIndicator(
-                  player: widget.player,
-                  isLoading: widget.isLoading,
-                  isVisible: _isVisible,
-                ),
+                PlayerBufferingIndicator(isVisible: _isVisible),
 
                 // Seek animation — isolated via AnimatedBuilder
                 AnimatedBuilder(
@@ -1237,12 +1247,24 @@ class SkyStreamPlayerControlsState
     );
   }
 
-  Widget _buildLoadingUI({String? title, String? subtitle}) {
+  Widget _buildLoadingUI({
+    required PlaybackUiPhase phase,
+    required List<SourceAttemptEntry> sourceAttempts,
+  }) {
+    final canSkip =
+        phase.kind != PlaybackUiPhaseKind.bootstrapping &&
+        phase.kind != PlaybackUiPhaseKind.fetchingSources &&
+        phase.kind != PlaybackUiPhaseKind.error;
+
     return PlayerLoadingOverlay(
       onDoubleTap: _handleDoubleTap,
-      onBack: () => context.pop(),
-      title: title,
-      subtitle: subtitle,
+      onBack: widget.onBackPointer ?? () => context.pop(),
+      phase: phase,
+      sourceAttempts: sourceAttempts,
+      onSkip: canSkip
+          ? () =>
+                ref.read(playerControllerProvider.notifier).skipLoadingOverlay()
+          : null,
     );
   }
 }

@@ -11,9 +11,12 @@ class MovieCastList extends StatefulWidget {
   final Color? textColor;
   final Color? textSecondary;
 
+  final bool isLoading;
+
   const MovieCastList({
     super.key,
     required this.cast,
+    this.isLoading = false,
     this.textColor,
     this.textSecondary,
   });
@@ -33,9 +36,10 @@ class _MovieCastListState extends State<MovieCastList> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.cast.isEmpty) return const SizedBox.shrink();
+    if (!widget.isLoading && widget.cast.isEmpty) return const SizedBox.shrink();
 
     final isDesktop = context.isDesktop;
+    final displayCount = widget.isLoading ? 6 : widget.cast.length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,9 +62,11 @@ class _MovieCastListState extends State<MovieCastList> {
                 clipBehavior: Clip.none,
                 controller: _scrollController,
                 scrollDirection: Axis.horizontal,
-                itemCount: widget.cast.length,
+                itemCount: displayCount,
                 separatorBuilder: (_, _) => const SizedBox(width: 16),
-                itemBuilder: _buildDesktopItem,
+                itemBuilder: (context, index) => widget.isLoading
+                    ? _buildShimmerItem(context, isDesktop: true)
+                    : _buildDesktopItem(context, index),
               ),
             ),
           ),
@@ -80,8 +86,10 @@ class _MovieCastListState extends State<MovieCastList> {
             child: ListView.builder(
               clipBehavior: Clip.none,
               scrollDirection: Axis.horizontal,
-              itemCount: widget.cast.length,
-              itemBuilder: _buildMobileItem,
+              itemCount: displayCount,
+              itemBuilder: (context, index) => widget.isLoading
+                  ? _buildShimmerItem(context, isDesktop: false)
+                  : _buildMobileItem(context, index),
             ),
           ),
           const SizedBox(height: 24),
@@ -181,6 +189,43 @@ class _MovieCastListState extends State<MovieCastList> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerItem(BuildContext context, {required bool isDesktop}) {
+    return Container(
+      width: isDesktop ? 80 : 90,
+      margin: isDesktop ? EdgeInsets.zero : const EdgeInsets.only(right: 16),
+      child: Column(
+        children: [
+          Container(
+            width: isDesktop ? 80 : 70,
+            height: isDesktop ? 80 : 70,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: 60,
+            height: 12,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            width: 40,
+            height: 10,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ],
       ),
     );
   }

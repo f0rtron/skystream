@@ -27,6 +27,132 @@ import '../../../../core/utils/app_utils.dart';
 import '../../settings/presentation/player_settings_provider.dart';
 import '../../../../core/services/local_proxy_service.dart';
 
+// Sentinel so copyWith can distinguish "not passed" from "explicitly null".
+const Object _keep = Object();
+
+enum PlaybackUiPhaseKind {
+  idle,
+  bootstrapping,
+  fetchingSources,
+  checkingSources,
+  openingSource,
+  switchingEngine,
+  bufferingInitial,
+  bufferingRuntime,
+  switchingSource,
+  reconnectingLive,
+  loadingNextEpisode,
+  manualSourcePick,
+  error,
+}
+
+enum SourceAttemptStatus { pending, trying, failed, selected, playing }
+
+class SourceAttemptEntry {
+  final int index;
+  final String label;
+  final SourceAttemptStatus status;
+  final bool isCurrent;
+
+  const SourceAttemptEntry({
+    required this.index,
+    required this.label,
+    this.status = SourceAttemptStatus.pending,
+    this.isCurrent = false,
+  });
+
+  SourceAttemptEntry copyWith({
+    int? index,
+    String? label,
+    SourceAttemptStatus? status,
+    bool? isCurrent,
+  }) {
+    return SourceAttemptEntry(
+      index: index ?? this.index,
+      label: label ?? this.label,
+      status: status ?? this.status,
+      isCurrent: isCurrent ?? this.isCurrent,
+    );
+  }
+}
+
+class PlaybackUiPhase {
+  final PlaybackUiPhaseKind kind;
+  final String title;
+  final String? subtitle;
+  final String? detail;
+  final bool fullscreenBlocking;
+  final bool preserveCurrentFrame;
+  final bool showBack;
+  final bool showGoLive;
+  final int? attemptIndex;
+  final int? attemptTotal;
+
+  const PlaybackUiPhase({
+    required this.kind,
+    this.title = '',
+    this.subtitle,
+    this.detail,
+    this.fullscreenBlocking = false,
+    this.preserveCurrentFrame = false,
+    this.showBack = false,
+    this.showGoLive = false,
+    this.attemptIndex,
+    this.attemptTotal,
+  });
+
+  const PlaybackUiPhase.idle() : this(kind: PlaybackUiPhaseKind.idle);
+
+  bool get showsInlineSourcePanel =>
+      fullscreenBlocking &&
+      const {
+        PlaybackUiPhaseKind.checkingSources,
+        PlaybackUiPhaseKind.openingSource,
+        PlaybackUiPhaseKind.bufferingInitial,
+        PlaybackUiPhaseKind.error,
+      }.contains(kind);
+
+  bool get allowsInlineSourceSelection => const {
+    PlaybackUiPhaseKind.checkingSources,
+    PlaybackUiPhaseKind.openingSource,
+    PlaybackUiPhaseKind.bufferingInitial,
+    PlaybackUiPhaseKind.manualSourcePick,
+    PlaybackUiPhaseKind.error,
+  }.contains(kind);
+
+  bool get isIdle => kind == PlaybackUiPhaseKind.idle;
+
+  PlaybackUiPhase copyWith({
+    PlaybackUiPhaseKind? kind,
+    Object? title = _keep,
+    Object? subtitle = _keep,
+    Object? detail = _keep,
+    bool? fullscreenBlocking,
+    bool? preserveCurrentFrame,
+    bool? showBack,
+    bool? showGoLive,
+    Object? attemptIndex = _keep,
+    Object? attemptTotal = _keep,
+  }) {
+    return PlaybackUiPhase(
+      kind: kind ?? this.kind,
+      title: title == _keep ? this.title : title as String,
+      subtitle: subtitle == _keep ? this.subtitle : subtitle as String?,
+      detail: detail == _keep ? this.detail : detail as String?,
+      fullscreenBlocking: fullscreenBlocking ?? this.fullscreenBlocking,
+      preserveCurrentFrame: preserveCurrentFrame ?? this.preserveCurrentFrame,
+      showBack: showBack ?? this.showBack,
+      showGoLive: showGoLive ?? this.showGoLive,
+      attemptIndex: attemptIndex == _keep
+          ? this.attemptIndex
+          : attemptIndex as int?,
+      attemptTotal: attemptTotal == _keep
+          ? this.attemptTotal
+          : attemptTotal as int?,
+    );
+  }
+}
+
 class PlayerState {
   final bool isLoading;
   final String? errorMessage;
@@ -43,7 +169,6 @@ class PlayerState {
   final bool isReverting;
   final bool showNextEpisodeOverlay;
   final String? nextEpisodeTitle;
-  final int retryCountdown; // seconds remaining before auto-retry
   final bool isAdaptiveBufferingActive;
   final bool isBuffering;
   final bool showEpisodeList;
@@ -56,9 +181,15 @@ class PlayerState {
   /// Whether the active engine is video_view (ExoPlayer/AVPlayer) instead of media_kit.
   final bool useExoPlayer;
   final bool isSeekable;
+  final PlaybackUiPhase uiPhase;
+  final List<SourceAttemptEntry> sourceAttempts;
+  final int? currentAttemptIndex;
+  final bool autoFallbackSuspended;
+  final int sourceSessionId;
 
   /// Non-null when a saved position was found; shows resume prompt instead of seeking silently.
   final int? resumePromptPosition;
+  final bool userSkippedOverlay;
 
   const PlayerState({
     this.isLoading = true,
@@ -76,7 +207,6 @@ class PlayerState {
     this.isReverting = false,
     this.showNextEpisodeOverlay = false,
     this.nextEpisodeTitle,
-    this.retryCountdown = 0,
     this.isAdaptiveBufferingActive = false,
     this.isBuffering = false,
     this.showEpisodeList = false,
@@ -87,7 +217,13 @@ class PlayerState {
     this.imdbId,
     this.tmdbId,
     this.useExoPlayer = false,
+    this.uiPhase = const PlaybackUiPhase.idle(),
+    this.sourceAttempts = const [],
+    this.currentAttemptIndex,
+    this.autoFallbackSuspended = false,
+    this.sourceSessionId = 0,
     this.resumePromptPosition,
+    this.userSkippedOverlay = false,
   });
 
   bool get canSeek => !useExoPlayer || isSeekable;
@@ -115,7 +251,6 @@ class PlayerState {
     bool? isReverting,
     bool? showNextEpisodeOverlay,
     String? nextEpisodeTitle,
-    int? retryCountdown,
     bool? isAdaptiveBufferingActive,
     bool? isBuffering,
     bool? showEpisodeList,
@@ -126,7 +261,13 @@ class PlayerState {
     String? imdbId,
     int? tmdbId,
     bool? useExoPlayer,
+    PlaybackUiPhase? uiPhase,
+    List<SourceAttemptEntry>? sourceAttempts,
+    Object? currentAttemptIndex = _keep,
+    bool? autoFallbackSuspended,
+    int? sourceSessionId,
     Object? resumePromptPosition = _keep,
+    bool? userSkippedOverlay,
   }) {
     return PlayerState(
       isLoading: isLoading ?? this.isLoading,
@@ -147,7 +288,6 @@ class PlayerState {
       showNextEpisodeOverlay:
           showNextEpisodeOverlay ?? this.showNextEpisodeOverlay,
       nextEpisodeTitle: nextEpisodeTitle ?? this.nextEpisodeTitle,
-      retryCountdown: retryCountdown ?? this.retryCountdown,
       isAdaptiveBufferingActive:
           isAdaptiveBufferingActive ?? this.isAdaptiveBufferingActive,
       isBuffering: isBuffering ?? this.isBuffering,
@@ -159,9 +299,18 @@ class PlayerState {
       imdbId: imdbId ?? this.imdbId,
       tmdbId: tmdbId ?? this.tmdbId,
       useExoPlayer: useExoPlayer ?? this.useExoPlayer,
+      uiPhase: uiPhase ?? this.uiPhase,
+      sourceAttempts: sourceAttempts ?? this.sourceAttempts,
+      currentAttemptIndex: currentAttemptIndex == _keep
+          ? this.currentAttemptIndex
+          : currentAttemptIndex as int?,
+      autoFallbackSuspended:
+          autoFallbackSuspended ?? this.autoFallbackSuspended,
+      sourceSessionId: sourceSessionId ?? this.sourceSessionId,
       resumePromptPosition: resumePromptPosition == _keep
           ? this.resumePromptPosition
           : resumePromptPosition as int?,
+      userSkippedOverlay: userSkippedOverlay ?? this.userSkippedOverlay,
     );
   }
 }
@@ -191,9 +340,6 @@ class PlayerTrackSelectionSnapshot {
     this.subtitlesOffSelected = true,
   });
 }
-
-// Sentinel so copyWith can distinguish "not passed" from "explicitly null".
-const Object _keep = Object();
 
 class PlayerController extends Notifier<PlayerState> {
   late Player _player;
@@ -268,7 +414,6 @@ class PlayerController extends Notifier<PlayerState> {
   bool _isRecoveringFromStall = false;
 
   final List<DateTime> _bufferDepletionTimes = [];
-  Timer? _retryTimer;
   Timer? _stallTimer;
   int? _pendingResumeSeekPosition;
   bool _isApplyingPendingResumeSeek = false;
@@ -276,6 +421,204 @@ class PlayerController extends Notifier<PlayerState> {
   final List<SubtitleFile> _userAddedExternalSubtitles = [];
   Set<String>? _pendingVideoViewSubtitleIdsBeforeReload;
   bool _selectNewestVideoViewSubtitleAfterReload = false;
+  bool _hasConfirmedPlaybackFrame = false;
+  bool _suppressNextEpisodeDetection = false;
+
+  String _phaseTitle([String? fallback]) {
+    if (state.playerTitle.isNotEmpty) return state.playerTitle;
+    if (_isInitialized) return _item.title;
+    return fallback ?? '';
+  }
+
+  String? _phaseSubtitle([String? fallback]) {
+    return fallback ?? state.streamSubtitle;
+  }
+
+
+  PlaybackUiPhase _composeUiPhase({
+    required PlaybackUiPhaseKind kind,
+    String? title,
+    String? subtitle,
+    String? detail,
+    bool? fullscreenBlocking,
+    bool? preserveCurrentFrame,
+    bool? showBack,
+    bool? showGoLive,
+    int? attemptIndex,
+    int? attemptTotal,
+  }) {
+    // If the user explicitly skipped the overlay, we don't want it to block
+    // the screen again during retries, unless it's a fatal error phase.
+    final effectiveFullscreenBlocking = (state.userSkippedOverlay &&
+            kind != PlaybackUiPhaseKind.error &&
+            kind != PlaybackUiPhaseKind.idle)
+        ? false
+        : (fullscreenBlocking ?? !_hasConfirmedPlaybackFrame);
+
+    return PlaybackUiPhase(
+      kind: kind,
+      title: title ?? _phaseTitle(),
+      subtitle: subtitle ?? _phaseSubtitle(),
+      detail: detail,
+      fullscreenBlocking: effectiveFullscreenBlocking,
+      preserveCurrentFrame: preserveCurrentFrame ?? _hasConfirmedPlaybackFrame,
+      showBack: showBack ?? (kind != PlaybackUiPhaseKind.idle),
+      showGoLive: showGoLive ?? false,
+      attemptIndex: attemptIndex,
+      attemptTotal: attemptTotal,
+    );
+  }
+
+  void _setUiPhase(PlaybackUiPhase phase) {
+    state = state.copyWith(uiPhase: phase);
+  }
+
+  void _setIdlePhase() {
+    if (!state.uiPhase.isIdle) {
+      state = state.copyWith(uiPhase: const PlaybackUiPhase.idle());
+    }
+  }
+
+  void _enterStartupPhase({
+    required PlaybackUiPhaseKind kind,
+    String? title,
+    String? subtitle,
+    String? detail,
+    int? attemptIndex,
+    int? attemptTotal,
+  }) {
+    _setUiPhase(
+      _composeUiPhase(
+        kind: kind,
+        title: title,
+        subtitle: subtitle,
+        detail: detail,
+        fullscreenBlocking: true,
+        preserveCurrentFrame: false,
+        showBack: true,
+        attemptIndex: attemptIndex,
+        attemptTotal: attemptTotal,
+      ),
+    );
+  }
+
+  void _enterRuntimePhase({
+    required PlaybackUiPhaseKind kind,
+    String? title,
+    String? subtitle,
+    String? detail,
+    bool? showBack,
+  }) {
+    _setUiPhase(
+      _composeUiPhase(
+        kind: kind,
+        title: title,
+        subtitle: subtitle,
+        detail: detail,
+        fullscreenBlocking: false,
+        preserveCurrentFrame: true,
+        showBack: showBack ?? false,
+      ),
+    );
+  }
+
+  void _enterAllSourcesFailedPhase({String? detail}) {
+    _setUiPhase(
+      _composeUiPhase(
+        kind: PlaybackUiPhaseKind.error,
+        detail: detail ?? "All sources failed.",
+        fullscreenBlocking: true, // Always show full error overlay with source list
+        preserveCurrentFrame: true,
+        showBack: true,
+        attemptIndex: state.currentAttemptIndex == null
+            ? null
+            : state.currentAttemptIndex! + 1,
+        attemptTotal: state.sourceAttempts.isEmpty
+            ? null
+            : state.sourceAttempts.length,
+      ),
+    );
+  }
+
+  int _beginSourceSession({
+    bool resetAttempts = false,
+    bool autoFallbackSuspended = false,
+  }) {
+    final nextSessionId = state.sourceSessionId + 1;
+    state = state.copyWith(
+      sourceSessionId: nextSessionId,
+      autoFallbackSuspended: autoFallbackSuspended,
+      currentAttemptIndex: null,
+      sourceAttempts: resetAttempts ? const [] : state.sourceAttempts,
+      userSkippedOverlay: false,
+    );
+    return nextSessionId;
+  }
+
+  bool _isCurrentSourceSession(int sessionId) =>
+      state.sourceSessionId == sessionId;
+
+  void _setSourceAttemptsFromStreams(
+    List<StreamResult> streams, {
+    int? activeIndex,
+    SourceAttemptStatus? activeStatus,
+  }) {
+    final attempts = <SourceAttemptEntry>[
+      for (int i = 0; i < streams.length; i++)
+        SourceAttemptEntry(
+          index: i,
+          label: streams[i].source,
+          status: i == activeIndex
+              ? (activeStatus ?? SourceAttemptStatus.pending)
+              : SourceAttemptStatus.pending,
+          isCurrent: i == activeIndex,
+        ),
+    ];
+    state = state.copyWith(
+      sourceAttempts: attempts,
+      currentAttemptIndex: activeIndex,
+    );
+  }
+
+  void _markSourceAttempt(
+    int index,
+    SourceAttemptStatus status, {
+    bool isCurrent = true,
+  }) {
+    if (index < 0 || index >= state.sourceAttempts.length) return;
+
+    final updated = [
+      for (final entry in state.sourceAttempts)
+        if (entry.index == index)
+          entry.copyWith(status: status, isCurrent: isCurrent)
+        else if (isCurrent)
+          entry.copyWith(isCurrent: false)
+        else
+          entry,
+    ];
+
+    state = state.copyWith(
+      sourceAttempts: updated,
+      currentAttemptIndex: isCurrent 
+          ? index 
+          : (state.currentAttemptIndex == index ? null : state.currentAttemptIndex),
+    );
+  }
+
+  void _confirmPlaybackStarted() {
+    _hasConfirmedPlaybackFrame = true;
+    _suppressNextEpisodeDetection = false;
+    final currentAttemptIndex = state.currentAttemptIndex;
+    if (currentAttemptIndex != null) {
+      _markSourceAttempt(currentAttemptIndex, SourceAttemptStatus.playing);
+    }
+    state = state.copyWith(
+      isLoading: false,
+      isBuffering: false,
+      autoFallbackSuspended: false,
+      uiPhase: const PlaybackUiPhase.idle(),
+    );
+  }
 
   @override
   PlayerState build() {
@@ -284,8 +627,7 @@ class PlayerController extends Notifier<PlayerState> {
     // disposeController() being called, clean up subscriptions.
     ref.onDispose(() {
       _torrentPollTimer?.cancel();
-      _retryTimer?.cancel();
-      _stallTimer?.cancel();
+        _stallTimer?.cancel();
       _videoParamsSub?.cancel();
       _errorSub?.cancel();
       _playingSub?.cancel();
@@ -314,6 +656,7 @@ class PlayerController extends Notifier<PlayerState> {
     state = const PlayerState(); // Reset stale state
     _logSub?.cancel();
     _logSub = null;
+    _hasConfirmedPlaybackFrame = false;
     _player = player;
     _videoViewController = videoViewController;
     _videoUrl = videoUrl;
@@ -368,6 +711,10 @@ class PlayerController extends Notifier<PlayerState> {
       imdbId: imdbId,
       tmdbId: tmdbId,
     );
+    _enterStartupPhase(
+      kind: PlaybackUiPhaseKind.bootstrapping,
+      detail: "Preparing playback...",
+    );
 
     _setupEventDrivenProgressSaving();
     _setupErrorListener();
@@ -394,10 +741,6 @@ class PlayerController extends Notifier<PlayerState> {
     _videoViewController!.mediaInfo.addListener(() {
       final info = _videoViewController!.mediaInfo.value;
       if (info != null) {
-        if ((info.duration > 0 || info.isLive) && state.isLoading) {
-          state = state.copyWith(isLoading: false);
-        }
-
         final detectedIsLive =
             _item.contentType == MultimediaContentType.livestream
             ? true
@@ -407,6 +750,23 @@ class PlayerController extends Notifier<PlayerState> {
           state = state.copyWith(
             isSeekable: info.isSeekable,
             isLive: detectedIsLive,
+          );
+        }
+
+        if (!_hasConfirmedPlaybackFrame &&
+            (info.duration > 0 || info.isLive) &&
+            state.uiPhase.kind == PlaybackUiPhaseKind.openingSource) {
+          _enterStartupPhase(
+            kind: PlaybackUiPhaseKind.bufferingInitial,
+            detail: detectedIsLive
+                ? "Connecting to live stream..."
+                : "Buffering selected source...",
+            attemptIndex: state.currentAttemptIndex == null
+                ? null
+                : state.currentAttemptIndex! + 1,
+            attemptTotal: state.sourceAttempts.isEmpty
+                ? null
+                : state.sourceAttempts.length,
           );
         }
 
@@ -435,14 +795,40 @@ class PlayerController extends Notifier<PlayerState> {
         _handleBufferStall();
         _stallTimer?.cancel();
         _stallTimer = Timer(const Duration(milliseconds: 200), () {
-          state = state.copyWith(isBuffering: true, isLoading: false);
+          if (_hasConfirmedPlaybackFrame) {
+            state = state.copyWith(isBuffering: true, isLoading: false);
+            _enterRuntimePhase(
+              kind: PlaybackUiPhaseKind.bufferingRuntime,
+              detail: state.isLive
+                  ? "Reconnecting to live stream..."
+                  : "Buffering playback...",
+            );
+          } else {
+            state = state.copyWith(isLoading: true, isBuffering: false);
+            _enterStartupPhase(
+              kind: PlaybackUiPhaseKind.bufferingInitial,
+              detail: state.isLive
+                  ? "Connecting to live stream..."
+                  : "Buffering selected source...",
+              attemptIndex: state.currentAttemptIndex == null
+                  ? null
+                  : state.currentAttemptIndex! + 1,
+              attemptTotal: state.sourceAttempts.isEmpty
+                  ? null
+                  : state.sourceAttempts.length,
+            );
+          }
         });
       } else {
         _stallTimer?.cancel();
         state = state.copyWith(
           isBuffering: false,
-          isLoading: false, // Also clear main loading when buffering finishes
+          isLoading: !_hasConfirmedPlaybackFrame,
         );
+        if (_hasConfirmedPlaybackFrame &&
+            state.uiPhase.kind == PlaybackUiPhaseKind.bufferingRuntime) {
+          _setIdlePhase();
+        }
       }
     });
 
@@ -452,12 +838,13 @@ class PlayerController extends Notifier<PlayerState> {
         _pendingVideoViewSubtitleIdsBeforeReload = null;
         _selectNewestVideoViewSubtitleAfterReload = false;
         if (kDebugMode) debugPrint("VideoView Player Error: $error");
-        if (state.isLoading || (_videoViewController!.position.value) == 0) {
-          if (state.isManualSwitch) {
-            revertToPreviousStream("Stream failed. Reverting...");
-          } else {
-            startRetryCountdown();
-          }
+        if (state.isManualSwitch) {
+          _markSourceAttempt(state.currentStreamIndex, SourceAttemptStatus.failed, isCurrent: false);
+          revertToPreviousStream("Stream failed. Reverting...");
+        } else if (state.isLoading || !_hasConfirmedPlaybackFrame ||
+            (_videoViewController!.position.value) == 0) {
+          _markSourceAttempt(state.currentStreamIndex, SourceAttemptStatus.failed, isCurrent: false);
+          retryNextStream(sourceSessionId: state.sourceSessionId);
         }
       }
     });
@@ -469,10 +856,9 @@ class PlayerController extends Notifier<PlayerState> {
       if (!playing) {
         saveProgress();
       } else {
-        // ALWAYS clear loading/buffering if playback starts
-        if (state.isLoading || state.isBuffering) {
-          state = state.copyWith(isLoading: false, isBuffering: false);
-        }
+        // Do NOT call _confirmPlaybackStarted() here — ExoPlayer/AVPlayer fires
+        // playbackState=playing when it starts buffering, before any frames arrive.
+        // Confirmation happens via position listener (position > 0).
       }
     });
 
@@ -483,6 +869,10 @@ class PlayerController extends Notifier<PlayerState> {
             _item.contentType == MultimediaContentType.livestream ||
             _isLiveStream(_videoUrl);
         if (isLive && state.currentStream != null) {
+          _enterRuntimePhase(
+            kind: PlaybackUiPhaseKind.reconnectingLive,
+            detail: "Reconnecting to live stream...",
+          );
           changeStream(state.currentStream!, resetPosition: true);
         }
       }
@@ -494,9 +884,8 @@ class PlayerController extends Notifier<PlayerState> {
       final posMs = _videoViewController!.position.value;
       final durationMs = _videoViewController!.mediaInfo.value?.duration ?? 0;
 
-      // If position is advancing, we are definitely not loading anymore
-      if (posMs > 0 && state.isLoading) {
-        state = state.copyWith(isLoading: false);
+      if (posMs > 0 && !_hasConfirmedPlaybackFrame) {
+        _confirmPlaybackStarted();
       }
 
       if (durationMs == 0) return;
@@ -509,7 +898,8 @@ class PlayerController extends Notifier<PlayerState> {
         _lastSavedPosition = Duration(milliseconds: posMs);
       }
 
-      if (_item.contentType == MultimediaContentType.series) {
+      if (!_suppressNextEpisodeDetection &&
+          _item.contentType == MultimediaContentType.series) {
         final remainingSecs = (durationMs - posMs) / 1000;
         if (remainingSecs <= 15 &&
             remainingSecs > 0 &&
@@ -560,8 +950,8 @@ class PlayerController extends Notifier<PlayerState> {
   void _setupVideoParamsListener() {
     _videoParamsSub = _player.stream.videoParams.listen((args) {
       if (args.w != null && args.w! > 0) {
-        if (state.isLoading) {
-          state = state.copyWith(isLoading: false);
+        if (!_hasConfirmedPlaybackFrame) {
+          _confirmPlaybackStarted();
         }
       }
     });
@@ -572,19 +962,48 @@ class PlayerController extends Notifier<PlayerState> {
     _bufferingSub = _player.stream.buffering.listen((isBuffering) {
       if (isBuffering) {
         _handleBufferStall();
-        // Delay showing the loader to avoid flicker on micro-stalls
         _stallTimer?.cancel();
         _stallTimer = Timer(const Duration(milliseconds: 200), () {
-          state = state.copyWith(isBuffering: true);
+          if (_hasConfirmedPlaybackFrame) {
+            state = state.copyWith(isBuffering: true);
+            _enterRuntimePhase(
+              kind: PlaybackUiPhaseKind.bufferingRuntime,
+              detail: state.isLive
+                  ? "Reconnecting to live stream..."
+                  : "Buffering playback...",
+            );
+          } else {
+            state = state.copyWith(isLoading: true, isBuffering: false);
+            _enterStartupPhase(
+              kind: PlaybackUiPhaseKind.bufferingInitial,
+              detail: state.isLive
+                  ? "Connecting to live stream..."
+                  : "Buffering selected source...",
+              attemptIndex: state.currentAttemptIndex == null
+                  ? null
+                  : state.currentAttemptIndex! + 1,
+              attemptTotal: state.sourceAttempts.isEmpty
+                  ? null
+                  : state.sourceAttempts.length,
+            );
+          }
         });
       } else {
         _stallTimer?.cancel();
-        state = state.copyWith(isBuffering: false);
+        state = state.copyWith(
+          isBuffering: false,
+          isLoading: !_hasConfirmedPlaybackFrame,
+        );
+        if (_hasConfirmedPlaybackFrame &&
+            state.uiPhase.kind == PlaybackUiPhaseKind.bufferingRuntime) {
+          _setIdlePhase();
+        }
       }
     });
   }
 
   void _handleBufferStall() {
+    if (!_hasConfirmedPlaybackFrame) return; // ignore stalls during source health check
     if (_isLiveStream(_videoUrl)) return;
 
     final now = DateTime.now();
@@ -622,34 +1041,25 @@ class PlayerController extends Notifier<PlayerState> {
       if (kDebugMode) debugPrint("Player Error: $error");
       if (error.toString().toLowerCase().contains("abort")) return;
 
-      if (state.isLoading || _player.state.position == Duration.zero) {
-        if (state.isManualSwitch) {
-          revertToPreviousStream("Stream failed. Reverting...");
-        } else {
-          startRetryCountdown();
-        }
+      if (state.isManualSwitch) {
+        _markSourceAttempt(state.currentStreamIndex, SourceAttemptStatus.failed, isCurrent: false);
+        revertToPreviousStream("Stream failed. Reverting...");
+      } else if (state.isLoading ||
+          !_hasConfirmedPlaybackFrame ||
+          _player.state.position == Duration.zero) {
+        _markSourceAttempt(state.currentStreamIndex, SourceAttemptStatus.failed, isCurrent: false);
+        retryNextStream(sourceSessionId: state.sourceSessionId);
       }
     });
   }
 
-  void startRetryCountdown() {
-    _retryTimer?.cancel();
-    state = state.copyWith(retryCountdown: 5);
 
-    _retryTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (state.retryCountdown > 1) {
-        state = state.copyWith(retryCountdown: state.retryCountdown - 1);
-      } else {
-        timer.cancel();
-        state = state.copyWith(retryCountdown: 0);
-        retryNextStream();
-      }
-    });
-  }
-
-  void cancelRetry() {
-    _retryTimer?.cancel();
-    state = state.copyWith(retryCountdown: 0, isLoading: false);
+  void skipLoadingOverlay() {
+    state = state.copyWith(userSkippedOverlay: true);
+    _setUiPhase(_composeUiPhase(
+      kind: state.uiPhase.kind,
+      fullscreenBlocking: false,
+    ));
   }
 
   void _setupEventDrivenProgressSaving() {
@@ -660,11 +1070,10 @@ class PlayerController extends Notifier<PlayerState> {
         _torrentPollTimer?.cancel();
         _torrentPollTimer = null;
       } else {
-        // Playback started: CLEAR EVERYTHING
-        if (state.isLoading || state.isBuffering) {
-          state = state.copyWith(isLoading: false, isBuffering: false);
-        }
-
+        // Do NOT call _confirmPlaybackStarted() here — media_kit fires
+        // playing=true as soon as open() is called, before any frames arrive.
+        // Confirmation happens in _positionSub (position > 0) and
+        // _setupVideoParamsListener (video dimensions received).
         if (state.torrentStatus != null && _torrentPollTimer == null) {
           startTorrentPolling();
         }
@@ -681,7 +1090,10 @@ class PlayerController extends Notifier<PlayerState> {
           if (kDebugMode) {
             debugPrint("Live stream reached EOF. Forcing auto-reconnect...");
           }
-          // Emulate ExoPlayer's BEHIND_LIVE_WINDOW by re-initializing the failed stream internally
+          _enterRuntimePhase(
+            kind: PlaybackUiPhaseKind.reconnectingLive,
+            detail: "Reconnecting to live stream...",
+          );
           changeStream(state.currentStream!, resetPosition: true);
         }
       }
@@ -689,9 +1101,8 @@ class PlayerController extends Notifier<PlayerState> {
 
     _positionSub?.cancel();
     _positionSub = _player.stream.position.listen((pos) {
-      // Clear initial loading as soon as we have a valid position update
-      if (pos.inMilliseconds > 0 && state.isLoading) {
-        state = state.copyWith(isLoading: false);
+      if (pos.inMilliseconds > 0 && !_hasConfirmedPlaybackFrame) {
+        _confirmPlaybackStarted();
       }
 
       final now = DateTime.now();
@@ -746,7 +1157,8 @@ class PlayerController extends Notifier<PlayerState> {
       }
 
       // Next Episode Detection (Series only, trigger 15s before end)
-      if (_item.contentType == MultimediaContentType.series) {
+      if (!_suppressNextEpisodeDetection &&
+          _item.contentType == MultimediaContentType.series) {
         final remaining = duration - pos;
         if (remaining.inSeconds <= 15 &&
             remaining.inSeconds > 0 &&
@@ -779,7 +1191,51 @@ class PlayerController extends Notifier<PlayerState> {
     });
   }
 
-  Future<void> _initStream() async {
+  Future<void> _initStream({
+    PlaybackUiPhaseKind requestedPhaseKind =
+        PlaybackUiPhaseKind.fetchingSources,
+    bool forceNewSourceSession = true,
+  }) async {
+    final sourceSessionId = forceNewSourceSession
+        ? _beginSourceSession(resetAttempts: true)
+        : state.sourceSessionId;
+
+    String detail = "Fetching sources...";
+    switch (requestedPhaseKind) {
+      case PlaybackUiPhaseKind.loadingNextEpisode:
+        _enterRuntimePhase(
+          kind: PlaybackUiPhaseKind.loadingNextEpisode,
+          detail: "Loading next episode...",
+        );
+        break;
+      case PlaybackUiPhaseKind.switchingSource:
+        _enterRuntimePhase(
+          kind: PlaybackUiPhaseKind.switchingSource,
+          detail: "Switching source...",
+        );
+        break;
+      case PlaybackUiPhaseKind.reconnectingLive:
+        _enterRuntimePhase(
+          kind: PlaybackUiPhaseKind.reconnectingLive,
+          detail: "Reconnecting to live stream...",
+        );
+        break;
+      default:
+        if (_item.provider == 'Local' || AppUtils.isLocalFile(_videoUrl)) {
+          detail = "Opening local file...";
+        } else if (_item.provider == 'Torrent' ||
+            _videoUrl.startsWith("magnet:") ||
+            _videoUrl.endsWith(".torrent")) {
+          detail = "Preparing torrent stream...";
+        }
+        _enterStartupPhase(
+          kind: requestedPhaseKind,
+          detail: detail,
+        );
+    }
+
+    state = state.copyWith(isLoading: true, currentAttemptIndex: null);
+
     if (await _handleSpecialProviders()) return;
 
     final activeProvider = _resolveProvider();
@@ -794,18 +1250,29 @@ class PlayerController extends Notifier<PlayerState> {
     try {
       if (_videoUrl.isNotEmpty) {
         state = state.copyWith(
-          streamSubtitle: "Initializing stream...",
+          streamSubtitle: "Fetching sources...",
           isLoading: true,
         );
         if (await _handleFallbackTorrent()) return;
 
         final streams = await activeProvider.loadStreams(_videoUrl);
+        if (!_isCurrentSourceSession(sourceSessionId)) return;
         if (streams.isNotEmpty) {
           final initialIndex = _findSavedStreamIndex(streams);
           state = state.copyWith(
             streams: streams,
             currentStreamIndex: initialIndex,
           );
+          _setSourceAttemptsFromStreams(streams, activeIndex: initialIndex);
+          _enterStartupPhase(
+            kind: PlaybackUiPhaseKind.checkingSources,
+            detail: streams.length > 1
+                ? "Checking available sources..."
+                : "Preparing selected source...",
+            attemptIndex: initialIndex + 1,
+            attemptTotal: streams.length,
+          );
+          _markSourceAttempt(initialIndex, SourceAttemptStatus.trying);
 
           // PERFORMANCE: Parallel check the first few streams (health check)
           // This avoids waiting for a timeout on a dead stream if a working one is available
@@ -814,9 +1281,17 @@ class PlayerController extends Notifier<PlayerState> {
             streams,
             startIndex: initialIndex,
             limit: checkCount,
+            sourceSessionId: sourceSessionId,
           );
+          if (!_isCurrentSourceSession(sourceSessionId) ||
+              state.autoFallbackSuspended) {
+            return;
+          }
 
-          await loadStreamAtIndex(workingIndex);
+          await loadStreamAtIndex(
+            workingIndex,
+            sourceSessionId: sourceSessionId,
+          );
           return;
         }
       }
@@ -824,6 +1299,16 @@ class PlayerController extends Notifier<PlayerState> {
       if (kDebugMode) debugPrint("Error loading streams: $e");
     }
 
+    if (!_isCurrentSourceSession(sourceSessionId)) return;
+    _setUiPhase(
+      _composeUiPhase(
+        kind: PlaybackUiPhaseKind.error,
+        detail: "No sources were found for this item.",
+        fullscreenBlocking: !_hasConfirmedPlaybackFrame,
+        preserveCurrentFrame: _hasConfirmedPlaybackFrame,
+        showBack: true,
+      ),
+    );
     state = state.copyWith(errorMessage: "No streams found.", isLoading: false);
   }
 
@@ -844,7 +1329,8 @@ class PlayerController extends Notifier<PlayerState> {
       );
 
       state = state.copyWith(streams: [stream], currentStreamIndex: 0);
-      await loadStreamAtIndex(0);
+      _setSourceAttemptsFromStreams([stream], activeIndex: 0);
+      await loadStreamAtIndex(0, sourceSessionId: state.sourceSessionId);
       return true;
     }
     return false;
@@ -858,7 +1344,8 @@ class PlayerController extends Notifier<PlayerState> {
         headers: {},
       );
       state = state.copyWith(streams: [stream], currentStreamIndex: 0);
-      await loadStreamAtIndex(0);
+      _setSourceAttemptsFromStreams([stream], activeIndex: 0);
+      await loadStreamAtIndex(0, sourceSessionId: state.sourceSessionId);
       return true;
     }
     return false;
@@ -1297,8 +1784,15 @@ class PlayerController extends Notifier<PlayerState> {
     }
   }
 
-  Future<void> loadStreamAtIndex(int index) async {
+  Future<void> loadStreamAtIndex(
+    int index, {
+    int? sourceSessionId,
+    bool manualSelection = false,
+  }) async {
     if (index < 0 || index >= state.streams.length) return;
+    if (sourceSessionId != null && !_isCurrentSourceSession(sourceSessionId)) {
+      return;
+    }
 
     final stream = state.streams[index];
     final rawProviderName =
@@ -1307,6 +1801,15 @@ class PlayerController extends Notifier<PlayerState> {
         "Unknown";
     final providerName = _getProviderDisplayName(rawProviderName);
     final subtitles = _effectiveExternalSubtitles(stream.subtitles);
+    final attemptTotal = state.sourceAttempts.isEmpty
+        ? state.streams.length
+        : state.sourceAttempts.length;
+    _markSourceAttempt(
+      index,
+      manualSelection
+          ? SourceAttemptStatus.selected
+          : SourceAttemptStatus.trying,
+    );
 
     state = state.copyWith(
       currentStreamIndex: index,
@@ -1318,10 +1821,20 @@ class PlayerController extends Notifier<PlayerState> {
           _item.contentType == MultimediaContentType.livestream ||
           _isLiveStream(stream.url),
     );
+    _enterStartupPhase(
+      kind: PlaybackUiPhaseKind.openingSource,
+      detail: "Opening ${stream.source}...",
+      attemptIndex: index + 1,
+      attemptTotal: attemptTotal,
+    );
 
     try {
       final playUrl = await _resolveStreamUrl(stream);
       if (playUrl == null) throw Exception("Failed to resolve stream URL");
+      if (sourceSessionId != null &&
+          !_isCurrentSourceSession(sourceSessionId)) {
+        return;
+      }
 
       if (playUrl.contains("index=")) {
         startTorrentPolling(playUrl);
@@ -1335,11 +1848,21 @@ class PlayerController extends Notifier<PlayerState> {
         stream,
         isLive: resolvedIsLive,
       );
+      if (sourceSessionId != null &&
+          !_isCurrentSourceSession(sourceSessionId)) {
+        return;
+      }
       state = state.copyWith(
         streamSubtitle: "$providerName - ${stream.source}",
         isLive: resolvedIsLive,
         isSeekable: !useVideoView,
       );
+      if (state.useExoPlayer != useVideoView && _hasConfirmedPlaybackFrame) {
+        _enterRuntimePhase(
+          kind: PlaybackUiPhaseKind.switchingEngine,
+          detail: "Optimizing playback...",
+        );
+      }
 
       final headers = stream.headers ?? {};
       await _applyPlaybackProperties(
@@ -1347,11 +1870,27 @@ class PlayerController extends Notifier<PlayerState> {
         stream,
         useVideoView: useVideoView,
       );
+      if (sourceSessionId != null &&
+          !_isCurrentSourceSession(sourceSessionId)) {
+        return;
+      }
       await _openResolvedStream(
         playUrl,
         stream,
         headers,
         useVideoView: useVideoView,
+      );
+      if (sourceSessionId != null &&
+          !_isCurrentSourceSession(sourceSessionId)) {
+        return;
+      }
+      _enterStartupPhase(
+        kind: PlaybackUiPhaseKind.bufferingInitial,
+        detail: resolvedIsLive
+            ? "Connecting to live stream..."
+            : "Buffering selected source...",
+        attemptIndex: index + 1,
+        attemptTotal: attemptTotal,
       );
 
       final historyRepo = ref.read(historyRepositoryProvider);
@@ -1376,8 +1915,19 @@ class PlayerController extends Notifier<PlayerState> {
         state = state.copyWith(resumePromptPosition: savedPos);
       }
     } catch (e) {
+      if (sourceSessionId != null &&
+          !_isCurrentSourceSession(sourceSessionId)) {
+        return;
+      }
       if (kDebugMode) debugPrint("Stream $index failed: $e");
-      retryNextStream();
+      _markSourceAttempt(index, SourceAttemptStatus.failed, isCurrent: false);
+      if (manualSelection || state.autoFallbackSuspended) {
+        _enterAllSourcesFailedPhase(
+          detail: "Selected source failed.",
+        );
+        return;
+      }
+      retryNextStream(sourceSessionId: sourceSessionId);
     }
   }
 
@@ -1402,10 +1952,17 @@ class PlayerController extends Notifier<PlayerState> {
     bool isRevert = false,
     bool resetPosition = false,
   }) async {
+    final matchingIndex = state.streams.indexWhere(
+      (candidate) =>
+          candidate.url == stream.url && candidate.source == stream.source,
+    );
     if (!isRevert) {
       state = state.copyWith(
         previousStream: state.currentStream,
         isManualSwitch: true,
+        currentStreamIndex: matchingIndex == -1
+            ? state.currentStreamIndex
+            : matchingIndex,
       );
     }
 
@@ -1422,6 +1979,10 @@ class PlayerController extends Notifier<PlayerState> {
         : _player.state.position;
 
     state = state.copyWith(isOpeningStream: true);
+    _enterRuntimePhase(
+      kind: PlaybackUiPhaseKind.switchingSource,
+      detail: "Switching to ${stream.source}...",
+    );
 
     try {
       final playUrl = await _resolveStreamUrl(stream);
@@ -1434,6 +1995,12 @@ class PlayerController extends Notifier<PlayerState> {
         stream,
         isLive: resolvedIsLive,
       );
+      if (state.useExoPlayer != useVideoView && _hasConfirmedPlaybackFrame) {
+        _enterRuntimePhase(
+          kind: PlaybackUiPhaseKind.switchingEngine,
+          detail: "Optimizing playback...",
+        );
+      }
       state = state.copyWith(
         isLoading: true,
         currentStream: stream,
@@ -1489,14 +2056,57 @@ class PlayerController extends Notifier<PlayerState> {
     }
   }
 
-  void retryNextStream() {
-    if (state.currentStreamIndex < state.streams.length - 1) {
-      loadStreamAtIndex(state.currentStreamIndex + 1);
-    } else {
-      state = state.copyWith(
-        errorMessage: "All streams failed.",
-        isLoading: false,
+  Future<void> retryNextStream({int? sourceSessionId}) async {
+    if (sourceSessionId != null && !_isCurrentSourceSession(sourceSessionId)) {
+      return;
+    }
+    if (state.autoFallbackSuspended) {
+      return;
+    }
+
+    // Find the next index that isn't already failed
+    int nextIndex = state.currentStreamIndex + 1;
+    while (nextIndex < state.streams.length) {
+      final attempt = state.sourceAttempts.firstWhereOrNull(
+        (e) => e.index == nextIndex,
       );
+      if (attempt == null || attempt.status != SourceAttemptStatus.failed) {
+        break;
+      }
+      nextIndex++;
+    }
+
+    if (nextIndex < state.streams.length) {
+      // PERFORMANCE: If we are entering a new, unchecked batch, 
+      // trigger a parallel check for the next few candidates.
+      final hasNextChecked = state.sourceAttempts.any(
+        (e) => e.index > nextIndex && e.status != SourceAttemptStatus.pending,
+      );
+      
+      int targetIndex = nextIndex;
+      if (!hasNextChecked && state.streams.length > nextIndex + 1) {
+        final checkCount = (state.streams.length - nextIndex) > 3 ? 3 : (state.streams.length - nextIndex);
+        targetIndex = await _findFirstWorkingStream(
+          state.streams,
+          startIndex: nextIndex,
+          limit: checkCount,
+          sourceSessionId: sourceSessionId,
+        );
+      }
+
+      _enterStartupPhase(
+        kind: PlaybackUiPhaseKind.checkingSources,
+        detail: "Source failed. Trying next source...",
+        attemptIndex: targetIndex + 1,
+        attemptTotal: state.sourceAttempts.isEmpty
+            ? state.streams.length
+            : state.sourceAttempts.length,
+      );
+      _markSourceAttempt(targetIndex, SourceAttemptStatus.trying);
+      unawaited(loadStreamAtIndex(targetIndex, sourceSessionId: sourceSessionId));
+    } else {
+      state = state.copyWith(isLoading: false);
+      _enterAllSourcesFailedPhase();
     }
   }
 
@@ -1520,6 +2130,10 @@ class PlayerController extends Notifier<PlayerState> {
 
   Future<void> onTorrentFileSelected(int index) async {
     state = state.copyWith(isLoading: true);
+    _enterRuntimePhase(
+      kind: PlaybackUiPhaseKind.switchingSource,
+      detail: "Switching torrent file...",
+    );
     try {
       final url = await ref
           .read(torrentServiceProvider)
@@ -1584,6 +2198,7 @@ class PlayerController extends Notifier<PlayerState> {
       final bool isLocal = localFile != null;
 
       // Update video URL and episode, then refresh
+      _suppressNextEpisodeDetection = true;
       _videoUrl = finalUrl;
       _episode = nextEpisode;
       _userAddedExternalSubtitles.clear();
@@ -1594,7 +2209,13 @@ class PlayerController extends Notifier<PlayerState> {
         streamSubtitle: isLocal ? "Local - Downloaded" : "Fetching sources...",
       );
 
-      await _initStream();
+      _enterRuntimePhase(
+        kind: PlaybackUiPhaseKind.loadingNextEpisode,
+        detail: "Loading next episode...",
+      );
+      await _initStream(
+        requestedPhaseKind: PlaybackUiPhaseKind.loadingNextEpisode,
+      );
     }
   }
 
@@ -1630,7 +2251,13 @@ class PlayerController extends Notifier<PlayerState> {
       streamSubtitle: isLocal ? "Local - Downloaded" : "Fetching sources...",
     );
 
-    await _initStream();
+    _enterRuntimePhase(
+      kind: PlaybackUiPhaseKind.loadingNextEpisode,
+      detail: "Loading episode...",
+    );
+    await _initStream(
+      requestedPhaseKind: PlaybackUiPhaseKind.loadingNextEpisode,
+    );
   }
 
   void saveProgress() {
@@ -1791,8 +2418,6 @@ class PlayerController extends Notifier<PlayerState> {
   void disposeController() {
     _torrentPollTimer?.cancel();
     _torrentPollTimer = null;
-    _retryTimer?.cancel();
-    _retryTimer = null;
     _stallTimer?.cancel();
     _stallTimer = null;
 
@@ -1817,6 +2442,7 @@ class PlayerController extends Notifier<PlayerState> {
     List<StreamResult> streams, {
     required int startIndex,
     required int limit,
+    int? sourceSessionId,
   }) async {
     if (streams.isEmpty) return 0;
 
@@ -1833,17 +2459,33 @@ class PlayerController extends Notifier<PlayerState> {
     if (candidates.length <= 1) return start;
 
     try {
+      if (sourceSessionId != null &&
+          !_isCurrentSourceSession(sourceSessionId)) {
+        return start;
+      }
       if (kDebugMode) {
         debugPrint(
           "Starting parallel health check for ${candidates.length} streams",
         );
       }
+      // UI Transparency: We keep checked sources as 'pending' until they either
+      // fail the health check or are selected as the active stream.
+      // This prevents multiple spinners from showing up at once.
+
       final results = await Future.wait(
         candidates.map((idx) async {
           final s = streams[idx];
-          return MapEntry(idx, await _isStreamCandidateHealthy(s));
+          final isHealthy = await _isStreamCandidateHealthy(s);
+          if (!isHealthy) {
+            _markSourceAttempt(idx, SourceAttemptStatus.failed, isCurrent: false);
+          }
+          return MapEntry(idx, isHealthy);
         }),
       );
+      if (sourceSessionId != null &&
+          !_isCurrentSourceSession(sourceSessionId)) {
+        return start;
+      }
 
       // Return first one that responded positively in the original order of preference
       for (final entry in results) {

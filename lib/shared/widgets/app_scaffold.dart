@@ -5,6 +5,7 @@ import 'package:skystream/core/providers/device_info_provider.dart';
 import 'package:skystream/core/utils/responsive_breakpoints.dart';
 import 'package:skystream/shared/widgets/custom_bottom_nav.dart';
 import 'package:virtual_mouse/virtual_mouse.dart';
+import '../../features/settings/presentation/general_settings_provider.dart';
 
 class AppScaffold extends ConsumerStatefulWidget {
   final StatefulNavigationShell navigationShell;
@@ -25,10 +26,31 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
     );
   }
 
+  int _getRouteIndex(String route) {
+    switch (route) {
+      case '/home':
+        return 0;
+      case '/search':
+        return 1;
+      case '/discover':
+        return 2;
+      case '/library':
+        return 3;
+      case '/settings':
+        return 4;
+      default:
+        return 0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final deviceProfileAsync = ref.watch(deviceProfileProvider);
-    final isHome = widget.navigationShell.currentIndex == 0;
+    final defaultHome = ref.watch(
+      generalSettingsProvider.select((s) => s.defaultHomeScreen),
+    );
+    final defaultIndex = _getRouteIndex(defaultHome);
+    final isAtDefaultHome = widget.navigationShell.currentIndex == defaultIndex;
 
     return deviceProfileAsync.when(
       data: (profile) {
@@ -37,10 +59,10 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
         // VirtualMouse cursor only shown on TV, not desktop
         if (profile.isTv || context.isTabletOrLarger) {
           final sideNavScaffold = PopScope(
-            canPop: isHome,
+            canPop: isAtDefaultHome,
             onPopInvokedWithResult: (didPop, result) {
               if (!didPop) {
-                widget.navigationShell.goBranch(0);
+                widget.navigationShell.goBranch(defaultIndex);
               }
             },
             child: Scaffold(
@@ -110,10 +132,10 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
 
         // Mobile uses Bottom Navigation
         return PopScope(
-          canPop: isHome,
+          canPop: isAtDefaultHome,
           onPopInvokedWithResult: (didPop, result) {
             if (!didPop) {
-              widget.navigationShell.goBranch(0);
+              widget.navigationShell.goBranch(defaultIndex);
             }
           },
           child: Scaffold(

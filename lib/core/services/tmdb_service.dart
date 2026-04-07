@@ -604,8 +604,25 @@ class TmdbService {
       queryParameters: {
         'api_key': TmdbConfig.apiKey,
         'language': language,
-        'append_to_response':
-            'credits,videos,images,release_dates,translations',
+        'append_to_response': 'credits,release_dates',
+      },
+    );
+    if (response.statusCode == 200) {
+      return response.data;
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getMovieExtra(
+    int movieId, {
+    String language = 'en-US',
+  }) async {
+    final response = await _dio.get(
+      '/movie/$movieId',
+      queryParameters: {
+        'api_key': TmdbConfig.apiKey,
+        'language': language,
+        'append_to_response': 'videos,images,translations',
         'include_image_language': '$language,null,en',
       },
     );
@@ -639,8 +656,25 @@ class TmdbService {
       queryParameters: {
         'api_key': TmdbConfig.apiKey,
         'language': language,
-        'append_to_response':
-            'credits,videos,images,content_ratings,translations',
+        'append_to_response': 'credits,content_ratings',
+      },
+    );
+    if (response.statusCode == 200) {
+      return response.data;
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getTvExtra(
+    int tvId, {
+    String language = 'en-US',
+  }) async {
+    final response = await _dio.get(
+      '/tv/$tvId',
+      queryParameters: {
+        'api_key': TmdbConfig.apiKey,
+        'language': language,
+        'append_to_response': 'videos,images,translations',
         'include_image_language': '$language,null,en',
       },
     );

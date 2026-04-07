@@ -280,6 +280,8 @@ class MultimediaItem {
     return contentType.name.toUpperCase();
   }
 
+  String get tmdbMediaType => contentType == MultimediaContentType.series ? 'tv' : 'movie';
+
   String get backdropImageUrl => bannerUrl ?? posterUrl;
   String get posterImageUrl => posterUrl;
   String get thumbnailImageUrl => posterUrl;

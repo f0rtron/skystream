@@ -159,7 +159,6 @@ class _ViewAllScreenState extends ConsumerState<ViewAllScreen> {
             final itemTitle = item.title;
             final uniqueTag =
                 'view_all_${widget.category.name}_${item.id}_$index';
-            final mediaType = item.mediaType;
 
             return MultimediaCard(
               imageUrl: imageUrl,
@@ -170,7 +169,7 @@ class _ViewAllScreenState extends ConsumerState<ViewAllScreen> {
                   '/tmdb-details',
                   extra: TmdbDetailsRouteExtra(
                     movieId: item.id,
-                    mediaType: mediaType,
+                    mediaType: item.tmdbMediaType,
                     heroTag: uniqueTag,
                     placeholderPoster: imageUrl,
                   ),

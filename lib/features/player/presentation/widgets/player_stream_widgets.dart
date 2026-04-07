@@ -341,8 +341,7 @@ class PlayerPlayPauseButton extends StatelessWidget {
                   vv.VideoControllerPlaybackState.playing;
               return _buildButton(
                 isPlaying: isPlaying,
-                isSpinning:
-                    isBuffering, // Only show spinner for buffering in Full UI
+                isSpinning: isBuffering || isLoading,
               );
             },
           );
@@ -351,12 +350,10 @@ class PlayerPlayPauseButton extends StatelessWidget {
         return StreamBuilder<bool>(
           stream: player.stream.playing,
           initialData: player.state.playing,
-          builder: (context, playingSnapshot) {
-            final isPlaying = playingSnapshot.data ?? false;
+          builder: (context, snapshot) {
             return _buildButton(
-              isPlaying: isPlaying,
-              isSpinning:
-                  isBuffering, // Only show spinner for buffering in Full UI
+              isPlaying: snapshot.data ?? false,
+              isSpinning: isBuffering || isLoading,
             );
           },
         );
@@ -377,9 +374,16 @@ class PlayerPlayPauseButton extends StatelessWidget {
           shape: BoxShape.circle,
         ),
         child: isSpinning
-            ? const Padding(
-                padding: EdgeInsets.all(20.0),
-                child: CircularProgressIndicator(color: Colors.white),
+            ? const SizedBox(
+                width: 64,
+                height: 64,
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 3.5,
+                  ),
+                ),
               )
             : Icon(
                 isPlaying ? Icons.pause : Icons.play_arrow,
@@ -392,16 +396,9 @@ class PlayerPlayPauseButton extends StatelessWidget {
 }
 
 class PlayerBufferingIndicator extends StatelessWidget {
-  final Player player;
-  final bool isLoading;
   final bool isVisible;
 
-  const PlayerBufferingIndicator({
-    super.key,
-    required this.player,
-    this.isLoading = false,
-    this.isVisible = false,
-  });
+  const PlayerBufferingIndicator({super.key, this.isVisible = false});
 
   @override
   Widget build(BuildContext context) {
@@ -410,24 +407,35 @@ class PlayerBufferingIndicator extends StatelessWidget {
         final isBuffering = ref.watch(
           playerControllerProvider.select((s) => s.isBuffering),
         );
+        final isLoading = ref.watch(
+          playerControllerProvider.select((s) => s.isLoading),
+        );
+        final userSkippedOverlay = ref.watch(
+          playerControllerProvider.select((s) => s.userSkippedOverlay),
+        );
 
-        if (!isBuffering) {
-          return const SizedBox.shrink();
-        }
+        // If controls are visible, the play button already shows a spinner; skip.
+        // If the user hasn't skipped and we are loading, the primary loading overlay is visible; skip.
+        if ((!isBuffering && !isLoading) || isVisible) return const SizedBox.shrink();
+        if (isLoading && !userSkippedOverlay) return const SizedBox.shrink();
 
         return Positioned.fill(
           child: IgnorePointer(
-            child: AnimatedOpacity(
-              opacity: 1.0,
-              duration: const Duration(milliseconds: 300),
-              child: Center(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.45),
-                    shape: BoxShape.circle,
+            child: Center(
+              child: Container(
+                width: 80,
+                height: 80,
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: Colors.black45,
+                  shape: BoxShape.circle,
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 3.5,
                   ),
-                  padding: const EdgeInsets.all(16),
-                  child: const CircularProgressIndicator(color: Colors.white),
                 ),
               ),
             ),

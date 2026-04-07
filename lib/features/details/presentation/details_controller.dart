@@ -190,6 +190,8 @@ class DetailsController extends Notifier<DetailsState> {
 
       if (provider != null) {
         final fetchedItem = await provider.getDetails(item.url);
+        if (!ref.mounted) return;
+
         final withProvider = fetchedItem.copyWith(
           provider: provider.packageName,
         );
@@ -207,7 +209,9 @@ class DetailsController extends Notifier<DetailsState> {
         throw Exception("No provider selected or found for this item");
       }
     } catch (e, st) {
-      state = state.copyWith(details: AsyncError(e, st));
+      if (ref.mounted) {
+        state = state.copyWith(details: AsyncError(e, st));
+      }
     }
   }
 

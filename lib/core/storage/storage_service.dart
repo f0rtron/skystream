@@ -142,6 +142,14 @@ class StorageService {
     return _settingsBox.get('theme_mode', defaultValue: 'system');
   }
 
+  Future<void> setDefaultHomeScreen(String path) async {
+    await _settingsBox.put('default_home_screen', path);
+  }
+
+  String getDefaultHomeScreen() {
+    return _settingsBox.get('default_home_screen', defaultValue: '/home');
+  }
+
   Future<void> setDevLoadAssets(bool enabled) async {
     await _settingsBox.put('dev_load_assets', enabled);
   }

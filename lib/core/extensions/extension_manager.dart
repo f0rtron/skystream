@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 // Contains ChangeNotifier
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,6 +20,7 @@ final extensionManagerProvider =
 class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
   JsEngineService? _engine;
   PluginStorageService? _storageService;
+  Future<void>? _syncLock;
 
   @override
   List<SkyStreamProvider> build() {
@@ -36,6 +38,14 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
   Future<void> _syncPlugins(List<ExtensionPlugin> installed) async {
     if (_engine == null || _storageService == null) return;
 
+    // Use a lock to ensure only one sync happens at a time.
+    final prevLock = _syncLock ?? Future.value();
+    final completer = Completer<void>();
+    _syncLock = completer.future;
+
+    try {
+      await prevLock;
+
     final activePackageName = ref
         .read(settingsRepositoryProvider)
         .getActiveProviderId();
@@ -50,44 +60,55 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
       });
     }
 
-    // Batch load background providers to avoid UI stutter
-    final parallelLoads = <Future<SkyStreamProvider?>>[];
-
-    for (final plugin in sortedPlugins) {
-      final existingList = state.where(
-        (p) => p.packageName == plugin.packageName,
-      );
-      final existing = existingList.isNotEmpty ? existingList.first : null;
-
-      bool needsLoad = existing == null;
-      if (existing != null) {
-        final newVersion = plugin.version.toString();
-        final oldVersion = existing.version;
-        if (newVersion != oldVersion) {
-          // Version changed, reload
-          state = state
-              .where((p) => p.packageName != plugin.packageName)
-              .toList();
-          needsLoad = true;
+    // 1. Priority Load: Active Provider (if needs loading)
+    if (activePackageName != null) {
+      try {
+        final activePlugin = sortedPlugins.firstWhere(
+          (p) => p.packageName == activePackageName,
+        );
+        final existing = state.any((p) => p.packageName == activePackageName);
+        if (!existing) {
+          await _loadPlugin(activePlugin, addToState: true);
         }
-      }
-
-      if (needsLoad) {
-        if (plugin.packageName == activePackageName) {
-          // Priority load for active provider
-          await _loadPlugin(plugin, addToState: true);
-        } else {
-          // Background providers loaded in parallel
-          parallelLoads.add(_loadPlugin(plugin, addToState: false));
-        }
+      } catch (_) {
+        // Active plugin not found in installed list, ignore
       }
     }
 
-    if (parallelLoads.isNotEmpty) {
-      final results = await Future.wait(parallelLoads);
-      final loaded = results.whereType<SkyStreamProvider>().toList();
-      if (loaded.isNotEmpty) {
-        state = [...state, ...loaded];
+    // 2. Process background providers in manageable batches (Pool of 3)
+    const batchSize = 3;
+    final List<SkyStreamProvider> allLoaded = [];
+
+    for (int i = 0; i < sortedPlugins.length; i += batchSize) {
+      final batch = sortedPlugins.skip(i).take(batchSize);
+      final batchLoads = <Future<SkyStreamProvider?>>[];
+
+      for (final plugin in batch) {
+        final existingList = state.where((p) => p.packageName == plugin.packageName);
+        final existing = existingList.isNotEmpty ? existingList.first : null;
+
+        bool needsLoad = existing == null;
+        if (existing != null) {
+          final newVersion = plugin.version.toString();
+          if (newVersion != existing.version) {
+            state = state.where((p) => p.packageName != plugin.packageName).toList();
+            needsLoad = true;
+          }
+        }
+
+        if (needsLoad && plugin.packageName != activePackageName) {
+          batchLoads.add(_loadPlugin(plugin, addToState: false));
+        }
+      }
+
+      if (batchLoads.isNotEmpty) {
+        final results = await Future.wait(batchLoads);
+        final loadedInBatch = results.whereType<SkyStreamProvider>().toList();
+        if (loadedInBatch.isNotEmpty) {
+          allLoaded.addAll(loadedInBatch);
+          // Batch the state update once per group
+          state = [...state, ...loadedInBatch];
+        }
       }
     }
 
@@ -123,6 +144,10 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
 
     // Signal that plugin sync is complete
     ref.read(pluginSyncCompleteProvider.notifier).set(true);
+    } finally {
+      if (!completer.isCompleted) completer.complete();
+      if (_syncLock == completer.future) _syncLock = null;
+    }
   }
 
   Future<void> updateCustomBaseUrl(String packageName, String? url) async {

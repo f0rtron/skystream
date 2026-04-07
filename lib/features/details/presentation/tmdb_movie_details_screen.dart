@@ -8,16 +8,17 @@ import '../../../../core/providers/device_info_provider.dart';
 import '../../../core/models/tmdb_details.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/storage/history_repository.dart';
-
-import 'widgets/provider_search_section.dart';
 import '../../../../core/utils/responsive_breakpoints.dart';
 import '../data/tmdb_details_provider.dart';
+
+import 'widgets/tmdb_details_desktop_hero.dart';
+import 'widgets/provider_search_section.dart';
+import 'widgets/tmdb_details_stats_section.dart';
 import 'widgets/movie_cast_list.dart';
+import '../data/lightweight_details_provider.dart';
 import 'widgets/movie_trailers_carousel.dart';
 import 'widgets/movie_production_companies.dart';
 import 'widgets/movie_seasons_list.dart';
-import 'widgets/tmdb_details_stats_section.dart';
-import 'widgets/tmdb_details_desktop_hero.dart';
 import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 import '../../../../shared/widgets/shimmer_placeholder.dart';
 
@@ -106,26 +107,22 @@ class _TmdbMovieDetailsScreenState
   Widget build(BuildContext context) {
     final params = MovieDetailsParams(widget.movieId, widget.mediaType);
     final detailsAsync = ref.watch(movieDetailsProvider(params));
-
+    final fastDetailsAsync = ref.watch(lightweightMovieDetailsProvider(params));
     final deviceProfileAsync = ref.watch(deviceProfileProvider);
 
-    final content = detailsAsync.when(
-      skipLoadingOnReload: false,
-      skipLoadingOnRefresh: false,
-      data: (data) {
-        if (data == null) {
-          return Center(
-            child: Text(
-              "Content not found",
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            ),
-          );
-        }
-        if (context.isDesktop) {
-          return _buildDesktopLayout(data);
-        }
-        return _buildMobileLayout(data);
-      },
+    // Prioritize full data, but use fast data if full is still loading
+    final data = detailsAsync.asData?.value ?? fastDetailsAsync.asData?.value;
+    final isHeavyLoading = detailsAsync.isLoading;
+    final hasAnyData = data != null;
+
+    final content = hasAnyData
+        ? (context.isDesktop
+            ? _buildDesktopLayout(data, isHeavyLoading)
+            : _buildMobileLayout(data, isHeavyLoading))
+        : detailsAsync.when(
+            skipLoadingOnReload: false,
+            skipLoadingOnRefresh: false,
+            data: (data) => const SizedBox.shrink(), // Handled by hasAnyData
       loading: () {
         final isMovie = widget.mediaType == 'movie';
         return Scaffold(
@@ -218,7 +215,7 @@ class _TmdbMovieDetailsScreenState
     );
   }
 
-  Widget _buildDesktopLayout(TmdbDetails data) {
+  Widget _buildDesktopLayout(TmdbDetails data, bool isHeavyLoading) {
     final isMovie = widget.mediaType == 'movie';
     final seasons = data.seasons;
     final cast = data.tmdbCast;
@@ -260,19 +257,25 @@ class _TmdbMovieDetailsScreenState
                 textColor: textColor,
               ),
             ],
-            if (cast.isNotEmpty) ...[
+            if (isHeavyLoading || cast.isNotEmpty) ...[
               MovieCastList(
                 cast: cast,
+                isLoading: isHeavyLoading,
                 textColor: textColor,
                 textSecondary: textSecondary,
               ),
             ],
-            if (trailers.isNotEmpty) ...[
-              MovieTrailersCarousel(trailers: trailers, textColor: textColor),
+            if (isHeavyLoading || trailers.isNotEmpty) ...[
+              MovieTrailersCarousel(
+                trailers: trailers,
+                isLoading: isHeavyLoading,
+                textColor: textColor,
+              ),
             ],
-            if (productionCompanies.isNotEmpty) ...[
+            if (isHeavyLoading || productionCompanies.isNotEmpty) ...[
               MovieProductionCompanies(
                 productionCompanies: productionCompanies,
+                isLoading: isHeavyLoading,
                 textColor: textColor,
                 textSecondary: textSecondary,
               ),
@@ -285,7 +288,7 @@ class _TmdbMovieDetailsScreenState
     );
   }
 
-  Widget _buildMobileLayout(TmdbDetails data) {
+  Widget _buildMobileLayout(TmdbDetails data, bool isHeavyLoading) {
     final isMovie = widget.mediaType == 'movie';
 
     final backdropImageUrl = data.backdropImageUrl;
@@ -687,21 +690,27 @@ class _TmdbMovieDetailsScreenState
                 const SizedBox(height: 32),
 
                 // Cast Section
-                if (cast.isNotEmpty) ...[MovieCastList(cast: cast)],
+                if (isHeavyLoading || cast.isNotEmpty) ...[
+                  MovieCastList(cast: cast, isLoading: isHeavyLoading),
+                ],
 
                 // Production Section
-                if (productionCompanies.isNotEmpty) ...[
+                if (isHeavyLoading || productionCompanies.isNotEmpty) ...[
                   MovieProductionCompanies(
                     productionCompanies: productionCompanies,
+                    isLoading: isHeavyLoading,
                   ),
                 ],
 
                 // Trailers Section
-                if (trailers.isNotEmpty) ...[
-                  MovieTrailersCarousel(trailers: trailers),
+                if (isHeavyLoading || trailers.isNotEmpty) ...[
+                  MovieTrailersCarousel(
+                    trailers: trailers,
+                    isLoading: isHeavyLoading,
+                  ),
                 ],
 
-                if (!isMovie && data.seasons.isNotEmpty) ...[
+                if (!isMovie && (isHeavyLoading || data.seasons.isNotEmpty)) ...[
                   MovieSeasonsList(
                     movieId: widget.movieId,
                     seasons: data.seasons,

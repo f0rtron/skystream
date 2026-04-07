@@ -181,7 +181,6 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
                     final prefix = widget.heroTagPrefix ?? 'list';
                     final uniqueTag =
                         '${prefix}_${widget.title}_${item.id}_${itemTitle.hashCode}_$index';
-                    final mediaType = item.mediaType;
 
                     return Padding(
                       padding: EdgeInsets.only(right: spacing),
@@ -197,7 +196,7 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
                               '/tmdb-details',
                               extra: TmdbDetailsRouteExtra(
                                 movieId: item.id,
-                                mediaType: mediaType,
+                                mediaType: item.tmdbMediaType,
                                 heroTag: uniqueTag,
                                 placeholderPoster: imageUrl,
                               ),

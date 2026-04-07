@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/utils/layout_constants.dart';
@@ -37,6 +38,8 @@ class CustomSlider extends StatefulWidget {
 class _CustomSliderState extends State<CustomSlider> {
   final FocusNode _focusNode = FocusNode();
   bool _isFocused = false;
+  bool _isDragging = false;
+  Timer? _seekCommitTimer;
 
   @override
   void initState() {
@@ -48,8 +51,23 @@ class _CustomSliderState extends State<CustomSlider> {
 
   @override
   void dispose() {
+    _seekCommitTimer?.cancel();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _handleDpadSeek(double newValue) {
+    if (!_isDragging) {
+      _isDragging = true;
+      widget.onChangeStart?.call(newValue);
+    }
+    widget.onChanged?.call(newValue);
+
+    _seekCommitTimer?.cancel();
+    _seekCommitTimer = Timer(const Duration(milliseconds: 500), () {
+      widget.onChangeEnd?.call(newValue);
+      _isDragging = false;
+    });
   }
 
   @override
@@ -70,7 +88,7 @@ class _CustomSliderState extends State<CustomSlider> {
             widget.max,
           );
           if (newValue != widget.value) {
-            widget.onChanged?.call(newValue);
+            _handleDpadSeek(newValue);
           }
           return KeyEventResult.handled;
         }
@@ -82,7 +100,7 @@ class _CustomSliderState extends State<CustomSlider> {
             widget.max,
           );
           if (newValue != widget.value) {
-            widget.onChanged?.call(newValue);
+            _handleDpadSeek(newValue);
           }
           return KeyEventResult.handled;
         }

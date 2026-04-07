@@ -18,6 +18,14 @@ class SettingsRepository {
     return _storageService.getThemeMode();
   }
 
+  Future<void> setDefaultHomeScreen(String path) async {
+    await _storageService.setDefaultHomeScreen(path);
+  }
+
+  String getDefaultHomeScreen() {
+    return _storageService.getDefaultHomeScreen();
+  }
+
   Future<void> setDevLoadAssets(bool enabled) async {
     await _storageService.setDevLoadAssets(enabled);
   }

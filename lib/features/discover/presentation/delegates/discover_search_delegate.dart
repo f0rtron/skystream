@@ -176,7 +176,7 @@ class _SearchSuggestionsListState
               '/tmdb-details',
               extra: TmdbDetailsRouteExtra(
                 movieId: item.id,
-                mediaType: mediaType,
+                mediaType: item.tmdbMediaType,
                 heroTag: 'search_${item.id}',
               ),
             );

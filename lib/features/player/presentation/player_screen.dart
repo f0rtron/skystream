@@ -15,7 +15,6 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../../core/providers/device_info_provider.dart';
 import '../../../../features/settings/presentation/player_settings_provider.dart';
-import '../../../shared/widgets/custom_widgets.dart';
 import 'widgets/skystream_player_controls.dart';
 import 'player_controller.dart';
 
@@ -51,14 +50,12 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
   bool _isTv = false;
   bool _isTablet = false;
   bool _wasPlayingBeforeBackground = false;
-  late final FocusNode _skipFocusNode;
 
   late final PlayerController _playerController;
 
   @override
   void initState() {
     super.initState();
-    _skipFocusNode = FocusNode(onKeyEvent: _handleSkipFocusKey);
     MediaKit.ensureInitialized();
     WidgetsBinding.instance.addObserver(this);
 
@@ -132,15 +129,6 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
     }
   }
 
-  KeyEventResult _handleSkipFocusKey(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.arrowUp) {
-      _controlsKeyFinal.currentState?.focusBack();
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
-
   void _updateResizeMode(BoxFit mode) {
     if (mounted) _videoFit.value = mode;
   }
@@ -152,7 +140,6 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
 
     _player.dispose();
     _videoViewController.dispose();
-    _skipFocusNode.dispose();
     _controlsVisible.dispose();
     _forceShowControls.dispose();
     _videoFit.dispose();
@@ -443,82 +430,12 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                       ),
                     ),
                   ),
-                  if (isLoading)
-                    ValueListenableBuilder<bool>(
-                      valueListenable: _forceShowControls,
-                      builder: (_, forceShow, child) {
-                        if (forceShow) return const SizedBox.shrink();
-                        return _buildSkipButtonOverlay();
-                      },
-                    ),
                 ],
               ),
             ),
           ),
         );
       },
-    );
-  }
-
-  Widget _buildSkipButtonOverlay() {
-    final isManualSwitch = ref.read(
-      playerControllerProvider.select((s) => s.isManualSwitch),
-    );
-    final streams = ref.read(playerControllerProvider.select((s) => s.streams));
-    final currentIndex = ref.read(
-      playerControllerProvider.select((s) => s.currentStreamIndex),
-    );
-
-    return Positioned.fill(
-      child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onDoubleTap: () {
-          if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-            _controlsKeyFinal.currentState?.toggleFullscreen();
-          }
-        },
-        child: Stack(
-          children: [
-            Positioned(
-              bottom: MediaQuery.sizeOf(context).height < 500 ? 60 : 120,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: isManualSwitch
-                    ? const SizedBox.shrink()
-                    : CustomButton(
-                        isPrimary: false,
-                        backgroundColor: Colors.grey.withValues(alpha: 0.3),
-                        focusNode: _skipFocusNode,
-                        autofocus: true,
-                        showFocusHighlight: _isTv,
-                        onPressed: () => _forceShowControls.value = true,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.skip_next),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  "Skip to manual source selection ${streams.isNotEmpty ? "(${currentIndex + 1}/${streams.length})" : ""}",
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -9,9 +9,12 @@ class MovieProductionCompanies extends StatefulWidget {
   final Color? textColor;
   final Color? textSecondary;
 
+  final bool isLoading;
+
   const MovieProductionCompanies({
     super.key,
     required this.productionCompanies,
+    this.isLoading = false,
     this.textColor,
     this.textSecondary,
   });
@@ -32,9 +35,12 @@ class _MovieProductionCompaniesState extends State<MovieProductionCompanies> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.productionCompanies.isEmpty) return const SizedBox.shrink();
+    if (!widget.isLoading && widget.productionCompanies.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     final isDesktop = context.isDesktop;
+    final displayCount = widget.isLoading ? 4 : widget.productionCompanies.length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,9 +63,11 @@ class _MovieProductionCompaniesState extends State<MovieProductionCompanies> {
                 controller: _scrollController,
                 clipBehavior: Clip.none,
                 scrollDirection: Axis.horizontal,
-                itemCount: widget.productionCompanies.length,
+                itemCount: displayCount,
                 separatorBuilder: (_, _) => const SizedBox(width: 24),
-                itemBuilder: _buildDesktopItem,
+                itemBuilder: (context, index) => widget.isLoading
+                    ? _buildShimmerItem(context)
+                    : _buildDesktopItem(context, index),
               ),
             ),
           ),
@@ -80,8 +88,10 @@ class _MovieProductionCompaniesState extends State<MovieProductionCompanies> {
             child: ListView.builder(
               clipBehavior: Clip.none,
               scrollDirection: Axis.horizontal,
-              itemCount: widget.productionCompanies.length,
-              itemBuilder: _buildMobileItem,
+              itemCount: displayCount,
+              itemBuilder: (context, index) => widget.isLoading
+                  ? _buildShimmerItem(context)
+                  : _buildMobileItem(context, index),
             ),
           ),
           const SizedBox(height: 32),
@@ -143,6 +153,17 @@ class _MovieProductionCompaniesState extends State<MovieProductionCompanies> {
             textAlign: TextAlign.center,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerItem(BuildContext context) {
+    return Container(
+      width: 100,
+      margin: const EdgeInsets.only(right: 16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
       ),
     );
   }

@@ -30,32 +30,47 @@ final movieDetailsProvider =
       // This ensures error UI is shown instead of forever-loading spinner
       try {
         Map<String, dynamic>? data;
+        Map<String, dynamic>? extra;
+
         if (params.type == 'tv') {
-          data = await service
-              .getTvDetails(params.id, language: language)
-              .timeout(
-                const Duration(seconds: 15),
-                onTimeout: () => throw TimeoutException('Request timed out'),
-              );
+          final results = await Future.wait([
+            service.getTvDetails(params.id, language: language),
+            service.getTvExtra(params.id, language: language),
+          ]).timeout(
+            const Duration(seconds: 15),
+            onTimeout: () => throw TimeoutException('Request timed out'),
+          );
+          data = results[0];
+          extra = results[1];
         } else {
-          data = await service
-              .getMovieDetails(params.id, language: language)
-              .timeout(
-                const Duration(seconds: 15),
-                onTimeout: () => throw TimeoutException('Request timed out'),
-              );
+          final results = await Future.wait([
+            service.getMovieDetails(params.id, language: language),
+            service.getMovieExtra(params.id, language: language),
+          ]).timeout(
+            const Duration(seconds: 15),
+            onTimeout: () => throw TimeoutException('Request timed out'),
+          );
+          data = results[0];
+          extra = results[1];
         }
 
         if (data == null) return null;
 
-        // Ensure logoUrl is processed
-        String? logoUrl;
-        final images = data['images'];
-        if (images != null) {
-          final logos = List<Map<String, dynamic>>.from(images['logos'] ?? []);
-          logoUrl = TmdbService.pickBestLogo(logos, language);
+        // Merge extra data into primary data
+        if (extra != null) {
+          data.addAll(extra);
         }
-        data['logo_url'] = logoUrl;
+
+        // Ensure logoUrl is processed
+        String? logoUrl = data['logo_url'];
+        if (logoUrl == null) {
+          final images = data['images'];
+          if (images != null) {
+            final logos = List<Map<String, dynamic>>.from(images['logos'] ?? []);
+            logoUrl = TmdbService.pickBestLogo(logos, language);
+          }
+          data['logo_url'] = logoUrl;
+        }
 
         return TmdbDetails.fromJson(data, language);
       } on TimeoutException {

@@ -70,6 +70,17 @@ class SettingsScreen extends ConsumerWidget {
                           !generalSettings.watchHistoryEnabled,
                         ),
                   ),
+                  SettingsTile(
+                    icon: Icons.home_rounded,
+                    title: 'Default Home Screen',
+                    subtitle: getHomeScreenLabel(generalSettings.defaultHomeScreen),
+                    isLast: true,
+                    onTap: () => showDefaultHomeScreenDialog(
+                      context,
+                      ref,
+                      generalSettings.defaultHomeScreen,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: LayoutConstants.spacingLg),

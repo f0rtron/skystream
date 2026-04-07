@@ -10,10 +10,12 @@ import '../../../../core/models/tmdb_details.dart';
 class MovieTrailersCarousel extends StatefulWidget {
   final List<TmdbVideo> trailers;
   final Color? textColor;
+  final bool isLoading;
 
   const MovieTrailersCarousel({
     super.key,
     required this.trailers,
+    this.isLoading = false,
     this.textColor,
   });
 
@@ -32,9 +34,10 @@ class _MovieTrailersCarouselState extends State<MovieTrailersCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.trailers.isEmpty) return const SizedBox.shrink();
+    if (!widget.isLoading && widget.trailers.isEmpty) return const SizedBox.shrink();
 
     final isDesktop = context.isDesktop;
+    final displayCount = widget.isLoading ? 3 : widget.trailers.length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,9 +60,11 @@ class _MovieTrailersCarouselState extends State<MovieTrailersCarousel> {
                 clipBehavior: Clip.none,
                 controller: _scrollController,
                 scrollDirection: Axis.horizontal,
-                itemCount: widget.trailers.length,
+                itemCount: displayCount,
                 separatorBuilder: (_, _) => const SizedBox(width: 16),
-                itemBuilder: _buildDesktopItem,
+                itemBuilder: (context, index) => widget.isLoading
+                    ? _buildShimmerItem(context, isDesktop: true)
+                    : _buildDesktopItem(context, index),
               ),
             ),
           ),
@@ -114,8 +119,10 @@ class _MovieTrailersCarouselState extends State<MovieTrailersCarousel> {
             child: ListView.builder(
               clipBehavior: Clip.none,
               scrollDirection: Axis.horizontal,
-              itemCount: widget.trailers.length,
-              itemBuilder: _buildMobileItem,
+              itemCount: displayCount,
+              itemBuilder: (context, index) => widget.isLoading
+                  ? _buildShimmerItem(context, isDesktop: false)
+                  : _buildMobileItem(context, index),
             ),
           ),
           const SizedBox(height: 32),
@@ -214,6 +221,22 @@ class _MovieTrailersCarouselState extends State<MovieTrailersCarousel> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerItem(BuildContext context, {required bool isDesktop}) {
+    return Container(
+      width: isDesktop ? 284 : 200,
+      margin: isDesktop ? EdgeInsets.zero : const EdgeInsets.only(right: 16),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),

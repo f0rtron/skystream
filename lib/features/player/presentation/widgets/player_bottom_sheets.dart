@@ -1145,9 +1145,9 @@ class PlayerBottomSheets {
       ),
       builder: (ctx) {
         return Container(
-          height: MediaQuery.of(context).size.height * 0.8,
+          height: MediaQuery.of(ctx).size.height * 0.8,
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
           ),
           child: Column(
             children: [

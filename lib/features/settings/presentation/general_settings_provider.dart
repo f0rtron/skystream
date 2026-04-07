@@ -3,12 +3,17 @@ import '../../../core/storage/settings_repository.dart';
 
 class GeneralSettings {
   final bool watchHistoryEnabled;
+  final String defaultHomeScreen;
 
-  const GeneralSettings({this.watchHistoryEnabled = true});
+  const GeneralSettings({
+    this.watchHistoryEnabled = true,
+    this.defaultHomeScreen = '/home',
+  });
 
-  GeneralSettings copyWith({bool? watchHistoryEnabled}) {
+  GeneralSettings copyWith({bool? watchHistoryEnabled, String? defaultHomeScreen}) {
     return GeneralSettings(
       watchHistoryEnabled: watchHistoryEnabled ?? this.watchHistoryEnabled,
+      defaultHomeScreen: defaultHomeScreen ?? this.defaultHomeScreen,
     );
   }
 }
@@ -19,6 +24,7 @@ class GeneralSettingsNotifier extends Notifier<GeneralSettings> {
     final repository = ref.watch(settingsRepositoryProvider);
     return GeneralSettings(
       watchHistoryEnabled: repository.isWatchHistoryEnabled(),
+      defaultHomeScreen: repository.getDefaultHomeScreen(),
     );
   }
 
@@ -26,6 +32,12 @@ class GeneralSettingsNotifier extends Notifier<GeneralSettings> {
     final repository = ref.read(settingsRepositoryProvider);
     await repository.setWatchHistoryEnabled(enabled);
     state = state.copyWith(watchHistoryEnabled: enabled);
+  }
+
+  Future<void> setDefaultHomeScreen(String path) async {
+    final repository = ref.read(settingsRepositoryProvider);
+    await repository.setDefaultHomeScreen(path);
+    state = state.copyWith(defaultHomeScreen: path);
   }
 }
 
