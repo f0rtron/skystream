@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:background_downloader/background_downloader.dart';
 import '../../../../core/services/download_service.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class DownloadProgressDialog extends ConsumerWidget {
   final String title;
@@ -15,6 +16,7 @@ class DownloadProgressDialog extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final progressMap = ref.watch(downloadProgressProvider);
     final data = progressMap[trackingUrl];
 
@@ -40,8 +42,8 @@ class DownloadProgressDialog extends ConsumerWidget {
             children: [
               Text(
                 data.status == TaskStatus.paused
-                    ? 'Download Paused'
-                    : 'Downloading',
+                    ? l10n.downloadPaused
+                    : l10n.downloading,
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -93,13 +95,13 @@ class DownloadProgressDialog extends ConsumerWidget {
                   _buildInfoItem(
                     context,
                     Icons.speed_rounded,
-                    'Speed',
+                    l10n.speed,
                     data.speedString,
                   ),
                   _buildInfoItem(
                     context,
                     Icons.timer_outlined,
-                    'Remaining',
+                    l10n.remaining,
                     data.timeRemainingString,
                   ),
                 ],
@@ -118,7 +120,7 @@ class DownloadProgressDialog extends ConsumerWidget {
                       style: TextButton.styleFrom(
                         foregroundColor: Theme.of(context).colorScheme.error,
                       ),
-                      child: const Text('Cancel'),
+                      child: Text(l10n.cancel),
                     ),
                     const SizedBox(width: 8),
                     TextButton(
@@ -131,14 +133,14 @@ class DownloadProgressDialog extends ConsumerWidget {
                         }
                       },
                       child: Text(
-                        data.status == TaskStatus.paused ? 'Resume' : 'Pause',
+                        data.status == TaskStatus.paused ? l10n.resume : l10n.pause,
                       ),
                     ),
                     const SizedBox(width: 8),
                   ],
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Close'),
+                    child: Text(l10n.close),
                   ),
                 ],
               ),

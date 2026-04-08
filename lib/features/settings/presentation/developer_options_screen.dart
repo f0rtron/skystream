@@ -11,6 +11,7 @@ import '../../../core/domain/entity/multimedia_item.dart';
 import '../../../core/providers/device_info_provider.dart';
 import '../../../core/router/app_router.dart';
 import 'widgets/settings_widgets.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 import 'package:flutter/foundation.dart';
 
@@ -36,24 +37,25 @@ class _DeveloperOptionsScreenState
   Widget build(BuildContext context) {
     final deviceAsync = ref.watch(deviceProfileProvider);
 
+    final l10n = AppLocalizations.of(context)!;
     final scaffold = Scaffold(
-      appBar: AppBar(title: const Text('Developer Options')),
+      appBar: AppBar(title: Text(l10n.developerOptions)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           SettingsGroup(
-            title: 'Debug Tools',
+            title: l10n.debugTools,
             children: [
               SettingsTile(
                 icon: Icons.video_file_rounded,
-                title: 'Play local video file',
-                subtitle: 'Play any video from device',
+                title: l10n.playLocalVideo,
+                subtitle: l10n.playLocalVideoSubtitle,
                 onTap: () => _pickLocalVideo(context),
               ),
               SettingsTile(
                 icon: Icons.link_rounded,
-                title: 'Stream URL',
-                subtitle: 'Play from network URL',
+                title: l10n.streamUrl,
+                subtitle: l10n.streamUrlSubtitle,
                 onTap: () => _showStreamUrlDialog(
                   context,
                   deviceAsync.asData?.value.isTv ?? false,
@@ -61,15 +63,15 @@ class _DeveloperOptionsScreenState
               ),
               SettingsTile(
                 icon: Icons.stream,
-                title: 'Stream torrent',
-                subtitle: 'Select a local torrent file to play',
+                title: l10n.streamTorrent,
+                subtitle: l10n.streamTorrentSubtitle,
                 onTap: () => _pickTorrentFile(context),
               ),
               if (kDebugMode)
                 SettingsTile(
                   icon: Icons.folder_copy_rounded,
-                  title: 'Load plugin from assets',
-                  subtitle: _devLoadAssets ? 'Enabled' : 'Disabled',
+                  title: l10n.loadPluginFromAssets,
+                  subtitle: _devLoadAssets ? l10n.enabled : l10n.disabled,
                   isLast: true,
                   trailing: Switch(
                     value: _devLoadAssets,
@@ -104,8 +106,8 @@ class _DeveloperOptionsScreenState
   Future<void> _toggleAssetLoading(BuildContext context, bool newValue) async {
     if (!kDebugMode) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This feature is only available in Debug builds'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.debugOnlyFeature),
         ),
       );
       return;
@@ -140,7 +142,7 @@ class _DeveloperOptionsScreenState
             title: name,
             url: path,
             posterUrl: '',
-            provider: 'Local',
+            provider: AppLocalizations.of(context)!.local,
             episodes: [Episode(name: name, url: path, posterUrl: '')],
           ),
           videoUrl: path,
@@ -150,15 +152,16 @@ class _DeveloperOptionsScreenState
   }
 
   void _showStreamUrlDialog(BuildContext context, bool isTv) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         surfaceTintColor: Colors.transparent,
-        title: const Text('Stream URL'),
+        title: Text(l10n.streamUrl),
         content: CustomTextField(
           controller: controller,
-          hintText: 'Enter video URL (http, magnet, etc.)',
+          hintText: l10n.enterVideoUrlHint,
           autofocus: false, // Start focus on Play button
           textInputAction: TextInputAction.done,
         ),
@@ -167,7 +170,7 @@ class _DeveloperOptionsScreenState
             showFocusHighlight: isTv,
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Cancel',
+              l10n.cancel,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -181,7 +184,7 @@ class _DeveloperOptionsScreenState
             onPressed: () {
               final url = controller.text.trim();
               if (url.isNotEmpty) {
-                String title = 'Network Stream';
+                String title = l10n.networkStream;
                 try {
                   final uri = Uri.parse(url);
                   if (uri.pathSegments.isNotEmpty) {
@@ -200,7 +203,7 @@ class _DeveloperOptionsScreenState
                       title: title,
                       url: url, // Unique URL for history
                       posterUrl: '',
-                      provider: 'Remote',
+                      provider: l10n.remote,
                       episodes: [Episode(name: title, url: url, posterUrl: '')],
                     ),
                     videoUrl: url,
@@ -208,7 +211,7 @@ class _DeveloperOptionsScreenState
                 );
               }
             },
-            child: const Text("Play"),
+            child: Text(l10n.play),
           ),
         ],
       ),
@@ -229,7 +232,7 @@ class _DeveloperOptionsScreenState
             title: name,
             url: path,
             posterUrl: '',
-            provider: 'Torrent',
+            provider: AppLocalizations.of(context)!.torrent,
             episodes: [Episode(name: name, url: path, posterUrl: '')],
           ),
           videoUrl: path,

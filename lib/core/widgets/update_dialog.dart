@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../providers/update_provider.dart';
 import '../data/models/github_release.dart';
 
@@ -19,24 +20,25 @@ class UpdateDialog extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final updateState = ref.watch(updateControllerProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return PopScope(
       canPop: updateState is! UpdateDownloading,
       child: AlertDialog(
-        title: Text('Update Available: ${release.tagName}'),
+        title: Text(l10n.updateAvailableTag(release.tagName)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (updateState is UpdateDownloading) ...[
-              const Text('Downloading update...'),
+              Text(l10n.downloadingUpdate),
               const SizedBox(height: 10),
               LinearProgressIndicator(value: updateState.progress),
               const SizedBox(height: 10),
               Text('${(updateState.progress * 100).toStringAsFixed(0)}%'),
             ] else if (updateState is UpdateError) ...[
               Text(
-                'Error: ${updateState.message}',
+                l10n.errorPrefix(updateState.message),
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ] else ...[
@@ -52,7 +54,7 @@ class UpdateDialog extends ConsumerWidget {
           if (updateState is! UpdateDownloading)
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Later'),
+              child: Text(l10n.later),
             ),
           if (updateState is! UpdateDownloading)
             FilledButton(
@@ -61,7 +63,7 @@ class UpdateDialog extends ConsumerWidget {
                     .read(updateControllerProvider.notifier)
                     .downloadAndInstall(release);
               },
-              child: const Text('Update Now'),
+              child: Text(l10n.updateNow),
             ),
         ],
       ),

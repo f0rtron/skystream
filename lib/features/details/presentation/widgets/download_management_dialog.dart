@@ -9,6 +9,7 @@ import '../../../library/presentation/downloads_provider.dart';
 import '../playback_launcher.dart';
 import '../details_controller.dart';
 import '../downloaded_file_provider.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class DownloadManagementDialog extends HookConsumerWidget {
   final MultimediaItem item;
@@ -37,6 +38,7 @@ class DownloadManagementDialog extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     // Try to get fresh details from the controller if available
     final detailsState = ref.watch(detailsControllerProvider(item.url));
     final currentItem = detailsState.item ?? item;
@@ -51,31 +53,30 @@ class DownloadManagementDialog extends HookConsumerWidget {
     );
 
     return AlertDialog(
+      surfaceTintColor: Colors.transparent,
       title: Text(title),
-      content: const Text(
-        'This video is already downloaded. What would you like to do?',
-      ),
+      content: Text(l10n.videoAlreadyDownloadedPrompt),
       actions: [
         CustomButton(
           isPrimary: false,
           onPressed: () => Navigator.pop(context),
-          child: const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text('Cancel'),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(l10n.cancel),
           ),
         ),
         CustomButton(
           isPrimary: false,
           isOutlined: true,
           onPressed: () => _showDeleteConfirmation(context, ref, matchingItem),
-          child: const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
-                SizedBox(width: 8),
-                Text('Delete', style: TextStyle(color: Colors.red)),
+                const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                const SizedBox(width: 8),
+                Text(l10n.delete, style: const TextStyle(color: Colors.red)),
               ],
             ),
           ),
@@ -86,14 +87,14 @@ class DownloadManagementDialog extends HookConsumerWidget {
             Navigator.pop(context);
             _playLocalFile(context, ref, currentItem);
           },
-          child: const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.play_arrow_rounded, size: 20),
-                SizedBox(width: 8),
-                Text('Play Now'),
+                const Icon(Icons.play_arrow_rounded, size: 20),
+                const SizedBox(width: 8),
+                Text(l10n.playNow),
               ],
             ),
           ),
@@ -107,29 +108,29 @@ class DownloadManagementDialog extends HookConsumerWidget {
     WidgetRef ref,
     DownloadItem? matchingItem,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Download?'),
-        content: const Text(
-          'Are you sure you want to delete this file? This cannot be undone.',
-        ),
+        surfaceTintColor: Colors.transparent,
+        title: Text(l10n.deleteDownloadPrompt),
+        content: Text(l10n.deleteDownloadConfirmation),
         actions: [
           CustomButton(
             isPrimary: false,
             onPressed: () => Navigator.pop(context, false),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text('No'),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(l10n.no),
             ),
           ),
           CustomButton(
             isPrimary: true,
             backgroundColor: Colors.red,
             onPressed: () => Navigator.pop(context, true),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text('Yes, Delete', style: TextStyle(color: Colors.white)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(l10n.yesDelete, style: const TextStyle(color: Colors.white)),
             ),
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -35,7 +36,7 @@ class CustomBottomNavBar extends StatelessWidget {
               Icons.home,
               color: Theme.of(context).colorScheme.primary,
             ),
-            label: 'Home',
+            label: AppLocalizations.of(context)!.home,
           ),
           NavigationDestination(
             icon: const Icon(Icons.search_outlined),
@@ -43,7 +44,7 @@ class CustomBottomNavBar extends StatelessWidget {
               Icons.search,
               color: Theme.of(context).colorScheme.primary,
             ),
-            label: 'Search',
+            label: AppLocalizations.of(context)!.search,
           ),
           NavigationDestination(
             icon: const Icon(Icons.dashboard_outlined),
@@ -51,7 +52,7 @@ class CustomBottomNavBar extends StatelessWidget {
               Icons.dashboard,
               color: Theme.of(context).colorScheme.primary,
             ),
-            label: 'Discover',
+            label: AppLocalizations.of(context)!.discover,
           ),
           NavigationDestination(
             icon: const Icon(Icons.video_library_outlined),
@@ -59,7 +60,7 @@ class CustomBottomNavBar extends StatelessWidget {
               Icons.video_library,
               color: Theme.of(context).colorScheme.primary,
             ),
-            label: 'Library',
+            label: AppLocalizations.of(context)!.library,
           ),
           NavigationDestination(
             icon: const Icon(Icons.settings_outlined),
@@ -67,7 +68,7 @@ class CustomBottomNavBar extends StatelessWidget {
               Icons.settings,
               color: Theme.of(context).colorScheme.primary,
             ),
-            label: 'Settings',
+            label: AppLocalizations.of(context)!.settings,
           ),
         ],
       ),

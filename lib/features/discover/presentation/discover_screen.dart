@@ -12,6 +12,7 @@ import 'delegates/discover_search_delegate.dart';
 import '../../../../core/utils/layout_constants.dart';
 import '../../../../shared/widgets/shimmer_placeholder.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -92,7 +93,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
               },
             ),
             title: Text(
-              "Discover",
+              AppLocalizations.of(context)!.discover,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 24,
@@ -221,9 +222,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                                 color: Theme.of(context).colorScheme.error,
                               ),
                               const SizedBox(height: 16),
-                              const Text(
-                                "Couldn't load trending items",
-                                style: TextStyle(
+                              Text(
+                                AppLocalizations.of(context)!.couldNotLoadTrending,
+                                style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -233,7 +234,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                                 onPressed: () =>
                                     ref.invalidate(discoverHeroMovieProvider),
                                 icon: const Icon(Icons.refresh),
-                                label: const Text("Retry"),
+                                label: Text(AppLocalizations.of(context)!.retry),
                               ),
                             ],
                           ),
@@ -246,56 +247,63 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
 
               SliverToBoxAdapter(
                 child: _buildSection(
+                  context,
                   popularMoviesProvider,
-                  "Popular Movies",
+                  AppLocalizations.of(context)!.popularMovies,
                   ViewAllCategory.popularMovies,
                 ),
               ),
 
               SliverToBoxAdapter(
                 child: _buildSection(
+                  context,
                   popularTVProvider,
-                  "Popular TV Shows",
+                  AppLocalizations.of(context)!.popularTVShows,
                   ViewAllCategory.popularTV,
                 ),
               ),
 
               SliverToBoxAdapter(
                 child: _buildSection(
+                  context,
                   nowPlayingMoviesProvider,
-                  "New Movies",
+                  AppLocalizations.of(context)!.newMovies,
                   ViewAllCategory.nowPlayingMovies,
                 ),
               ),
 
               SliverToBoxAdapter(
                 child: _buildSection(
+                  context,
                   onTheAirTVProvider,
-                  "New TV Shows",
+                  AppLocalizations.of(context)!.newTVShows,
                   ViewAllCategory.onTheAirTV,
                 ),
               ),
 
               SliverToBoxAdapter(
                 child: _buildSection(
+                  context,
                   topRatedMoviesProvider,
-                  "Featured Movies",
+                  AppLocalizations.of(context)!.featuredMovies,
                   ViewAllCategory.topRatedMovies,
                 ),
               ),
 
               SliverToBoxAdapter(
                 child: _buildSection(
+                  context,
                   topRatedTVProvider,
-                  "Featured TV Shows",
+                  AppLocalizations.of(context)!.featuredTVShows,
                   ViewAllCategory.topRatedTV,
                 ),
               ),
 
               SliverToBoxAdapter(
                 child: _buildSection(
+                  context,
                   airingTodayTVProvider,
-                  "Last videos TV Shows",
+                  AppLocalizations.of(context)!.lastVideosTVShows,
                   ViewAllCategory.airingTodayTV,
                 ),
               ),
@@ -309,6 +317,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
   }
 
   Widget _buildSection(
+    BuildContext context,
     FutureProvider<List<MultimediaItem>> provider,
     String title,
     ViewAllCategory category,

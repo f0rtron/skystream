@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import 'widgets/bookmarks_tab.dart';
 import 'widgets/downloads_tab.dart';
 
@@ -55,15 +56,18 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Library'),
+        title: Text(AppLocalizations.of(context)!.library),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
+          tabs: [
             Tab(
-              text: 'Downloads',
-              icon: Icon(Icons.download_for_offline_rounded),
+              text: AppLocalizations.of(context)!.downloads,
+              icon: const Icon(Icons.download_for_offline_rounded),
             ),
-            Tab(text: 'Bookmarks', icon: Icon(Icons.bookmark_rounded)),
+            Tab(
+              text: AppLocalizations.of(context)!.bookmarks,
+              icon: const Icon(Icons.bookmark_rounded),
+            ),
           ],
         ),
       ),

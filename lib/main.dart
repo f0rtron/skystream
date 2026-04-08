@@ -18,6 +18,9 @@ import 'features/extensions/widgets/extensions_sync_bridge.dart';
 import 'core/providers/update_provider.dart';
 import 'core/widgets/update_dialog.dart';
 import 'core/services/download_service.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
+import 'core/providers/locale_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -187,7 +190,9 @@ class _MyAppState extends ConsumerState<MyApp> {
       if (count > 0) {
         _scaffoldMessengerKey.currentState?.showSnackBar(
           SnackBar(
-            content: Text("Updated $count extension${count > 1 ? 's' : ''}"),
+            content: Text(
+              AppLocalizations.of(context)!.extensionsUpdated(count),
+            ),
             behavior: SnackBarBehavior.floating,
             backgroundColor: Colors.green,
           ),
@@ -202,6 +207,7 @@ class _MyAppState extends ConsumerState<MyApp> {
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final appRouter = ref.watch(appRouterProvider);
+    final locale = ref.watch(localeProvider);
 
     return DynamicColorBuilder(
       builder: (lightDynamic, darkDynamic) {
@@ -220,6 +226,14 @@ class _MyAppState extends ConsumerState<MyApp> {
               : AppTheme.createLightTheme(null),
           darkTheme: AppTheme.createDarkTheme(darkScheme),
           routerConfig: appRouter,
+          locale: locale,
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
         );
       },
     );
@@ -241,66 +255,79 @@ class LaunchErrorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         backgroundColor: Colors.red.shade900,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.white),
-                const SizedBox(height: 16),
-                const Text(
-                  'Startup Error',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+            child: Builder(builder: (context) {
+              final l10n = AppLocalizations.of(context);
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.white),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n?.startupError ?? 'Startup Error',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  error.toString(),
-                  style: const TextStyle(color: Colors.white70),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
-                  onPressed: () {
-                    main();
-                  },
-                ),
-                const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white),
+                  const SizedBox(height: 16),
+                  Text(
+                    error.toString(),
+                    style: const TextStyle(color: Colors.white70),
+                    textAlign: TextAlign.center,
                   ),
-                  icon: const Icon(Icons.delete_forever),
-                  label: const Text('Factory Reset'),
-                  onPressed: () async {
-                    await storageService.deleteAllData();
-                    if (context.mounted) await AppUtils.restartApp(context);
-                  },
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.orange),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.refresh),
+                    label: Text(l10n?.retry ?? 'Retry'),
+                    onPressed: () {
+                      main();
+                    },
                   ),
-                  icon: const Icon(Icons.restore),
-                  label: const Text('Reset Data (Keep Extensions)'),
-                  onPressed: () async {
-                    await storageService.clearPreferences();
-                    if (context.mounted) await AppUtils.restartApp(context);
-                  },
-                ),
-              ],
-            ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white),
+                    ),
+                    icon: const Icon(Icons.delete_forever),
+                    label: Text(l10n?.factoryReset ?? 'Factory Reset'),
+                    onPressed: () async {
+                      await storageService.deleteAllData();
+                      if (context.mounted) await AppUtils.restartApp(context);
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.orange),
+                    ),
+                    icon: const Icon(Icons.restore),
+                    label: Text(
+                      l10n?.resetDataKeepExtensions ??
+                          'Reset Data (Keep Extensions)',
+                    ),
+                    onPressed: () async {
+                      await storageService.clearPreferences();
+                      if (context.mounted) await AppUtils.restartApp(context);
+                    },
+                  ),
+                ],
+              );
+            }),
           ),
         ),
       ),

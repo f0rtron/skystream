@@ -7,6 +7,7 @@ import '../../../core/providers/device_info_provider.dart';
 import '../../../shared/widgets/custom_widgets.dart';
 import '../providers/extensions_controller.dart';
 import '../widgets/plugin_settings_dialog.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class ExtensionsScreen extends ConsumerStatefulWidget {
   const ExtensionsScreen({super.key});
@@ -47,6 +48,7 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (!_didEnsureInit) {
       _didEnsureInit = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -59,12 +61,12 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text("Error"),
+            title: Text(l10n.error),
             content: Text(next.error!),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text("OK"),
+                child: Text(l10n.ok),
               ),
             ],
           ),
@@ -75,15 +77,15 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
     final state = ref.watch(extensionsControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Extensions')),
+      appBar: AppBar(title: Text(l10n.extensions)),
       body: Builder(
         builder: (context) {
           if (state.isLoading && state.repositories.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
           if (state.repositories.isEmpty && state.installedPlugins.isEmpty) {
-            return const Center(
-              child: Text("No repositories or plugins found"),
+            return Center(
+              child: Text(l10n.noReposFound),
             );
           }
           final debugPlugins = state.installedPlugins
@@ -194,7 +196,7 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
                                     .read(extensionsControllerProvider.notifier)
                                     .installPlugins(plugins);
                               },
-                              tooltip: "Download All available providers",
+                              tooltip: l10n.downloadAllProviders,
                             ),
                             IconButton(
                               icon: Icon(
@@ -203,7 +205,7 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
                               ),
                               onPressed: () =>
                                   _confirmDeleteRepo(context, ref, repo),
-                              tooltip: "Remove Repository",
+                              tooltip: l10n.removeRepository,
                             ),
                           ],
                         ],
@@ -275,7 +277,7 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
                                   left: LayoutConstants.spacingSm,
                                 ),
                                 child: Text(
-                                  "Add Repo",
+                                  l10n.addRepo,
                                   style: TextStyle(
                                     color: Theme.of(
                                       context,
@@ -306,13 +308,9 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
     List<ExtensionPlugin> plugins, {
     required bool hasRepos,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
-      margin: const EdgeInsets.only(
-        bottom: LayoutConstants.spacingMd,
-        left: LayoutConstants.spacingMd,
-        right: LayoutConstants.spacingMd,
-        top: LayoutConstants.spacingMd,
-      ),
+      margin: const EdgeInsets.all(LayoutConstants.spacingMd),
       color: Theme.of(context).colorScheme.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -339,7 +337,7 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
             ),
             const SizedBox(width: LayoutConstants.spacingSm),
             Text(
-              "Extensions Not in Repositories",
+              l10n.extensionsNotInRepos,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.bold,
@@ -349,8 +347,8 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
         ),
         subtitle: Text(
           hasRepos
-              ? "No longer listed in any repository"
-              : "Add a repository to browse and update plugins",
+              ? l10n.noLongerInRepo
+              : l10n.addRepoToBrowse,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -383,13 +381,9 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
     BuildContext context,
     List<ExtensionPlugin> debugPlugins,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
-      margin: const EdgeInsets.only(
-        bottom: LayoutConstants.spacingMd,
-        left: LayoutConstants.spacingMd,
-        right: LayoutConstants.spacingMd,
-        top: LayoutConstants.spacingMd, // Extra top padding for first item
-      ),
+      margin: const EdgeInsets.all(LayoutConstants.spacingMd),
       color: Theme.of(context).colorScheme.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -410,7 +404,7 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
           vertical: LayoutConstants.spacingXs,
         ),
         title: Text(
-          "Debug Extensions",
+          l10n.debugExtensions,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             color: Theme.of(context).colorScheme.tertiary,
             fontWeight: FontWeight.bold,
@@ -436,17 +430,16 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
   }
 
   void _confirmDeleteRepo(BuildContext context, WidgetRef ref, dynamic repo) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Remove ${repo.name}?"),
-        content: const Text(
-          "This will remove the repository and uninstall ALL its plugin.",
-        ),
+        title: Text(l10n.removeRepoConfirm(repo.name)),
+        content: Text(l10n.removeRepoWarning),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
@@ -456,7 +449,7 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
               Navigator.pop(context);
             },
             child: Text(
-              "Remove",
+              l10n.delete,
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
@@ -466,6 +459,7 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
   }
 
   void _showAddRepoDialog(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
     final isTv = ref.read(deviceProfileProvider).asData?.value.isTv ?? false;
 
@@ -473,10 +467,10 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         surfaceTintColor: Colors.transparent, // Remove M3 tint
-        title: const Text("Add Repository"),
+        title: Text(l10n.addRepository),
         content: CustomTextField(
           controller: controller,
-          hintText: "Repository URL or Shortcode",
+          hintText: l10n.repoUrlOrShortcode,
           autofocus: false, // Don't trap focus - start on Add button
           textInputAction: TextInputAction.done,
         ),
@@ -485,7 +479,7 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
             showFocusHighlight: isTv,
             onPressed: () => Navigator.pop(context),
             child: Text(
-              "Cancel",
+              l10n.cancel,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -504,7 +498,7 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
                 Navigator.pop(context);
               }
             },
-            child: const Text("Add"),
+            child: Text(l10n.addRepo),
           ),
         ],
       ),
@@ -520,6 +514,7 @@ class _PluginTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     // If this IS a debug tile, just show basic info
     if (isDebugSection) {
       return ListTile(
@@ -553,9 +548,9 @@ class _PluginTile extends ConsumerWidget {
                 color: Colors.red,
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: const Text(
-                'DEBUG',
-                style: TextStyle(
+              child: Text(
+                AppLocalizations.of(context)!.debug,
+                style: const TextStyle(
                   fontSize: 10,
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -565,7 +560,7 @@ class _PluginTile extends ConsumerWidget {
           ],
         ),
         subtitle: Text(
-          "v${plugin.version} • Asset Plugin",
+          "v${plugin.version} • ${l10n.assetPlugin}",
           style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
         ),
         // No actions for debug plugins
@@ -611,7 +606,7 @@ class _PluginTile extends ConsumerWidget {
       ),
       subtitle: Text(
         isInstalled
-            ? "v${installedPlugin.version} • Installed"
+            ? "v${installedPlugin.version} • ${l10n.installed}"
             : "v${plugin.version} • ${plugin.description ?? ''}",
         style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
       ),
@@ -622,7 +617,7 @@ class _PluginTile extends ConsumerWidget {
           if (isInstalled && updateAvailable != null)
             IconButton(
               icon: const Icon(Icons.download, color: Colors.green),
-              tooltip: "Update to v${updateAvailable.version}",
+              tooltip: l10n.updateTo(updateAvailable.version.toString()),
               onPressed: () {
                 ref
                     .read(extensionsControllerProvider.notifier)
@@ -634,7 +629,7 @@ class _PluginTile extends ConsumerWidget {
           if (isInstalled && installedPlugin.settingsSchema != null)
             IconButton(
               icon: const Icon(Icons.settings),
-              tooltip: "Settings",
+              tooltip: l10n.settings,
               onPressed: () {
                 showDialog(
                   context: context,
@@ -660,7 +655,7 @@ class _PluginTile extends ConsumerWidget {
           else
             IconButton(
               icon: const Icon(Icons.download),
-              tooltip: "Install",
+              tooltip: l10n.install,
               onPressed: () {
                 ref
                     .read(extensionsControllerProvider.notifier)

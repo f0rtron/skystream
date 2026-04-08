@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 import '../../../../core/models/tmdb_details.dart';
 
 /// Rich "Movie Details" / "Show Details" block (tagline, status, dates, budget, etc.).
@@ -29,7 +29,9 @@ class TmdbDetailsStatsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          isMovie ? "Movie Details" : "Show Details",
+          isMovie
+              ? AppLocalizations.of(context)!.movieDetails
+              : AppLocalizations.of(context)!.showDetails,
           style: TextStyle(
             color: textColor,
             fontSize: 24,
@@ -38,39 +40,49 @@ class TmdbDetailsStatsSection extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         if (tagline.isNotEmpty) ...[
-          _DetailItem("Tagline", "\"$tagline\"", italic: true),
+          _DetailItem(
+            AppLocalizations.of(context)!.tagline,
+            "\"$tagline\"",
+            italic: true,
+          ),
           const SizedBox(height: 16),
         ],
         Wrap(
           spacing: 40,
           runSpacing: 24,
           children: [
-            _DetailItem("Status", status),
+            _DetailItem(AppLocalizations.of(context)!.status, status),
             _DetailItem(
-              isMovie ? "Release Date" : "First Air Date",
+              isMovie
+                  ? AppLocalizations.of(context)!.releaseDate
+                  : AppLocalizations.of(context)!.firstAirDate,
               releaseDateFull.isNotEmpty
                   ? DateFormat(
                       'MMMM d, yyyy',
                     ).format(DateTime.parse(releaseDateFull))
-                  : 'Unknown',
+                  : AppLocalizations.of(context)!.unknown,
             ),
-            _DetailItem("Original Language", originalLanguage),
-            _DetailItem("Origin Country", originCountry),
+            _DetailItem(
+              AppLocalizations.of(context)!.originalLanguage,
+              originalLanguage,
+            ),
+            _DetailItem(
+              AppLocalizations.of(context)!.originCountry,
+              originCountry,
+            ),
             if (budget > 0)
               _DetailItem(
-                "Budget",
-                NumberFormat.currency(
-                  symbol: '\$',
-                  decimalDigits: 0,
-                ).format(budget),
+                AppLocalizations.of(context)!.budgetLabel,
+                NumberFormat.currency(symbol: '\$', decimalDigits: 0).format(
+                  budget,
+                ),
               ),
             if (revenue > 0)
               _DetailItem(
-                "Revenue",
-                NumberFormat.currency(
-                  symbol: '\$',
-                  decimalDigits: 0,
-                ).format(revenue),
+                AppLocalizations.of(context)!.revenueLabel,
+                NumberFormat.currency(symbol: '\$', decimalDigits: 0).format(
+                  revenue,
+                ),
               ),
           ],
         ),

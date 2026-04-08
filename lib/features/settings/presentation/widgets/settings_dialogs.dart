@@ -9,20 +9,22 @@ import '../../../../core/theme/theme_provider.dart';
 import '../../../../core/utils/app_utils.dart';
 import '../player_settings_provider.dart';
 import '../general_settings_provider.dart';
+import '../../../../core/providers/locale_provider.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 /// Returns a human-readable label for a home screen route.
-String getHomeScreenLabel(String route) {
+String getHomeScreenLabel(String route, AppLocalizations l10n) {
   switch (route) {
     case '/home':
-      return 'Home';
+      return l10n.home;
     case '/discover':
-      return 'Discover';
+      return l10n.discover;
     case '/search':
-      return 'Search';
+      return l10n.search;
     case '/library':
-      return 'Library';
+      return l10n.library;
     default:
-      return 'Home';
+      return l10n.home;
   }
 }
 
@@ -32,18 +34,19 @@ void showDefaultHomeScreenDialog(
   WidgetRef ref,
   String current,
 ) {
+  final l10n = AppLocalizations.of(context)!;
   final options = [
-    {'label': 'Home', 'route': '/home'},
-    {'label': 'Discover', 'route': '/discover'},
-    {'label': 'Search', 'route': '/search'},
-    {'label': 'Library', 'route': '/library'},
+    {'label': l10n.home, 'route': '/home'},
+    {'label': l10n.discover, 'route': '/discover'},
+    {'label': l10n.search, 'route': '/search'},
+    {'label': l10n.library, 'route': '/library'},
   ];
 
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
       surfaceTintColor: Colors.transparent,
-      title: const Text('Default Home Screen'),
+      title: Text(l10n.defaultHomeScreen),
       content: RadioGroup<String>(
         groupValue: current,
         onChanged: (val) {
@@ -71,46 +74,46 @@ Widget buildThemeOption(String title, ThemeMode value) {
 }
 
 /// Formats seek duration for display (e.g. "10 sec", "2 min").
-String formatSeekDuration(int seconds) {
+String formatSeekDuration(int seconds, AppLocalizations l10n) {
   if (seconds >= 60) {
-    return '${seconds ~/ 60} min';
+    return '${seconds ~/ 60} ${l10n.min}';
   }
-  return '$seconds sec';
+  return '$seconds ${l10n.sec}';
 }
 
 /// Formats readahead seconds for display (e.g. "5 min", "10 min").
-String formatReadahead(int seconds) {
-  return '${seconds ~/ 60} min';
+String formatReadahead(int seconds, AppLocalizations l10n) {
+  return '${seconds ~/ 60} ${l10n.min}';
 }
 
 /// Returns a human-readable name for a player ID.
-String getPlayerDisplayName(String? playerId) {
-  if (playerId == null) return 'Internal (media_kit)';
+String getPlayerDisplayName(String? playerId, AppLocalizations l10n) {
+  if (playerId == null) return l10n.internalPlayer;
   final player = ExternalPlayerService.instance.getPlayerById(playerId);
   return player?.displayName ?? playerId;
 }
 
 /// Returns a human-readable label for a DoH provider.
-String getDohProviderLabel(DohProvider provider, String customUrl) {
+String getDohProviderLabel(DohProvider provider, String customUrl, AppLocalizations l10n) {
   switch (provider) {
     case DohProvider.cloudflare:
-      return 'Cloudflare';
+      return l10n.cloudflare;
     case DohProvider.google:
-      return 'Google';
+      return l10n.google;
     case DohProvider.adguard:
-      return 'AdGuard';
+      return l10n.adguard;
     case DohProvider.dnsWatch:
-      return 'DNS.Watch';
+      return l10n.dnsWatch;
     case DohProvider.quad9:
-      return 'Quad9';
+      return l10n.quad9;
     case DohProvider.dnsSb:
-      return 'DNS.SB';
+      return l10n.dnsSb;
     case DohProvider.canadianShield:
-      return 'Canadian Shield';
+      return l10n.canadianShield;
     case DohProvider.custom:
       return customUrl.isNotEmpty
           ? Uri.tryParse(customUrl)?.host ?? customUrl
-          : 'Custom (not set)';
+          : l10n.customNotSet;
   }
 }
 
@@ -121,11 +124,12 @@ void showGestureDialog(
   bool isLeft,
   PlayerGesture current,
 ) {
+  final l10n = AppLocalizations.of(context)!;
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
       surfaceTintColor: Colors.transparent,
-      title: Text('Select ${isLeft ? "Left" : "Right"} Gesture'),
+      title: Text(l10n.selectGesture(isLeft ? l10n.left : l10n.right)),
       content: RadioGroup<PlayerGesture>(
         groupValue: current,
         onChanged: (val) {
@@ -141,8 +145,20 @@ void showGestureDialog(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: PlayerGesture.values.map((g) {
+              String label;
+              switch (g) {
+                case PlayerGesture.volume:
+                  label = l10n.volume;
+                  break;
+                case PlayerGesture.brightness:
+                  label = l10n.brightness;
+                  break;
+                case PlayerGesture.none:
+                  label = l10n.none;
+                  break;
+              }
               return RadioListTile<PlayerGesture>(
-                title: Text(g.name[0].toUpperCase() + g.name.substring(1)),
+                title: Text(label),
                 value: g,
               );
             }).toList(),
@@ -155,13 +171,14 @@ void showGestureDialog(
 
 /// Shows a dialog to pick the seek duration.
 void showDurationDialog(BuildContext context, WidgetRef ref, int current) {
+  final l10n = AppLocalizations.of(context)!;
   final options = [5, 10, 15, 20, 30, 60, 120];
 
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
       surfaceTintColor: Colors.transparent,
-      title: const Text('Select Seek Duration'),
+      title: Text(l10n.selectSeekDuration),
       content: RadioGroup<int>(
         groupValue: current,
         onChanged: (val) {
@@ -174,7 +191,7 @@ void showDurationDialog(BuildContext context, WidgetRef ref, int current) {
             mainAxisSize: MainAxisSize.min,
             children: options.map((sec) {
               return RadioListTile<int>(
-                title: Text(formatSeekDuration(sec)),
+                title: Text(formatSeekDuration(sec, l10n)),
                 value: sec,
               );
             }).toList(),
@@ -187,12 +204,17 @@ void showDurationDialog(BuildContext context, WidgetRef ref, int current) {
 
 /// Shows a dialog to pick the default resize mode.
 void showResizeDialog(BuildContext context, WidgetRef ref, String current) {
-  final options = ["Fit", "Zoom", "Stretch"];
+  final l10n = AppLocalizations.of(context)!;
+  final options = [
+    {'label': l10n.fit, 'value': 'Fit'},
+    {'label': l10n.zoom, 'value': 'Zoom'},
+    {'label': l10n.stretch, 'value': 'Stretch'},
+  ];
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
       surfaceTintColor: Colors.transparent,
-      title: const Text("Default Resize Mode"),
+      title: Text(l10n.defaultResizeMode),
       content: RadioGroup<String>(
         groupValue: current,
         onChanged: (val) {
@@ -203,7 +225,10 @@ void showResizeDialog(BuildContext context, WidgetRef ref, String current) {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: options
-              .map((e) => RadioListTile<String>(title: Text(e), value: e))
+              .map((e) => RadioListTile<String>(
+                    title: Text(e['label']!),
+                    value: e['value']!,
+                  ))
               .toList(),
         ),
       ),
@@ -213,6 +238,7 @@ void showResizeDialog(BuildContext context, WidgetRef ref, String current) {
 
 /// Shows a dialog to pick the readahead duration (5-10 min).
 void showReadaheadDialog(BuildContext context, WidgetRef ref, int current) {
+  final l10n = AppLocalizations.of(context)!;
   // 1 to 20 minutes in 1-minute steps
   final options = List.generate(20, (i) => (1 + i) * 60);
 
@@ -220,7 +246,7 @@ void showReadaheadDialog(BuildContext context, WidgetRef ref, int current) {
     context: context,
     builder: (context) => AlertDialog(
       surfaceTintColor: Colors.transparent,
-      title: const Text('Select Buffer depth'),
+      title: Text(l10n.selectBufferDepth),
       content: RadioGroup<int>(
         groupValue: current,
         onChanged: (val) {
@@ -233,7 +259,7 @@ void showReadaheadDialog(BuildContext context, WidgetRef ref, int current) {
             mainAxisSize: MainAxisSize.min,
             children: options.map((sec) {
               return RadioListTile<int>(
-                title: Text(formatReadahead(sec)),
+                title: Text(formatReadahead(sec, l10n)),
                 value: sec,
               );
             }).toList(),
@@ -250,6 +276,7 @@ void showSubtitleDialog(
   WidgetRef ref,
   PlayerSettings settings,
 ) {
+  final l10n = AppLocalizations.of(context)!;
   double size = settings.subtitleSize;
   bool showBackground = settings.subtitleBackgroundColor != 0;
   final isTv = ref.read(deviceProfileProvider).asData?.value.isTv ?? false;
@@ -260,11 +287,11 @@ void showSubtitleDialog(
       builder: (context, setState) {
         return AlertDialog(
           surfaceTintColor: Colors.transparent,
-          title: const Text("Subtitle Settings"),
+          title: Text(l10n.subtitleSettings),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text("Size: ${size.toInt()}"),
+              Text(l10n.size(size.toInt())),
               CustomSlider(
                 value: size,
                 min: 10,
@@ -275,7 +302,7 @@ void showSubtitleDialog(
               ),
               const SizedBox(height: 8),
               SwitchListTile(
-                title: const Text("Background"),
+                title: Text(l10n.background),
                 value: showBackground,
                 onChanged: (v) => setState(() => showBackground = v),
               ),
@@ -286,7 +313,7 @@ void showSubtitleDialog(
               showFocusHighlight: isTv,
               onPressed: () => Navigator.pop(ctx),
               child: Text(
-                "Cancel",
+                l10n.cancel,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -304,7 +331,7 @@ void showSubtitleDialog(
                     .setSubtitleSettings(size, settings.subtitleColor, bg);
                 Navigator.pop(ctx);
               },
-              child: const Text("Save"),
+              child: Text(l10n.save),
             ),
           ],
         );
@@ -319,6 +346,7 @@ void showDefaultPlayerDialog(
   WidgetRef ref,
   String? currentPlayerId,
 ) {
+  final l10n = AppLocalizations.of(context)!;
   final platformPlayers = ExternalPlayerService.instance
       .getPlayersForPlatform();
 
@@ -326,7 +354,7 @@ void showDefaultPlayerDialog(
     context: context,
     builder: (context) => AlertDialog(
       surfaceTintColor: Colors.transparent,
-      title: const Text('Default Player'),
+      title: Text(l10n.defaultPlayer),
       content: SingleChildScrollView(
         child: RadioGroup<String?>(
           groupValue: currentPlayerId,
@@ -337,10 +365,10 @@ void showDefaultPlayerDialog(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const RadioListTile<String?>(
-                title: Text('Internal (media_kit)'),
-                subtitle: Text('Built-in player'),
-                secondary: Icon(Icons.play_circle_filled_rounded),
+              RadioListTile<String?>(
+                title: Text(l10n.internalPlayer),
+                subtitle: Text(l10n.builtInPlayer),
+                secondary: const Icon(Icons.play_circle_filled_rounded),
                 value: null,
               ),
               const Divider(),
@@ -359,7 +387,7 @@ void showDefaultPlayerDialog(
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(
-            'Cancel',
+            l10n.cancel,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -372,6 +400,7 @@ void showDefaultPlayerDialog(
 
 /// Shows a dialog to pick the DNS-over-HTTPS provider.
 void showDohProviderDialog(BuildContext context, WidgetRef ref) {
+  final l10n = AppLocalizations.of(context)!;
   final initialSettings = ref.read(dohSettingsProvider).asData?.value;
   var currentProvider = initialSettings?.provider ?? DohProvider.cloudflare;
   final controller = TextEditingController(
@@ -384,7 +413,7 @@ void showDohProviderDialog(BuildContext context, WidgetRef ref) {
       builder: (context, setState) {
         return AlertDialog(
           surfaceTintColor: Colors.transparent,
-          title: const Text('DoH Provider'),
+          title: Text(l10n.dohProvider),
           content: SingleChildScrollView(
             child: RadioGroup<DohProvider>(
               groupValue: currentProvider,
@@ -405,44 +434,44 @@ void showDohProviderDialog(BuildContext context, WidgetRef ref) {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const RadioListTile<DohProvider>(
-                    title: Text('Cloudflare'),
-                    subtitle: Text('1.1.1.1'),
+                  RadioListTile<DohProvider>(
+                    title: Text(l10n.cloudflare),
+                    subtitle: const Text('1.1.1.1'),
                     value: DohProvider.cloudflare,
                   ),
-                  const RadioListTile<DohProvider>(
-                    title: Text('Google'),
-                    subtitle: Text('8.8.8.8'),
+                  RadioListTile<DohProvider>(
+                    title: Text(l10n.google),
+                    subtitle: const Text('8.8.8.8'),
                     value: DohProvider.google,
                   ),
-                  const RadioListTile<DohProvider>(
-                    title: Text('AdGuard'),
-                    subtitle: Text('dns.adguard.com'),
+                  RadioListTile<DohProvider>(
+                    title: Text(l10n.adguard),
+                    subtitle: const Text('dns.adguard.com'),
                     value: DohProvider.adguard,
                   ),
-                  const RadioListTile<DohProvider>(
-                    title: Text('DNS.Watch'),
-                    subtitle: Text('resolver2.dns.watch'),
+                  RadioListTile<DohProvider>(
+                    title: Text(l10n.dnsWatch),
+                    subtitle: const Text('resolver2.dns.watch'),
                     value: DohProvider.dnsWatch,
                   ),
-                  const RadioListTile<DohProvider>(
-                    title: Text('Quad9'),
-                    subtitle: Text('9.9.9.9'),
+                  RadioListTile<DohProvider>(
+                    title: Text(l10n.quad9),
+                    subtitle: const Text('9.9.9.9'),
                     value: DohProvider.quad9,
                   ),
-                  const RadioListTile<DohProvider>(
-                    title: Text('DNS.SB'),
-                    subtitle: Text('doh.dns.sb'),
+                  RadioListTile<DohProvider>(
+                    title: Text(l10n.dnsSb),
+                    subtitle: const Text('doh.dns.sb'),
                     value: DohProvider.dnsSb,
                   ),
-                  const RadioListTile<DohProvider>(
-                    title: Text('Canadian Shield'),
-                    subtitle: Text('private.canadianshield.cira.ca'),
+                  RadioListTile<DohProvider>(
+                    title: Text(l10n.canadianShield),
+                    subtitle: const Text('private.canadianshield.cira.ca'),
                     value: DohProvider.canadianShield,
                   ),
-                  const RadioListTile<DohProvider>(
-                    title: Text('Custom'),
-                    subtitle: Text('Enter your own DoH URL'),
+                  RadioListTile<DohProvider>(
+                    title: Text(l10n.custom),
+                    subtitle: Text(l10n.enterCustomDohUrl),
                     value: DohProvider.custom,
                   ),
                   if (currentProvider == DohProvider.custom)
@@ -454,10 +483,10 @@ void showDohProviderDialog(BuildContext context, WidgetRef ref) {
                       child: TextField(
                         controller: controller,
                         autofocus: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Custom DoH URL',
+                        decoration: InputDecoration(
+                          labelText: l10n.customDohUrlLabel,
                           hintText: 'https://...',
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
                         ),
                         keyboardType: TextInputType.url,
                       ),
@@ -470,7 +499,7 @@ void showDohProviderDialog(BuildContext context, WidgetRef ref) {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text(
-                'Cancel',
+                l10n.cancel,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -489,7 +518,7 @@ void showDohProviderDialog(BuildContext context, WidgetRef ref) {
                     Navigator.pop(ctx);
                   }
                 },
-                child: const Text('Save'),
+                child: Text(l10n.save),
               ),
           ],
         );
@@ -504,11 +533,12 @@ void showThemeDialog(
   WidgetRef ref,
   ThemeMode currentTheme,
 ) {
+  final l10n = AppLocalizations.of(context)!;
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
       surfaceTintColor: Colors.transparent,
-      title: const Text('Choose Theme'),
+      title: Text(l10n.chooseTheme),
       content: RadioGroup<ThemeMode>(
         groupValue: currentTheme,
         onChanged: (val) {
@@ -520,9 +550,9 @@ void showThemeDialog(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              buildThemeOption('System', ThemeMode.system),
-              buildThemeOption('Dark', ThemeMode.dark),
-              buildThemeOption('Light', ThemeMode.light),
+              buildThemeOption(l10n.system, ThemeMode.system),
+              buildThemeOption(l10n.dark, ThemeMode.dark),
+              buildThemeOption(l10n.light, ThemeMode.light),
             ],
           ),
         ),
@@ -531,7 +561,7 @@ void showThemeDialog(
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(
-            'Cancel',
+            l10n.cancel,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -544,20 +574,19 @@ void showThemeDialog(
 
 /// Shows a dialog to reset data.
 void showResetDataDialog(BuildContext context, WidgetRef ref) {
+  final l10n = AppLocalizations.of(context)!;
   final callerContext = context;
   showDialog(
     context: context,
     builder: (dialogContext) => AlertDialog(
       surfaceTintColor: Colors.transparent,
-      title: const Text('Reset Data?'),
-      content: const Text(
-        'This will clear Settings, Favorites, and History. Your installed Extensions will NOT be deleted.',
-      ),
+      title: Text(l10n.resetDataDialogTitle),
+      content: Text(l10n.resetDataDialogContent),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext),
           child: Text(
-            'Cancel',
+            l10n.cancel,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -578,7 +607,7 @@ void showResetDataDialog(BuildContext context, WidgetRef ref) {
           style: TextButton.styleFrom(
             foregroundColor: Theme.of(context).colorScheme.tertiary,
           ),
-          child: const Text('Reset Data'),
+          child: Text(l10n.resetDataKeepExtensions),
         ),
       ],
     ),
@@ -587,20 +616,19 @@ void showResetDataDialog(BuildContext context, WidgetRef ref) {
 
 /// Shows a dialog to factory reset.
 void showFactoryResetDialog(BuildContext context, WidgetRef ref) {
+  final l10n = AppLocalizations.of(context)!;
   final callerContext = context;
   showDialog(
     context: context,
     builder: (dialogContext) => AlertDialog(
       surfaceTintColor: Colors.transparent,
-      title: const Text('Factory Reset?'),
-      content: const Text(
-        'This will delete EVERYTHING: Favorites, History, Settings, and ALL Extensions. This cannot be undone.',
-      ),
+      title: Text(l10n.factoryResetDialogTitle),
+      content: Text(l10n.factoryResetDialogContent),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext),
           child: Text(
-            'Cancel',
+            l10n.cancel,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -620,9 +648,49 @@ void showFactoryResetDialog(BuildContext context, WidgetRef ref) {
           style: TextButton.styleFrom(
             foregroundColor: Theme.of(context).colorScheme.error,
           ),
-          child: const Text('Factory Reset'),
+          child: Text(l10n.factoryReset),
         ),
       ],
+    ),
+  );
+}
+
+/// Shows a dialog to pick the application language.
+void showLanguageDialog(
+  BuildContext context,
+  WidgetRef ref,
+  Locale currentLocale,
+) {
+  final l10n = AppLocalizations.of(context)!;
+  final options = [
+    {'label': l10n.english, 'locale': const Locale('en', 'US')},
+    {'label': l10n.hindi, 'locale': const Locale('hi')},
+    {'label': l10n.kannada, 'locale': const Locale('kn')},
+  ];
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      surfaceTintColor: Colors.transparent,
+      title: Text(l10n.selectLanguage),
+      content: RadioGroup<Locale>(
+        groupValue: currentLocale,
+        onChanged: (val) {
+          if (val == null) return;
+          ref.read(localeProvider.notifier).setLocale(val);
+          Navigator.pop(context);
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: options.map((opt) {
+            final locale = opt['locale'] as Locale;
+            return RadioListTile<Locale>(
+              title: Text(opt['label'] as String),
+              value: locale,
+            );
+          }).toList(),
+        ),
+      ),
     ),
   );
 }

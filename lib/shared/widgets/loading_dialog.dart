@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'custom_widgets.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class LoadingDialog extends StatelessWidget {
   final String message;
@@ -43,9 +44,9 @@ class LoadingDialog extends StatelessWidget {
               onCancel();
               Navigator.of(context).pop();
             },
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text('Cancel'),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(AppLocalizations.of(context)!.cancel),
             ),
           ),
         ],

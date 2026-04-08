@@ -12,6 +12,7 @@ import 'package:skystream/core/router/app_router.dart';
 import 'package:skystream/core/utils/image_fallbacks.dart';
 import '../../../../core/extensions/extension_manager.dart';
 import '../../../../shared/widgets/loading_dialog.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class ContinueWatchingCard extends ConsumerWidget {
   final HistoryItem historyItem;
@@ -108,7 +109,7 @@ class ContinueWatchingCard extends ConsumerWidget {
           bool canceled = false;
           LoadingDialog.show(
             context,
-            message: 'Refreshing live stream...',
+            message: AppLocalizations.of(context)!.refreshingLiveStream,
             onCancel: () {
               canceled = true;
               dialogDismissed = true;
@@ -166,7 +167,7 @@ class ContinueWatchingCard extends ConsumerWidget {
                     color: Theme.of(context).colorScheme.error,
                   ),
                   title: Text(
-                    'Remove from History',
+                    AppLocalizations.of(context)!.removeFromHistory,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
                     ),
@@ -178,14 +179,15 @@ class ContinueWatchingCard extends ConsumerWidget {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Removed ${item.title} from history'),
+                        content: Text(AppLocalizations.of(context)!
+                            .removedFromHistory(item.title)),
                       ),
                     );
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.close),
-                  title: const Text('Cancel'),
+                  title: Text(AppLocalizations.of(context)!.cancel),
                   onTap: () => Navigator.pop(context),
                 ),
               ],
@@ -326,9 +328,9 @@ class ContinueWatchingCard extends ConsumerWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 6),
-                                const Text(
-                                  "LIVE",
-                                  style: TextStyle(
+                                Text(
+                                  AppLocalizations.of(context)!.live,
+                                  style: const TextStyle(
                                     color: Colors.red,
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -376,7 +378,8 @@ class ContinueWatchingCard extends ConsumerWidget {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            "$percentage% watched",
+                            AppLocalizations.of(context)!
+                                .percentWatched(percentage),
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.outline,
                               fontSize: 11,
@@ -405,7 +408,8 @@ class ContinueWatchingCard extends ConsumerWidget {
                       .removeFromHistory(item.url);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Removed ${item.title} from history'),
+                      content: Text(AppLocalizations.of(context)!
+                          .removedFromHistory(item.title)),
                     ),
                   );
                 },

@@ -15,6 +15,7 @@ import '../../features/player/presentation/player_screen.dart';
 import '../domain/entity/multimedia_item.dart';
 import 'package:skystream/shared/widgets/app_scaffold.dart';
 import '../../core/storage/settings_repository.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 /// Typed extra for /details. Use when pushing: context.push('/details', extra: DetailsRouteExtra(...)).
 class DetailsRouteExtra {
@@ -137,8 +138,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final extra = state.extra;
           if (extra is! DetailsRouteExtra) {
-            return const Scaffold(
-              body: Center(child: Text('Invalid navigation. Please go back.')),
+            return Scaffold(
+              body: Center(
+                child: Text(AppLocalizations.of(context)!.invalidNavigation),
+              ),
             );
           }
           return DetailsScreen(item: extra.item, autoPlay: extra.autoPlay);
@@ -150,8 +153,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final extra = state.extra;
           if (extra is! TmdbDetailsRouteExtra) {
-            return const Scaffold(
-              body: Center(child: Text('Invalid navigation. Please go back.')),
+            return Scaffold(
+              body: Center(
+                child: Text(AppLocalizations.of(context)!.invalidNavigation),
+              ),
             );
           }
           return TmdbMovieDetailsScreen(
@@ -168,8 +173,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final extra = state.extra;
           if (extra is! ViewAllRouteExtra) {
-            return const Scaffold(
-              body: Center(child: Text('Invalid navigation. Please go back.')),
+            return Scaffold(
+              body: Center(
+                child: Text(AppLocalizations.of(context)!.invalidNavigation),
+              ),
             );
           }
           return ViewAllScreen(
@@ -185,8 +192,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final extra = state.extra;
           if (extra is! PlayerRouteExtra) {
-            return const Scaffold(
-              body: Center(child: Text('Invalid navigation. Please go back.')),
+            return Scaffold(
+              body: Center(
+                child: Text(AppLocalizations.of(context)!.invalidNavigation),
+              ),
             );
           }
           return PlayerScreen(

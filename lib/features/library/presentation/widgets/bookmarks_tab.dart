@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/image_fallbacks.dart';
@@ -30,7 +31,7 @@ class BookmarksTab extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Your library is empty',
+              AppLocalizations.of(context)!.libraryEmpty,
               style: Theme.of(context).textTheme.bodyLarge,
             ),
           ],

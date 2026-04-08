@@ -11,6 +11,7 @@ import 'package:media_kit/media_kit.dart' hide PlayerState;
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:video_view/video_view.dart' as vv;
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../../core/providers/device_info_provider.dart';
@@ -143,12 +144,18 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
     _videoFit.dispose();
 
     WakelockPlus.disable();
-    if ((Platform.isAndroid || Platform.isIOS) && !_isTv) {
+    if (Platform.isAndroid || Platform.isIOS) {
+      // Always restore system UI mode — immersiveSticky is set for all Android
+      // (including TV/FireTV) in initState, so it must always be cleared here.
+      // On FireTV, leaving immersiveSticky active after the player is popped
+      // causes the system to suppress hardware back-button key events.
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      if (_isTablet) {
-        SystemChrome.setPreferredOrientations([]);
-      } else {
-        SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+      if (!_isTv) {
+        if (_isTablet) {
+          SystemChrome.setPreferredOrientations([]);
+        } else {
+          SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+        }
       }
     }
     if (!Platform.isAndroid && !Platform.isIOS) {
@@ -282,9 +289,10 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                     children: [
                       const Icon(Icons.error_outline, color: Colors.red, size: 56),
                       const SizedBox(height: 16),
-                      const Text(
-                        "Playback Error",
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      Text(
+                        AppLocalizations.of(context)!.playbackError,
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -294,9 +302,10 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
+                        autofocus: true,
                         onPressed: _handleBack,
                         icon: const Icon(Icons.arrow_back),
-                        label: const Text("Go Back"),
+                        label: Text(AppLocalizations.of(context)!.goBack),
                       ),
                     ],
                   ),
@@ -307,11 +316,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
               Positioned(
                 top: 8,
                 left: 8,
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  tooltip: 'Go Back',
-                  onPressed: _handleBack,
-                ),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    tooltip: AppLocalizations.of(context)!.goBack,
+                    onPressed: _handleBack,
+                  ),
               ),
             ],
           ),

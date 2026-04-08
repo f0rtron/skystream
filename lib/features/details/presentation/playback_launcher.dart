@@ -15,6 +15,7 @@ import 'details_controller.dart';
 import '../../../core/services/download_service.dart';
 import '../../../shared/widgets/loading_dialog.dart';
 import '../../../core/utils/app_utils.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class PlaybackLauncher {
   final Ref _ref;
@@ -89,7 +90,7 @@ class PlaybackLauncher {
     bool dialogDismissed = false;
     LoadingDialog.show(
       context,
-      message: 'Resolving streams...',
+      message: AppLocalizations.of(context)!.resolving,
       onCancel: () {
         isCanceled = true;
         dialogDismissed = true;
@@ -129,7 +130,7 @@ class PlaybackLauncher {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Could not resolve video for $playerName. Starting internal player.',
+              AppLocalizations.of(context)!.playerNotDetected(playerName),
             ),
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 3),
@@ -165,7 +166,9 @@ class PlaybackLauncher {
         dialogDismissed = true;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e. Using internal player.')),
+        SnackBar(
+            content: Text(
+                AppLocalizations.of(context)!.usingInternalPlayerError(e.toString()))),
       );
       context.push(
         '/player',
@@ -206,7 +209,7 @@ class PlaybackLauncher {
           playerId;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('$playerName not detected. Starting internal player.'),
+          content: Text(AppLocalizations.of(context)!.playerNotDetected(playerName)),
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 3),
         ),
@@ -243,7 +246,7 @@ class PlaybackLauncher {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  'Choose source for $playerName',
+                  AppLocalizations.of(context)!.selectSourceForPlayer(playerName),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),

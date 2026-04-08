@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class ResumePromptOverlay extends StatefulWidget {
   final int positionMs;
@@ -119,10 +120,10 @@ class _ResumePromptOverlayState extends State<ResumePromptOverlay>
                         ],
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Resuming Playback',
-                          style: TextStyle(
+                          AppLocalizations.of(context)!.resumingPlayback,
+                          style: const TextStyle(
                             color: Colors.white70,
                             letterSpacing: 1.0,
                             fontSize: 12,
@@ -138,13 +139,14 @@ class _ResumePromptOverlayState extends State<ResumePromptOverlay>
                           color: Colors.white60,
                           size: 20,
                         ),
-                        tooltip: 'Start Over',
+                        tooltip: AppLocalizations.of(context)!.startOver,
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Paused at ${_formatDuration(widget.positionMs)}',
+                    AppLocalizations.of(context)!
+                        .pausedAt(_formatDuration(widget.positionMs)),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -153,7 +155,8 @@ class _ResumePromptOverlayState extends State<ResumePromptOverlay>
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Resumes automatically in $_secondsRemaining ${_secondsRemaining == 1 ? 'second' : 'seconds'}',
+                    AppLocalizations.of(context)!
+                        .resumesAutomatically(_secondsRemaining),
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 13,
@@ -173,7 +176,7 @@ class _ResumePromptOverlayState extends State<ResumePromptOverlay>
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Start Over'),
+                          child: Text(AppLocalizations.of(context)!.startOver),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -189,14 +192,15 @@ class _ResumePromptOverlayState extends State<ResumePromptOverlay>
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.play_arrow_rounded, size: 20),
-                              SizedBox(width: 4),
+                              const Icon(Icons.play_arrow_rounded, size: 20),
+                              const SizedBox(width: 4),
                               Text(
-                                'Resume Now',
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                                AppLocalizations.of(context)!.resumeNow,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),

@@ -19,6 +19,7 @@ import 'details_controller.dart';
 import "widgets/details_layout_widgets.dart";
 import "widgets/premium_details_widgets.dart";
 import "../../../shared/widgets/expandable_text.dart";
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class DetailsScreen extends ConsumerStatefulWidget {
   final MultimediaItem item;
@@ -78,6 +79,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
     );
     final item = details ?? widget.item;
 
+    final l10n = AppLocalizations.of(context)!;
     final deviceProfileAsync = ref.watch(deviceProfileProvider);
 
     final scaffold = Scaffold(
@@ -177,6 +179,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
               details,
               detailsAsync,
               isMovie,
+              l10n,
             )
           else
             ..._buildMobileSlivers(
@@ -185,6 +188,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
               details,
               detailsAsync,
               isMovie,
+              l10n,
             ),
         ],
       ),
@@ -212,6 +216,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
     MultimediaItem? details,
     AsyncValue<MultimediaItem?> detailsState,
     bool isMovie,
+    AppLocalizations l10n,
   ) {
     return [
       SliverToBoxAdapter(
@@ -287,14 +292,14 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                       const SizedBox(height: 24),
                     ],
                     Text(
-                      'Synopsis',
+                      l10n.synopsis,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 8),
                     const SizedBox(height: 8),
                     ExpandableText(
-                      text: item.description ?? 'No description available.',
+                      text: item.description ?? l10n.noDescription,
                       maxLines: 10,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         fontSize: 16,
@@ -375,6 +380,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
     MultimediaItem? details,
     AsyncValue<MultimediaItem?> detailsState,
     bool isMovie,
+    AppLocalizations l10n,
   ) {
     return [
       SliverToBoxAdapter(
@@ -450,7 +456,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
               ],
               const SizedBox(height: 24),
               Text(
-                'Synopsis',
+                l10n.synopsis,
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
@@ -458,7 +464,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
               const SizedBox(height: 8),
               const SizedBox(height: 8),
               ExpandableText(
-                text: item.description ?? 'No description available.',
+                text: item.description ?? l10n.noDescription,
                 maxLines: 4,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Theme.of(context).textTheme.bodyMedium?.color,
@@ -474,7 +480,8 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                   color: Theme.of(
                     context,
                   ).colorScheme.error.withValues(alpha: 0.1),
-                  child: Text("Error: ${detailsState.error}"),
+                  child: Text(AppLocalizations.of(context)!
+                      .errorPrefix(detailsState.error.toString())),
                 )
               else if (!isMovie && details?.episodes != null)
                 DetailsSeasonListWrapper(itemUrl: widget.item.url),

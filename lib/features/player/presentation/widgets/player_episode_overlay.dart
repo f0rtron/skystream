@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../../core/storage/history_repository.dart';
 import '../player_controller.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class PlayerEpisodeOverlay extends ConsumerStatefulWidget {
   final MultimediaItem item;
@@ -156,10 +157,10 @@ class _PlayerEpisodeOverlayState extends ConsumerState<PlayerEpisodeOverlay> {
                       child:
                           widget.item.episodes == null ||
                               widget.item.episodes!.isEmpty
-                          ? const Center(
+                          ? Center(
                               child: Text(
-                                "No episodes found",
-                                style: TextStyle(color: Colors.white54),
+                                AppLocalizations.of(context)!.noEpisodesFound,
+                                style: const TextStyle(color: Colors.white54),
                               ),
                             )
                           : _buildEpisodeList(context),
@@ -193,10 +194,10 @@ class _PlayerEpisodeOverlayState extends ConsumerState<PlayerEpisodeOverlay> {
                 size: 24,
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  "Episodes",
-                  style: TextStyle(
+                  AppLocalizations.of(context)!.episodes,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -232,7 +233,8 @@ class _PlayerEpisodeOverlayState extends ConsumerState<PlayerEpisodeOverlay> {
                     items: _seasons.map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,
-                        child: Text("Season $value"),
+                        child: Text(AppLocalizations.of(context)!
+                            .seasonWithNumber(value)),
                       );
                     }).toList(),
                     onChanged: (int? newValue) {

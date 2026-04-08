@@ -10,6 +10,7 @@ import '../../../core/services/download_service.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/loading_dialog.dart';
 import '../../../shared/widgets/custom_widgets.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class DownloadLauncher {
   final Ref _ref;
@@ -27,7 +28,7 @@ class DownloadLauncher {
     bool isCanceled = false;
     LoadingDialog.show(
       context,
-      message: 'Resolving download sources...',
+      message: AppLocalizations.of(context)!.resolving,
       onCancel: () => isCanceled = true,
     );
 
@@ -64,7 +65,8 @@ class DownloadLauncher {
       if (!isCanceled) Navigator.of(context).pop(); // Dismiss if still there
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(SnackBar(
+          content: Text(AppLocalizations.of(context)!.errorPrefix(e.toString()))));
     }
   }
 
@@ -88,7 +90,7 @@ class DownloadLauncher {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  'Select Download Source',
+                  AppLocalizations.of(context)!.selectSource,
                   style: Theme.of(
                     context,
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -146,12 +148,12 @@ class DownloadLauncher {
         return PopScope(
           canPop: false,
           child: AlertDialog(
-            content: const Column(
+            content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Verifying source & size...'),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(AppLocalizations.of(context)!.verifyingSourceSize),
               ],
             ),
             actions: [
@@ -203,24 +205,25 @@ class DownloadLauncher {
       showDialog(
         context: finalContext,
         builder: (ctx) => AlertDialog(
-          title: const Text('Confirm Download'),
+          title: Text(AppLocalizations.of(context)!.confirmDownload),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Title: ${item.title}'),
+              Text(AppLocalizations.of(context)!.titleWithParam(item.title)),
               const SizedBox(height: 8),
-              Text('Source: ${stream.source}'),
+              Text(AppLocalizations.of(context)!.sourceWithParam(stream.source)),
               const SizedBox(height: 8),
-              Text('Size: ${metadata.sizeString}'),
+              Text(
+                  AppLocalizations.of(context)!.sizeWithParam(metadata.sizeString)),
               const SizedBox(height: 16),
-              const Text('The file will be saved in your Downloads folder.'),
+              Text(AppLocalizations.of(context)!.fileSaveLocationNotification),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context)!.cancel),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -280,7 +283,7 @@ class DownloadLauncher {
                   );
                 }
               },
-              child: const Text('Download Now'),
+              child: Text(AppLocalizations.of(context)!.downloadNow),
             ),
           ],
         ),
@@ -298,12 +301,12 @@ class DownloadLauncher {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Download Unavailable'),
+        title: Text(AppLocalizations.of(context)!.downloadUnavailable),
         content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -314,7 +317,7 @@ class DownloadLauncher {
                 episodeUrl: resolveUrl,
               ); // Go back to source picker
             },
-            child: const Text('Select Another Source'),
+            child: Text(AppLocalizations.of(context)!.selectAnotherSource),
           ),
         ],
       ),

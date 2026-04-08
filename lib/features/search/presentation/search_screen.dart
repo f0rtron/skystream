@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/layout_constants.dart';
 import 'search_provider.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import 'widgets/search_result_section.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -39,6 +40,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final searchResultsAsync = ref.watch(searchResultsProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
@@ -97,7 +99,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   textInputAction: TextInputAction.search,
                   onSubmitted: _submitSearch,
                   decoration: InputDecoration(
-                    hintText: 'Search movies, series...',
+                    hintText: l10n.searchHint,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(50),
                       borderSide: BorderSide.none,
@@ -168,12 +170,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+        error: (err, stack) => Center(child: Text(l10n.errorPrefix(err.toString()))),
       ),
     );
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final query = ref.watch(searchQueryProvider);
     if (query.isEmpty) {
       return Center(
@@ -187,12 +190,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
             const SizedBox(height: LayoutConstants.spacingMd),
             Text(
-              'Search for your favorite content',
+              l10n.searchFavoriteContent,
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 8),
             Text(
-              'Press the Search key or Enter to start',
+              l10n.pressSearchOrEnter,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -201,6 +204,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ),
       );
     }
-    return const Center(child: Text('No results found.'));
+    return Center(child: Text(l10n.noResultsFound));
   }
 }

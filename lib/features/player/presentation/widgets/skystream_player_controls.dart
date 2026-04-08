@@ -228,7 +228,8 @@ class SkyStreamPlayerControlsState
     widget.videoViewController?.videoSize.addListener(_updateOrientation);
     widget.videoViewController?.orientation.addListener(_updateOrientation);
 
-    if (Platform.isAndroid) {
+    // PiP is phone/tablet-only — never register the handler on TV.
+    if (Platform.isAndroid && !_isTv) {
       const MethodChannel(
         'dev.akash.skystream.player/pip',
       ).setMethodCallHandler((call) async {
@@ -255,8 +256,6 @@ class SkyStreamPlayerControlsState
         }
       });
     }
-
-    _isTv = ref.read(deviceProfileProvider).asData?.value.isTv ?? false;
 
     if (widget.streams != null && widget.streams!.isNotEmpty) {
       _isVisible = true;
@@ -316,6 +315,12 @@ class SkyStreamPlayerControlsState
       if (kDebugMode) debugPrint('Failed to restore volume UI: $e');
     }
     SystemChrome.setPreferredOrientations([]); // Reset to system default
+    // Clear the PiP method channel handler to prevent a stale handler from
+    // accessing the disposed provider after the player exits.
+    if (Platform.isAndroid && !_isTv) {
+      const MethodChannel('dev.akash.skystream.player/pip')
+          .setMethodCallHandler(null);
+    }
     super.dispose();
   }
 
@@ -393,6 +398,7 @@ class SkyStreamPlayerControlsState
     widget.onVisibilityChanged?.call(_isVisible);
     if (_isVisible) {
       _startHideTimer();
+      if (_isTv) _playFocusNode.requestFocus();
     }
   }
 
@@ -413,6 +419,10 @@ class SkyStreamPlayerControlsState
       setState(() => _isVisible = true);
       widget.onVisibilityChanged?.call(true);
       _startHideTimer();
+      // On TV, always restore focus to the play/pause button when controls
+      // become visible — autofocus only fires once when the widget first mounts,
+      // so after hide/show cycles we must request focus explicitly.
+      if (_isTv) _playFocusNode.requestFocus();
     }
   }
 
@@ -449,6 +459,7 @@ class SkyStreamPlayerControlsState
     if (!_isVisible) {
       setState(() => _isVisible = true);
       widget.onVisibilityChanged?.call(true);
+      if (_isTv) _playFocusNode.requestFocus();
     }
   }
 
@@ -546,7 +557,8 @@ class SkyStreamPlayerControlsState
       _resizeMode = (_resizeMode + 1) % 3;
 
       final modes = [BoxFit.contain, BoxFit.cover, BoxFit.fill];
-      final labels = ["Fit", "Zoom", "Stretch"];
+      final l10n = AppLocalizations.of(context)!;
+      final labels = [l10n.fit, l10n.zoom, l10n.stretch];
 
       widget.onResize?.call(modes[_resizeMode]);
       _gestureHandler.showToast(labels[_resizeMode], Icons.aspect_ratio);
@@ -947,7 +959,7 @@ class SkyStreamPlayerControlsState
       child: Center(
         child: _buildActionButton(
           icon: Icons.lock,
-          label: "Unlock",
+          label: AppLocalizations.of(context)!.unlock,
           onTap: _toggleLock,
           rotate: false,
           highlight: false,
@@ -1055,7 +1067,9 @@ class SkyStreamPlayerControlsState
                                         icon: _isLocked
                                             ? Icons.lock
                                             : Icons.lock_open,
-                                        label: _isLocked ? "Unlock" : "Lock",
+                                        label: _isLocked
+                                            ? AppLocalizations.of(context)!.unlock
+                                            : AppLocalizations.of(context)!.lock,
                                         onTap: _toggleLock,
                                         highlight: _isLocked,
                                       ),
@@ -1064,7 +1078,7 @@ class SkyStreamPlayerControlsState
                                       order: const NumericFocusOrder(1),
                                       child: _buildActionButton(
                                         icon: Icons.source,
-                                        label: "Sources",
+                                        label: AppLocalizations.of(context)!.sources,
                                         onTap: () =>
                                             PlayerBottomSheets.showSourceSelection(
                                               context: context,
@@ -1083,7 +1097,7 @@ class SkyStreamPlayerControlsState
                                       order: const NumericFocusOrder(2),
                                       child: _buildActionButton(
                                         icon: Icons.subtitles,
-                                        label: "Tracks",
+                                        label: AppLocalizations.of(context)!.tracks,
                                         onTap: () =>
                                             PlayerBottomSheets.showTracksSelection(
                                               context: context,
@@ -1117,7 +1131,7 @@ class SkyStreamPlayerControlsState
                                         order: const NumericFocusOrder(4),
                                         child: _buildActionButton(
                                           icon: Icons.folder,
-                                          label: "Content",
+                                          label: AppLocalizations.of(context)!.content,
                                           onTap: () =>
                                               PlayerBottomSheets.showContentSelection(
                                                 context: context,
@@ -1139,7 +1153,7 @@ class SkyStreamPlayerControlsState
                                         order: const NumericFocusOrder(5),
                                         child: _buildActionButton(
                                           icon: Icons.info_outline,
-                                          label: "Stats",
+                                          label: AppLocalizations.of(context)!.stats,
                                           onTap: () {
                                             setState(
                                               () => _showTorrentInfo =
@@ -1153,7 +1167,7 @@ class SkyStreamPlayerControlsState
                                       order: const NumericFocusOrder(6),
                                       child: _buildActionButton(
                                         icon: Icons.aspect_ratio,
-                                        label: "Resize",
+                                        label: AppLocalizations.of(context)!.resize,
                                         onTap: cycleResize,
                                       ),
                                     ),
@@ -1162,7 +1176,7 @@ class SkyStreamPlayerControlsState
                                         order: const NumericFocusOrder(7),
                                         child: _buildActionButton(
                                           icon: Icons.skip_next,
-                                          label: "Next",
+                                          label: AppLocalizations.of(context)!.next,
                                           onTap: () => ref
                                               .read(
                                                 playerControllerProvider
@@ -1183,7 +1197,7 @@ class SkyStreamPlayerControlsState
                                         order: const NumericFocusOrder(8),
                                         child: _buildActionButton(
                                           icon: Icons.picture_in_picture_alt,
-                                          label: "PIP",
+                                          label: AppLocalizations.of(context)!.pip,
                                           onTap: _enterPip,
                                         ),
                                       ),
@@ -1199,7 +1213,7 @@ class SkyStreamPlayerControlsState
                                         order: const NumericFocusOrder(9),
                                         child: _buildActionButton(
                                           icon: Icons.screen_rotation,
-                                          label: "Rotate",
+                                          label: AppLocalizations.of(context)!.rotate,
                                           onTap: _toggleOrientation,
                                         ),
                                       ),
@@ -1213,8 +1227,8 @@ class SkyStreamPlayerControlsState
                                               ? Icons.fullscreen_exit
                                               : Icons.fullscreen,
                                           label: _isFullscreen
-                                              ? "Windowed"
-                                              : "Fullscreen",
+                                              ? AppLocalizations.of(context)!.windowed
+                                              : AppLocalizations.of(context)!.fullscreen,
                                           onTap: toggleFullscreen,
                                         ),
                                       ),
@@ -1251,6 +1265,7 @@ class SkyStreamPlayerControlsState
       onBack: widget.onBackPointer ?? () => context.pop(),
       phase: phase,
       sourceAttempts: sourceAttempts,
+      isTv: _isTv,
       onSkip: canSkip
           ? () =>
                 ref.read(playerControllerProvider.notifier).skipLoadingOverlay()

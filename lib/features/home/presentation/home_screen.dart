@@ -12,6 +12,7 @@ import '../../discover/presentation/view_all_screen.dart';
 import '../../../shared/widgets/desktop_scroll_wrapper.dart';
 
 import 'package:flutter/rendering.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import 'package:skystream/core/extensions/extension_manager.dart';
 import 'package:skystream/core/extensions/base_provider.dart';
 import 'package:skystream/core/domain/entity/multimedia_item.dart';
@@ -76,6 +77,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final homeDataAsync = ref.watch(homeDataProvider);
     final history = ref.watch(watchHistoryProvider);
     final generalSettings = ref.watch(generalSettingsProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final overlayStyle = isDark
@@ -100,7 +102,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             );
           },
         ),
-        title: const Text('SkyStream'),
+        title: Text(l10n.appTitle),
       ),
       floatingActionButton: ValueListenableBuilder<bool>(
         valueListenable: _isFabExtended,
@@ -138,6 +140,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                 padding: const EdgeInsets.only(left: 12),
                                 child: Builder(
                                   builder: (context) {
+                                    final l10n = AppLocalizations.of(context)!;
                                     final active = ref.watch(
                                       activeProviderStateProvider,
                                     );
@@ -145,7 +148,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                     return Row(
                                       children: [
                                         Text(
-                                          active?.name ?? 'None',
+                                          active?.name ?? l10n.none,
                                           style: TextStyle(
                                             color: Theme.of(
                                               context,
@@ -168,9 +171,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                               borderRadius:
                                                   BorderRadius.circular(4),
                                             ),
-                                            child: const Text(
-                                              'DEBUG',
-                                              style: TextStyle(
+                                            child: Text(
+                                              l10n.debug,
+                                              style: const TextStyle(
                                                 fontSize: 10,
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.bold,
@@ -208,6 +211,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     List<dynamic> history,
     bool watchHistoryEnabled,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     // Handling initial loading
     final isResolving = ref.watch(providerResolutionLoadingProvider);
     if (isResolving) {
@@ -232,12 +236,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ).colorScheme.primary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
-            const Text(
-              "Select a provider to start watching",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              l10n.selectProviderToStart,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text("Tap the extension icon in the corner"),
+            Text(l10n.tapExtensionIcon),
           ],
         ),
       );
@@ -288,7 +292,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               if (watchHistoryEnabled && history.isNotEmpty)
                 SliverToBoxAdapter(
                   child: ContinueWatchingSection(
-                    title: 'Continue Watching',
+                    title: l10n.continueWatching,
                     items: history.cast<HistoryItem>(),
                   ),
                 ),
@@ -326,6 +330,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildErrorState(BuildContext context, String error, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final bool isOffline = error.contains('No internet connection');
 
     return Center(
@@ -341,7 +346,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
             const SizedBox(height: 24),
             Text(
-              isOffline ? 'No Internet Connection' : 'Site Not Reachable',
+              isOffline ? l10n.noInternetConnection : l10n.siteNotReachable,
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
@@ -349,8 +354,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             const SizedBox(height: 12),
             Text(
               isOffline
-                  ? 'Check your connection or view your downloaded content.'
-                  : 'Please try accessing the site with a VPN or checking your internet connection.',
+                  ? l10n.checkConnectionOrDownloads
+                  : l10n.tryVpnOrConnection,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -365,7 +370,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: SelectableText(
-                  'Error Details: $error',
+                  l10n.errorDetails(error),
                   style: TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 12,
@@ -383,12 +388,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 FilledButton.icon(
                   onPressed: () => ref.invalidate(homeDataProvider),
                   icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Retry'),
+                  label: Text(l10n.retry),
                 ),
                 ElevatedButton.icon(
                   onPressed: () => context.push('/library'),
                   icon: const Icon(Icons.download_for_offline_rounded),
-                  label: const Text('Go to Downloads'),
+                  label: Text(l10n.goToDownloads),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(
                       context,
@@ -407,6 +412,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _showProviderSelector(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final extManager = ref.read(extensionManagerProvider.notifier);
     final activeProvider = ref.read(activeProviderStateProvider);
     final providers = List<SkyStreamProvider>.from(extManager.getAllProviders())
@@ -419,7 +425,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Select Provider'),
+          title: Text(l10n.selectProvider),
           contentPadding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
           content: SizedBox(
             width: 600,
@@ -443,7 +449,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                               visualDensity: VisualDensity.compact,
                               materialTapTargetSize:
                                   MaterialTapTargetSize.shrinkWrap,
-                              label: const Text('All'),
+                              label: Text(l10n.all),
                               selected: currentFilter == null,
                               onSelected: (_) => ref
                                   .read(homeFilterProvider.notifier)
@@ -459,10 +465,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                       visualDensity: VisualDensity.compact,
                                       materialTapTargetSize:
                                           MaterialTapTargetSize.shrinkWrap,
-                                      label: Text(
-                                        type.name[0].toUpperCase() +
-                                            type.name.substring(1),
-                                      ),
+                                      label: Text(_getLocalizedType(type, l10n)),
                                       selected: currentFilter == type,
                                       onSelected: (_) => ref
                                           .read(homeFilterProvider.notifier)
@@ -510,7 +513,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           itemBuilder: (context, index) {
                             if (filter == null && index == 0) {
                               return ListTile(
-                                title: const Text('None'),
+                                title: Text(l10n.none),
                                 leading: const Radio<String?>(value: null),
                                 onTap: () {
                                   ref
@@ -544,9 +547,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                         color: Colors.red,
                                         borderRadius: BorderRadius.circular(4),
                                       ),
-                                      child: const Text(
-                                        'DEBUG',
-                                        style: TextStyle(
+                                      child: Text(
+                                        l10n.debug,
+                                        style: const TextStyle(
                                           fontSize: 10,
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
@@ -577,7 +580,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              child: Text(l10n.close),
             ),
           ],
         );
@@ -585,5 +588,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     ).then((_) {
       scrollController.dispose();
     });
+  }
+
+  String _getLocalizedType(ProviderType type, AppLocalizations l10n) {
+    switch (type) {
+      case ProviderType.movie:
+        return l10n.movies;
+      case ProviderType.series:
+        return l10n.series;
+      case ProviderType.anime:
+        return l10n.anime;
+      case ProviderType.livestream:
+        return l10n.liveStreams;
+      case ProviderType.other:
+        return l10n.unknown;
+    }
   }
 }

@@ -13,6 +13,7 @@ import '../../../../shared/widgets/desktop_scroll_wrapper.dart';
 import '../../../../core/utils/layout_constants.dart';
 import '../../../../shared/widgets/shimmer_placeholder.dart';
 import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 // Delegates to the shared searchAllProviders() function — no duplicated
 // fan-out, mapping, or filtering logic.
@@ -73,7 +74,7 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
         alignment: Alignment.center,
         padding: const EdgeInsets.all(LayoutConstants.spacingMd),
         child: Text(
-          "No plugins installed",
+          AppLocalizations.of(context)!.noPluginsInstalled,
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -112,7 +113,7 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
               alignment: Alignment.center,
               padding: const EdgeInsets.all(LayoutConstants.spacingMd),
               child: Text(
-                "No streams found.",
+                AppLocalizations.of(context)!.noResultsFound,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -268,7 +269,7 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
         ),
         error: (err, _) => Padding(
           padding: const EdgeInsets.all(LayoutConstants.spacingMd),
-          child: Text("Error: $err"),
+          child: Text(AppLocalizations.of(context)!.errorPrefix(err.toString())),
         ),
       );
     }
@@ -305,7 +306,7 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
                 ),
                 const SizedBox(width: LayoutConstants.spacingXs),
                 Text(
-                  "Available Sources",
+                  AppLocalizations.of(context)!.availableSources,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,

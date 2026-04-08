@@ -10,6 +10,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../shared/widgets/desktop_scroll_wrapper.dart';
 import '../subtitle_search_provider.dart';
 import '../../domain/entity/subtitle_model.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class PlayerBottomSheets {
   static void showSourceSelection({
@@ -37,7 +38,7 @@ class PlayerBottomSheets {
               Padding(
                 padding: const EdgeInsets.all(LayoutConstants.spacingMd),
                 child: Text(
-                  "Select Source",
+                  AppLocalizations.of(context)!.selectSource,
                   style: TextStyle(
                     color: theme.textTheme.bodyLarge?.color,
                     fontSize: 18,
@@ -118,7 +119,7 @@ class PlayerBottomSheets {
                 Padding(
                   padding: const EdgeInsets.all(LayoutConstants.spacingMd),
                   child: Text(
-                    "Torrent Content",
+                    AppLocalizations.of(context)!.torrentContent,
                     style: TextStyle(
                       color: theme.textTheme.bodyLarge?.color,
                       fontSize: 18,
@@ -133,7 +134,7 @@ class PlayerBottomSheets {
                     itemCount: files.length,
                     itemBuilder: (ctx, index) {
                       final file = files[index];
-                      final path = file['path'] as String? ?? "Unknown";
+                      final path = file['path'] as String? ?? AppLocalizations.of(context)!.unknown;
                       final length = file['length'] as int? ?? 0;
                       final id =
                           file['id'] as int? ??
@@ -214,7 +215,7 @@ class PlayerBottomSheets {
               padding: const EdgeInsets.all(LayoutConstants.spacingMd),
               children: [
                 Text(
-                  "Audio Tracks",
+                  AppLocalizations.of(context)!.audioTracks,
                   style: TextStyle(
                     color: theme.textTheme.bodyLarge?.color,
                     fontSize: 18,
@@ -252,7 +253,7 @@ class PlayerBottomSheets {
                 }),
                 if (snapshot.audioTracks.isEmpty)
                   Text(
-                    "No audio tracks found",
+                    AppLocalizations.of(context)!.noAudioTracks,
                     style: TextStyle(color: theme.textTheme.bodySmall?.color),
                   ),
 
@@ -261,7 +262,7 @@ class PlayerBottomSheets {
                   children: [
                     Expanded(
                       child: Text(
-                        "Subtitles",
+                        AppLocalizations.of(context)!.subtitles,
                         style: TextStyle(
                           color: theme.textTheme.bodyLarge?.color,
                           fontSize: 18,
@@ -275,14 +276,14 @@ class PlayerBottomSheets {
                         _showSubtitleOptions(context);
                       },
                       icon: const Icon(Icons.settings, size: 18),
-                      label: const Text("Options"),
+                      label: Text(AppLocalizations.of(context)!.options),
                     ),
                   ],
                 ),
                 Divider(color: theme.dividerColor),
                 ListTile(
                   title: Text(
-                    "Off",
+                    AppLocalizations.of(context)!.off,
                     style: TextStyle(color: theme.textTheme.bodyMedium?.color),
                   ),
                   onTap: () async {
@@ -324,7 +325,7 @@ class PlayerBottomSheets {
                 }),
                 if (snapshot.subtitleTracks.isEmpty)
                   Text(
-                    "No subtitle tracks found",
+                    AppLocalizations.of(context)!.noSubtitlesFound,
                     style: TextStyle(color: theme.textTheme.bodySmall?.color),
                   ),
               ],
@@ -372,7 +373,7 @@ class PlayerBottomSheets {
               Padding(
                 padding: const EdgeInsets.all(LayoutConstants.spacingMd),
                 child: Text(
-                  "Playback Speed",
+                  AppLocalizations.of(context)!.playbackSpeed,
                   style: TextStyle(
                     color: theme.textTheme.bodyLarge?.color,
                     fontSize: 18,
@@ -447,7 +448,7 @@ class PlayerBottomSheets {
                     Padding(
                       padding: const EdgeInsets.all(LayoutConstants.spacingMd),
                       child: Text(
-                        "Subtitle Options",
+                        AppLocalizations.of(context)!.subtitleOptions,
                         style: TextStyle(
                           color: theme.textTheme.bodyLarge?.color,
                           fontSize: 18,
@@ -480,7 +481,7 @@ class PlayerBottomSheets {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                "External subtitle files are not supported on the active HLS player on this platform.",
+                                AppLocalizations.of(context)!.hlsSubtitleWarning,
                                 style: TextStyle(
                                   color: Colors.orange.shade200,
                                   fontSize: 13,
@@ -492,7 +493,7 @@ class PlayerBottomSheets {
                       ),
                     ListTile(
                       leading: const Icon(Icons.file_open_outlined),
-                      title: const Text("Load from Device"),
+                      title: Text(AppLocalizations.of(context)!.loadFromDevice),
                       onTap: !supportsExternalSubtitleLoading
                           ? null
                           : () {
@@ -504,7 +505,7 @@ class PlayerBottomSheets {
                     ),
                     ListTile(
                       leading: const Icon(Icons.sync),
-                      title: const Text("Sync / Delay"),
+                      title: Text(AppLocalizations.of(context)!.syncDelay),
                       onTap: () {
                         Navigator.pop(ctx);
                         _showSubtitleSync(context);
@@ -512,7 +513,7 @@ class PlayerBottomSheets {
                     ),
                     ListTile(
                       leading: const Icon(Icons.style),
-                      title: const Text("Style Settings"),
+                      title: Text(AppLocalizations.of(context)!.styleSettings),
                       onTap: () {
                         Navigator.pop(ctx);
                         _showSubtitleStyles(context);
@@ -520,7 +521,7 @@ class PlayerBottomSheets {
                     ),
                     ListTile(
                       leading: const Icon(Icons.search),
-                      title: const Text("Search Online (Subtitle Search)"),
+                      title: Text(AppLocalizations.of(context)!.searchOnline),
                       onTap: !supportsExternalSubtitleLoading
                           ? null
                           : () {
@@ -565,7 +566,7 @@ class PlayerBottomSheets {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      "Subtitle Sync",
+                      AppLocalizations.of(context)!.subtitleSync,
                       style: TextStyle(
                         color: theme.textTheme.bodyLarge?.color,
                         fontSize: 18,
@@ -596,7 +597,7 @@ class PlayerBottomSheets {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                "Subtitle delay is not supported by the active playback engine.",
+                                AppLocalizations.of(context)!.subtitleDelayWarning,
                                 style: TextStyle(
                                   color: Colors.orange.shade200,
                                   fontSize: 13,
@@ -651,7 +652,7 @@ class PlayerBottomSheets {
                           : () => ref
                                 .read(playerControllerProvider.notifier)
                                 .setSubtitleDelay(0.0),
-                      child: const Text("Reset Delay"),
+                      child: Text(AppLocalizations.of(context)!.resetDelay),
                     ),
                     const SizedBox(height: 10),
                   ],
@@ -692,7 +693,7 @@ class PlayerBottomSheets {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        "Subtitle Styles",
+                        AppLocalizations.of(context)!.subtitleStyles,
                         style: TextStyle(
                           color: theme.textTheme.bodyLarge?.color,
                           fontSize: 18,
@@ -720,7 +721,7 @@ class PlayerBottomSheets {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                "Subtitle styling is only available on the media_kit player right now.",
+                                AppLocalizations.of(context)!.mediaKitStylingWarning,
                                 style: TextStyle(
                                   color: Colors.orange.shade200,
                                   fontSize: 13,
@@ -744,7 +745,7 @@ class PlayerBottomSheets {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "Subtitle Styles",
+                        AppLocalizations.of(context)!.subtitleStyles,
                         style: TextStyle(
                           color: theme.textTheme.bodyLarge?.color,
                           fontSize: 18,
@@ -753,7 +754,7 @@ class PlayerBottomSheets {
                       ),
                       IconButton(
                         icon: const Icon(Icons.refresh),
-                        tooltip: "Reset to Default",
+                        tooltip: AppLocalizations.of(context)!.resetToDefault,
                         onPressed: () {
                           ref
                               .read(playerSettingsProvider.notifier)
@@ -769,7 +770,7 @@ class PlayerBottomSheets {
 
                   // Font Size
                   Text(
-                    "Font Size",
+                    AppLocalizations.of(context)!.fontSize,
                     style: TextStyle(color: theme.textTheme.bodySmall?.color),
                   ),
                   Slider(
@@ -792,7 +793,7 @@ class PlayerBottomSheets {
 
                   // Position
                   Text(
-                    "Vertical Position",
+                    AppLocalizations.of(context)!.verticalPosition,
                     style: TextStyle(color: theme.textTheme.bodySmall?.color),
                   ),
                   Slider(
@@ -812,7 +813,7 @@ class PlayerBottomSheets {
                   // Color Presets
                   const SizedBox(height: 10),
                   Text(
-                    "Text Color",
+                    AppLocalizations.of(context)!.textColor,
                     style: TextStyle(color: theme.textTheme.bodySmall?.color),
                   ),
                   const SizedBox(height: 8),
@@ -970,7 +971,7 @@ class PlayerBottomSheets {
 
                   const SizedBox(height: 20),
                   Text(
-                    "Background Color",
+                    AppLocalizations.of(context)!.backgroundColor,
                     style: TextStyle(color: theme.textTheme.bodySmall?.color),
                   ),
                   const SizedBox(height: 8),
@@ -1077,7 +1078,7 @@ class PlayerBottomSheets {
 
                   const SizedBox(height: 16),
                   Text(
-                    "Background Opacity",
+                    AppLocalizations.of(context)!.backgroundOpacity,
                     style: TextStyle(color: theme.textTheme.bodySmall?.color),
                   ),
                   Slider(
@@ -1179,10 +1180,10 @@ class PlayerBottomSheets {
                       children: [
                         const Icon(Icons.search),
                         const SizedBox(width: 16),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            "Subtitle Search",
-                            style: TextStyle(
+                            AppLocalizations.of(context)!.subtitleSearch,
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1205,7 +1206,7 @@ class PlayerBottomSheets {
                       controller: queryController,
                       autofocus: true,
                       decoration: InputDecoration(
-                        hintText: "Search subtitle name...",
+                        hintText: AppLocalizations.of(context)!.searchSubtitleNameHint,
                         prefixIcon: const Icon(Icons.video_collection_outlined),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1349,38 +1350,38 @@ class PlayerBottomSheets {
                     return searchState.when(
                       data: (results) {
                         if (results == null) {
-                          return const Center(
+                          return Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.subtitles_rounded,
                                   size: 64,
                                   color: Colors.white24,
                                 ),
-                                SizedBox(height: 16),
+                                const SizedBox(height: 16),
                                 Text(
-                                  "Enter a name or search to find subtitles.",
-                                  style: TextStyle(color: Colors.white38),
+                                  AppLocalizations.of(context)!.enterSearchSubtitlePrompt,
+                                  style: const TextStyle(color: Colors.white38),
                                 ),
                               ],
                             ),
                           );
                         }
                         if (results.isEmpty) {
-                          return const Center(
+                          return Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.subtitles_off_rounded,
                                   size: 64,
                                   color: Colors.white24,
                                 ),
-                                SizedBox(height: 16),
+                                const SizedBox(height: 16),
                                 Text(
-                                  "No results found. Try another query.",
-                                  style: TextStyle(color: Colors.white38),
+                                  AppLocalizations.of(context)!.noSubtitleResults,
+                                  style: const TextStyle(color: Colors.white38),
                                 ),
                               ],
                             ),
@@ -1402,9 +1403,9 @@ class PlayerBottomSheets {
                               sub: sub,
                               onTap: () async {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
+                                  SnackBar(
                                     content: Text(
-                                      "Downloading & applying subtitle...",
+                                      AppLocalizations.of(context)!.downloadingApplyingSubtitle,
                                     ),
                                   ),
                                 );
@@ -1421,9 +1422,9 @@ class PlayerBottomSheets {
                                 } else {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
+                                      SnackBar(
                                         content: Text(
-                                          "Failed to download subtitle.",
+                                            AppLocalizations.of(context)!.failedToDownloadSubtitle,
                                         ),
                                       ),
                                     );
@@ -1439,7 +1440,7 @@ class PlayerBottomSheets {
                         child: Padding(
                           padding: const EdgeInsets.all(20),
                           child: Text(
-                            "Failed to load subtitles. Please try again.",
+                             AppLocalizations.of(context)!.failedToLoadSubtitles,
                             style: TextStyle(
                               color: theme.colorScheme.error,
                               fontSize: 14,

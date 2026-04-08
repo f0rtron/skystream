@@ -438,16 +438,14 @@ class PlayerController extends Notifier<PlayerState> {
     int? attemptIndex,
     int? attemptTotal,
   }) {
-    // Once a frame has been confirmed, NEVER block the screen again.
-    // The overlay is only for the initial source-discovery phase.
-    // Next episode resets _hasConfirmedPlaybackFrame → allows blocking again.
+    // Error phase always blocks — even after a frame was confirmed — so the
+    // user sees a clear "all sources failed" screen and can navigate back.
+    // All other phases never block once a frame has been confirmed.
     final bool effectiveFullscreenBlocking;
-    if (_hasConfirmedPlaybackFrame) {
-      effectiveFullscreenBlocking = false;
-    } else if (kind == PlaybackUiPhaseKind.error) {
-      // Error always blocks during initial load — even if the user skipped the
-      // overlay — so they know no source was found and can go back.
+    if (kind == PlaybackUiPhaseKind.error) {
       effectiveFullscreenBlocking = fullscreenBlocking ?? true;
+    } else if (_hasConfirmedPlaybackFrame) {
+      effectiveFullscreenBlocking = false;
     } else if (state.userSkippedOverlay && kind != PlaybackUiPhaseKind.idle) {
       // User dismissed the initial overlay; suppress non-error blocking phases.
       effectiveFullscreenBlocking = false;
@@ -2225,15 +2223,9 @@ class PlayerController extends Notifier<PlayerState> {
         loadStreamAtIndex(targetIndex, sourceSessionId: sourceSessionId),
       );
     } else {
-      if (_hasConfirmedPlaybackFrame) {
-        // All sources exhausted during active playback — don't block the screen.
-        // Show a snackbar and go idle; the back button in the controls lets them leave.
-        _revertMessage = "All sources failed.";
-        _setIdlePhase();
-      } else {
-        // All sources exhausted during initial load — show the blocking error overlay.
-        _enterAllSourcesFailedPhase();
-      }
+      // All sources exhausted — always show the blocking error overlay regardless
+      // of whether playback had started. The overlay has a "Go Back" button.
+      _enterAllSourcesFailedPhase();
     }
   }
 

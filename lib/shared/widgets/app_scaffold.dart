@@ -5,6 +5,7 @@ import 'package:skystream/core/providers/device_info_provider.dart';
 import 'package:skystream/core/utils/responsive_breakpoints.dart';
 import 'package:skystream/shared/widgets/custom_bottom_nav.dart';
 import 'package:virtual_mouse/virtual_mouse.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 import '../../features/settings/presentation/general_settings_provider.dart';
 
 class AppScaffold extends ConsumerStatefulWidget {
@@ -78,30 +79,30 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
                         _onItemTapped(index, context),
                     labelType: NavigationRailLabelType.all,
                     groupAlignment: 0.0, // Center
-                    destinations: const [
+                    destinations: [
                       NavigationRailDestination(
-                        icon: Icon(Icons.home_outlined),
-                        selectedIcon: Icon(Icons.home),
-                        label: Text('Home'),
+                        icon: const Icon(Icons.home_outlined),
+                        selectedIcon: const Icon(Icons.home),
+                        label: Text(AppLocalizations.of(context)!.home),
                       ),
                       NavigationRailDestination(
-                        icon: Icon(Icons.search),
-                        label: Text('Search'),
+                        icon: const Icon(Icons.search),
+                        label: Text(AppLocalizations.of(context)!.search),
                       ),
                       NavigationRailDestination(
-                        icon: Icon(Icons.dashboard_outlined),
-                        selectedIcon: Icon(Icons.dashboard),
-                        label: Text('Discover'),
+                        icon: const Icon(Icons.dashboard_outlined),
+                        selectedIcon: const Icon(Icons.dashboard),
+                        label: Text(AppLocalizations.of(context)!.discover),
                       ),
                       NavigationRailDestination(
-                        icon: Icon(Icons.library_books_outlined),
-                        selectedIcon: Icon(Icons.library_books),
-                        label: Text('Library'),
+                        icon: const Icon(Icons.library_books_outlined),
+                        selectedIcon: const Icon(Icons.library_books),
+                        label: Text(AppLocalizations.of(context)!.library),
                       ),
                       NavigationRailDestination(
-                        icon: Icon(Icons.settings_outlined),
-                        selectedIcon: Icon(Icons.settings),
-                        label: Text('Settings'),
+                        icon: const Icon(Icons.settings_outlined),
+                        selectedIcon: const Icon(Icons.settings),
+                        label: Text(AppLocalizations.of(context)!.settings),
                       ),
                     ],
                   ),
@@ -149,7 +150,9 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
       },
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (err, stack) => Scaffold(body: Center(child: Text('Error: $err'))),
+      error: (err, stack) => Scaffold(
+          body: Center(
+              child: Text(AppLocalizations.of(context)!.errorPrefix(err.toString())))),
     );
   }
 }

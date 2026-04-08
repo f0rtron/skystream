@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/extensions/models/extension_plugin.dart';
 import '../../../core/storage/extension_repository.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class PluginSettingsDialog extends ConsumerStatefulWidget {
   final ExtensionPlugin plugin;
@@ -57,6 +58,7 @@ class _PluginSettingsDialogState extends ConsumerState<PluginSettingsDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (_isLoading) {
       return const AlertDialog(
         content: Center(child: CircularProgressIndicator()),
@@ -66,7 +68,7 @@ class _PluginSettingsDialogState extends ConsumerState<PluginSettingsDialog> {
     final schema = widget.plugin.settingsSchema ?? [];
 
     return AlertDialog(
-      title: Text("${widget.plugin.name} Settings"),
+      title: Text(l10n.pluginSettings(widget.plugin.name)),
       content: SizedBox(
         width: double.maxFinite,
         child: SingleChildScrollView(
@@ -82,15 +84,16 @@ class _PluginSettingsDialogState extends ConsumerState<PluginSettingsDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text("Close"),
+          child: Text(l10n.close),
         ),
       ],
     );
   }
 
   Widget _buildSettingItem(Map<String, dynamic> item) {
+    final l10n = AppLocalizations.of(context)!;
     final String? id = item['id'];
-    final String name = item['name'] ?? id ?? "Unknown";
+    final String name = item['name'] ?? id ?? l10n.unknown;
     final String type = item['type'] ?? "text";
     final String? description = item['description'];
 

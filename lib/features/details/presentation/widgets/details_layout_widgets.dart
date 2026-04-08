@@ -18,6 +18,7 @@ import 'download_progress_dialog.dart';
 import 'download_management_dialog.dart';
 import 'episode_card.dart';
 import 'package:skystream/core/providers/device_info_provider.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class DetailsSeasonListWrapper extends ConsumerWidget {
   const DetailsSeasonListWrapper({super.key, required this.itemUrl});
@@ -46,7 +47,7 @@ class DetailsSeasonListWrapper extends ConsumerWidget {
           final s = seasons[index];
           final isSelected = s == selectedSeason;
           return FilterChip(
-            label: Text("Season $s"),
+            label: Text(AppLocalizations.of(context)!.seasonWithNumber(s)),
             selected: isSelected,
             onSelected: (_) => ref
                 .read(detailsControllerProvider(itemUrl).notifier)
@@ -113,12 +114,16 @@ class DetailsActionButtons extends HookConsumerWidget {
           )
         : historyRepo.getDuration(item.url);
 
+    final l10n = AppLocalizations.of(context)!;
     final bool isResuming = pos > 5000;
 
-    String playLabel = isResuming ? 'Resume' : 'Play';
+    String playLabel = isResuming ? l10n.resume : l10n.play;
     if (targetEpisode != null && !isMovie) {
-      playLabel =
-          "$playLabel S${targetEpisode.season} E${targetEpisode.episode}";
+      playLabel = l10n.playEpisode(
+        playLabel,
+        targetEpisode.season,
+        targetEpisode.episode,
+      );
     }
 
     final playBtn = CustomButton(
@@ -127,13 +132,13 @@ class DetailsActionButtons extends HookConsumerWidget {
       autofocus: true,
       onPressed:
           (details != null &&
-               details!.episodes != null &&
-               details!.episodes!.isNotEmpty)
+              details!.episodes != null &&
+              details!.episodes!.isNotEmpty)
           ? () async {
               await ref
                   .read(detailsControllerProvider(item.url).notifier)
                   .handlePlayPress(context, details!);
-              
+
               // Phase 10 Fix: TV Focus restoration on return from player
               if (context.mounted && isTv) {
                 playFocusNode.requestFocus();
@@ -145,8 +150,8 @@ class DetailsActionButtons extends HookConsumerWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: isLaunching
-              ? const [
-                  SizedBox(
+              ? [
+                  const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
@@ -154,8 +159,8 @@ class DetailsActionButtons extends HookConsumerWidget {
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(width: LayoutConstants.spacingXs),
-                  Text('Resolving...'),
+                  const SizedBox(width: LayoutConstants.spacingXs),
+                  Text(AppLocalizations.of(context)!.resolving),
                 ]
               : [
                   const Icon(Icons.play_arrow_rounded),
@@ -216,14 +221,14 @@ class DetailsActionButtons extends HookConsumerWidget {
                 ),
               );
             },
-            child: const Padding(
-              padding: EdgeInsets.all(LayoutConstants.spacingMd),
+            child: Padding(
+              padding: const EdgeInsets.all(LayoutConstants.spacingMd),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.download_done_sharp, color: Colors.green),
-                  SizedBox(width: LayoutConstants.spacingXs),
-                  Text('Downloaded'),
+                  const Icon(Icons.download_done_sharp, color: Colors.green),
+                  const SizedBox(width: LayoutConstants.spacingXs),
+                  Text(AppLocalizations.of(context)!.downloaded),
                 ],
               ),
             ),
@@ -272,16 +277,16 @@ class DetailsActionButtons extends HookConsumerWidget {
                         const SizedBox(width: LayoutConstants.spacingXs),
                         Text(
                           downloadProgressData?.status == TaskStatus.paused
-                              ? 'Paused'
+                              ? AppLocalizations.of(context)!.paused
                               : downloadProgress > 0
                               ? '${(downloadProgress * 100).toInt()}%'
-                              : 'Starting...',
+                              : AppLocalizations.of(context)!.starting,
                         ),
                       ]
-                    : const [
-                        Icon(Icons.download_rounded),
-                        SizedBox(width: LayoutConstants.spacingXs),
-                        Text('Download'),
+                    : [
+                        const Icon(Icons.download_rounded),
+                        const SizedBox(width: LayoutConstants.spacingXs),
+                        Text(AppLocalizations.of(context)!.download),
                       ],
               ),
             ),
@@ -318,7 +323,7 @@ class DetailsActionButtons extends HookConsumerWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  "${(progress * 100).toInt()}% watched${!isMovie && targetEpisode != null ? ' • S${targetEpisode.season} E${targetEpisode.episode}' : ''}",
+                  "${AppLocalizations.of(context)!.percentWatched((progress * 100).toInt())}${!isMovie && targetEpisode != null ? ' • S${targetEpisode.season} E${targetEpisode.episode}' : ''}",
                   style: TextStyle(
                     fontSize: 11,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -418,7 +423,7 @@ class SliverDetailsDesktopEpisodeGrid extends ConsumerWidget {
               runSpacing: 12,
               children: [
                 Text(
-                  "Episodes",
+                  AppLocalizations.of(context)!.episodes,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -541,7 +546,7 @@ class SliverDetailsEpisodeList extends ConsumerWidget {
               runSpacing: 12,
               children: [
                 Text(
-                  "Episodes",
+                  AppLocalizations.of(context)!.episodes,
                   style: Theme.of(
                     context,
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -714,7 +719,7 @@ class DetailsEpisodeFilterBar extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _LanguageButton(
-            label: "Sub",
+            label: AppLocalizations.of(context)!.sub,
             isSelected: selected == DubStatus.subbed,
             onTap: () => ref
                 .read(detailsControllerProvider(itemUrl).notifier)
@@ -722,7 +727,7 @@ class DetailsEpisodeFilterBar extends ConsumerWidget {
           ),
           const SizedBox(width: 4),
           _LanguageButton(
-            label: "Dub",
+            label: AppLocalizations.of(context)!.dub,
             isSelected: selected == DubStatus.dubbed,
             onTap: () => ref
                 .read(detailsControllerProvider(itemUrl).notifier)

@@ -6,6 +6,7 @@ import 'package:skystream/core/utils/responsive_breakpoints.dart';
 import 'package:skystream/features/home/presentation/widgets/continue_watching_card.dart';
 import 'package:skystream/features/library/presentation/history_provider.dart';
 import 'package:skystream/shared/widgets/desktop_scroll_wrapper.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class ContinueWatchingSection extends ConsumerStatefulWidget {
   final String title;
@@ -76,17 +77,16 @@ class _ContinueWatchingSectionState
               ),
               TextButton.icon(
                 onPressed: () {
+                  final l10n = AppLocalizations.of(context)!;
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('Clear All History'),
-                      content: const Text(
-                        'Are you sure you want to remove all items from your watch history?',
-                      ),
+                      title: Text(l10n.clearAllHistory),
+                      content: Text(l10n.confirmClearHistory),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel'),
+                          child: Text(l10n.cancel),
                         ),
                         TextButton(
                           onPressed: () {
@@ -95,13 +95,13 @@ class _ContinueWatchingSectionState
                                 .clearAllHistory();
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Watch history cleared'),
+                              SnackBar(
+                                content: Text(l10n.watchHistoryCleared),
                               ),
                             );
                           },
                           child: Text(
-                            'Clear All',
+                            l10n.clearAll,
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.error,
                             ),
@@ -112,7 +112,7 @@ class _ContinueWatchingSectionState
                   );
                 },
                 icon: const Icon(Icons.delete_sweep, size: 18),
-                label: const Text('Clear All'),
+                label: Text(AppLocalizations.of(context)!.clearAll),
                 style: TextButton.styleFrom(
                   foregroundColor: Theme.of(
                     context,

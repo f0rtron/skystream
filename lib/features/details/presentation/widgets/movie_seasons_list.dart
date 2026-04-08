@@ -9,6 +9,7 @@ import '../../../../shared/widgets/desktop_scroll_wrapper.dart';
 import '../../../../core/utils/responsive_breakpoints.dart';
 import '../../../../core/models/tmdb_details.dart';
 import '../tmdb_details_controller.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class MovieSeasonsList extends ConsumerStatefulWidget {
   final int movieId;
@@ -51,9 +52,9 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
         color: const Color(0xFF0d253f),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: const Text(
-        "TMDB",
-        style: TextStyle(
+      child: Text(
+        AppLocalizations.of(context)!.tmdb,
+        style: const TextStyle(
           color: Color(0xFF90cea1),
           fontSize: 8,
           fontWeight: FontWeight.bold,
@@ -75,7 +76,7 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
           Row(
             children: [
               Text(
-                "Episodes",
+                AppLocalizations.of(context)!.episodes,
                 style: TextStyle(
                   color: widget.textColor,
                   fontSize: 24,
@@ -109,7 +110,8 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
                         final count = s.episodeCount;
                         return DropdownMenuItem(
                           value: num,
-                          child: Text("Season $num ($count Episodes)"),
+                          child: Text(AppLocalizations.of(context)!
+                              .seasonWithEpisodes(num, count)),
                         );
                       }).toList(),
                       onChanged: (val) {
@@ -139,7 +141,7 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Seasons",
+            AppLocalizations.of(context)!.seasons,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
               fontSize: 20,
@@ -218,7 +220,8 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
                               ),
                             ),
                             Text(
-                              '${season.episodeCount} Episodes',
+                              AppLocalizations.of(context)!
+                                  .episodeCountOnly(season.episodeCount),
                               style: TextStyle(
                                 color: widget.textColor?.withValues(alpha: 0.7),
                                 fontSize: 12,
@@ -297,7 +300,7 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              "Please select a source from 'Available Sources' above to play.",
+                              AppLocalizations.of(context)!.selectSourceToPlay,
                               style: TextStyle(
                                 color: Theme.of(context).colorScheme.onSurface,
                               ),
@@ -444,7 +447,7 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Episodes",
+                  AppLocalizations.of(context)!.episodes,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 20,
@@ -478,7 +481,7 @@ class _MovieSeasonsListState extends ConsumerState<MovieSeasonsList> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              "Please select a source from 'Available Sources' above to play.",
+                              AppLocalizations.of(context)!.selectSourceToPlay,
                               style: TextStyle(
                                 color: Theme.of(context).colorScheme.onSurface,
                               ),

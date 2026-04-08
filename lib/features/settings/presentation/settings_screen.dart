@@ -10,6 +10,8 @@ import 'package:go_router/go_router.dart';
 import 'player_settings_provider.dart';
 import 'general_settings_provider.dart';
 
+import 'package:skystream/l10n/generated/app_localizations.dart';
+import '../../../core/providers/locale_provider.dart';
 import '../../../core/network/doh_service.dart';
 
 // Simple provider for app version
@@ -31,8 +33,9 @@ class SettingsScreen extends ConsumerWidget {
         ref.watch(playerSettingsProvider).asData?.value ??
         const PlayerSettings();
 
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.settings)),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
@@ -41,22 +44,22 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               const SizedBox(height: LayoutConstants.spacingXs),
               SettingsGroup(
-                title: 'General',
+                title: l10n.general,
                 children: [
                   SettingsTile(
                     icon: Icons.dark_mode_rounded,
-                    title: 'App Theme',
+                    title: l10n.appTheme,
                     subtitle: themeMode == ThemeMode.system
-                        ? 'System'
-                        : (themeMode == ThemeMode.dark ? 'Dark' : 'Light'),
+                        ? l10n.system
+                        : (themeMode == ThemeMode.dark ? l10n.dark : l10n.light),
                     onTap: () => showThemeDialog(context, ref, themeMode),
                   ),
                   SettingsTile(
                     icon: Icons.history_rounded,
-                    title: 'Record Watch History',
+                    title: l10n.recordWatchHistory,
                     subtitle: generalSettings.watchHistoryEnabled
-                        ? 'Enabled'
-                        : 'Disabled',
+                        ? l10n.enabled
+                        : l10n.disabled,
                     trailing: Switch(
                       value: generalSettings.watchHistoryEnabled,
                       onChanged: (val) => ref
@@ -72,8 +75,8 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   SettingsTile(
                     icon: Icons.home_rounded,
-                    title: 'Default Home Screen',
-                    subtitle: getHomeScreenLabel(generalSettings.defaultHomeScreen),
+                    title: l10n.defaultHomeScreen,
+                    subtitle: getHomeScreenLabel(generalSettings.defaultHomeScreen, l10n),
                     isLast: true,
                     onTap: () => showDefaultHomeScreenDialog(
                       context,
@@ -81,17 +84,35 @@ class SettingsScreen extends ConsumerWidget {
                       generalSettings.defaultHomeScreen,
                     ),
                   ),
+                  SettingsTile(
+                    icon: Icons.translate_rounded,
+                    title: l10n.language,
+                    subtitle: Localizations.localeOf(context).languageCode == 'en'
+                        ? l10n.english
+                        : (Localizations.localeOf(context).languageCode == 'hi'
+                            ? l10n.hindi
+                            : (Localizations.localeOf(context).languageCode == 'kn'
+                                ? l10n.kannada
+                                : l10n.unknown)),
+                    isLast: true,
+                    onTap: () => showLanguageDialog(
+                      context,
+                      ref,
+                      ref.read(localeProvider),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: LayoutConstants.spacingLg),
               SettingsGroup(
-                title: 'Player',
+                title: l10n.player,
                 children: [
                   SettingsTile(
                     icon: Icons.smart_display_rounded,
-                    title: 'Default Player',
+                    title: l10n.defaultPlayer,
                     subtitle: getPlayerDisplayName(
                       playerSettings.preferredPlayer,
+                      l10n,
                     ),
                     onTap: () => showDefaultPlayerDialog(
                       context,
@@ -101,7 +122,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   SettingsTile(
                     icon: Icons.swipe_vertical_rounded,
-                    title: 'Left Gesture',
+                    title: l10n.leftGesture,
                     subtitle:
                         playerSettings.leftGesture.name[0].toUpperCase() +
                         playerSettings.leftGesture.name.substring(1),
@@ -114,7 +135,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   SettingsTile(
                     icon: Icons.swipe_vertical_rounded,
-                    title: 'Right Gesture',
+                    title: l10n.rightGesture,
                     subtitle:
                         playerSettings.rightGesture.name[0].toUpperCase() +
                         playerSettings.rightGesture.name.substring(1),
@@ -127,10 +148,10 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   SettingsTile(
                     icon: Icons.touch_app_rounded,
-                    title: 'Double Tap to Seek',
+                    title: l10n.doubleTapToSeek,
                     subtitle: playerSettings.doubleTapEnabled
-                        ? 'Enabled'
-                        : 'Disabled',
+                        ? l10n.enabled
+                        : l10n.disabled,
                     trailing: Switch(
                       value: playerSettings.doubleTapEnabled,
                       onChanged: (val) => ref
@@ -143,10 +164,10 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   SettingsTile(
                     icon: Icons.swipe_rounded,
-                    title: 'Swipe to Seek',
+                    title: l10n.swipeToSeek,
                     subtitle: playerSettings.swipeSeekEnabled
-                        ? 'Enabled'
-                        : 'Disabled',
+                        ? l10n.enabled
+                        : l10n.disabled,
                     trailing: Switch(
                       value: playerSettings.swipeSeekEnabled,
                       onChanged: (val) => ref
@@ -159,8 +180,8 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   SettingsTile(
                     icon: Icons.av_timer_rounded,
-                    title: 'Seek Duration',
-                    subtitle: formatSeekDuration(playerSettings.seekDuration),
+                    title: l10n.seekDuration,
+                    subtitle: formatSeekDuration(playerSettings.seekDuration, l10n),
                     onTap: () => showDurationDialog(
                       context,
                       ref,
@@ -169,8 +190,8 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   SettingsTile(
                     icon: Icons.timer_outlined,
-                    title: 'Buffer depth',
-                    subtitle: formatReadahead(playerSettings.readaheadSeconds),
+                    title: l10n.bufferDepth,
+                    subtitle: formatReadahead(playerSettings.readaheadSeconds, l10n),
                     onTap: () => showReadaheadDialog(
                       context,
                       ref,
@@ -179,7 +200,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   SettingsTile(
                     icon: Icons.aspect_ratio_rounded,
-                    title: 'Default Resize Mode',
+                    title: l10n.defaultResizeMode,
                     subtitle: playerSettings.defaultResizeMode,
                     onTap: () => showResizeDialog(
                       context,
@@ -189,10 +210,10 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   SettingsTile(
                     icon: Icons.high_quality_rounded,
-                    title: 'Hardware Decoding',
+                    title: l10n.hardwareDecoding,
                     subtitle: playerSettings.hardwareDecoding
-                        ? 'Enabled (Recommended)'
-                        : 'Disabled',
+                        ? '${l10n.enabled} (${l10n.recommended})'
+                        : l10n.disabled,
                     trailing: Switch(
                       value: playerSettings.hardwareDecoding,
                       onChanged: (val) => ref
@@ -213,14 +234,14 @@ class SettingsScreen extends ConsumerWidget {
                       ref.watch(dohSettingsProvider).asData?.value ??
                       const DohSettings();
                   return SettingsGroup(
-                    title: 'Network',
+                    title: l10n.network,
                     children: [
                       SettingsTile(
                         icon: Icons.dns_rounded,
-                        title: 'DNS over HTTPS',
+                        title: l10n.dnsOverHttps,
                         subtitle: dohState.enabled
-                            ? 'On (${getDohProviderLabel(dohState.provider, dohState.customUrl)})'
-                            : 'Off',
+                            ? '${l10n.on} (${getDohProviderLabel(dohState.provider, dohState.customUrl, l10n)})'
+                            : l10n.off,
                         trailing: Switch(
                           value: dohState.enabled,
                           onChanged: (val) {
@@ -238,10 +259,11 @@ class SettingsScreen extends ConsumerWidget {
                       if (dohState.enabled)
                         SettingsTile(
                           icon: Icons.cloud_rounded,
-                          title: 'DoH Provider',
+                          title: l10n.dohProvider,
                           subtitle: getDohProviderLabel(
                             dohState.provider,
                             dohState.customUrl,
+                            l10n,
                           ),
                           isLast: true,
                           onTap: () => showDohProviderDialog(context, ref),
@@ -252,12 +274,12 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: LayoutConstants.spacingLg),
               SettingsGroup(
-                title: 'Extensions',
+                title: l10n.extensions,
                 children: [
                   SettingsTile(
                     icon: Icons.extension_rounded,
-                    title: 'Manage Extensions',
-                    subtitle: 'Install or remove providers',
+                    title: l10n.manageExtensions,
+                    subtitle: l10n.installRemoveProviders,
                     isLast: true,
                     onTap: () => context.go('/settings/extensions'),
                   ),
@@ -265,18 +287,18 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: LayoutConstants.spacingLg),
               SettingsGroup(
-                title: 'App Data',
+                title: l10n.appData,
                 children: [
                   SettingsTile(
                     icon: Icons.restore_rounded,
-                    title: 'Reset Data (Keep Extensions)',
-                    subtitle: 'Clear settings & database, keep plugin',
+                    title: l10n.resetDataKeepExtensions,
+                    subtitle: l10n.resetDataSubtitle,
                     onTap: () => showResetDataDialog(context, ref),
                   ),
                   SettingsTile(
                     icon: Icons.delete_forever_rounded,
-                    title: 'Factory Reset',
-                    subtitle: 'Delete all data, settings, and extensions',
+                    title: l10n.factoryReset,
+                    subtitle: l10n.factoryResetSubtitle,
                     isLast: true,
                     onTap: () => showFactoryResetDialog(context, ref),
                   ),
@@ -284,12 +306,12 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: LayoutConstants.spacingLg),
               SettingsGroup(
-                title: 'Developer',
+                title: l10n.developer,
                 children: [
                   SettingsTile(
                     icon: Icons.developer_mode_rounded,
-                    title: 'Developer Options',
-                    subtitle: 'Debug tools & local play',
+                    title: l10n.developerOptions,
+                    subtitle: l10n.developerOptionsSubtitle,
                     isLast: true,
                     onTap: () => context.go('/settings/developer'),
                   ),
@@ -297,15 +319,15 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: LayoutConstants.spacingLg),
               SettingsGroup(
-                title: 'About',
+                title: l10n.about,
                 children: [
                   SettingsTile(
                     icon: Icons.info_outline_rounded,
-                    title: 'Version',
+                    title: l10n.version,
                     subtitle: versionAsync.when(
                       data: (v) => v,
-                      loading: () => 'Loading...',
-                      error: (err, stack) => 'Unknown',
+                      loading: () => l10n.loading,
+                      error: (err, stack) => l10n.unknown,
                     ),
                     trailing: const SizedBox.shrink(),
                     isLast: true,

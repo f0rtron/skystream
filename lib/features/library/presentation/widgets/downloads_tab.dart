@@ -9,6 +9,7 @@ import '../../../../core/services/download_service.dart';
 import '../../../../core/utils/layout_constants.dart';
 import '../../../details/presentation/playback_launcher.dart';
 import '../downloads_provider.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
 class DownloadsTab extends ConsumerWidget {
   const DownloadsTab({super.key});
@@ -17,6 +18,7 @@ class DownloadsTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final downloadsAsync = ref.watch(downloadsProvider);
     final activeProgress = ref.watch(downloadProgressProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return downloadsAsync.when(
       data: (downloads) {
@@ -32,7 +34,7 @@ class DownloadsTab extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'No downloads yet',
+                  l10n.noDownloadsYet,
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
               ],
@@ -86,7 +88,7 @@ class DownloadsTab extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('Error: $err')),
+      error: (err, stack) => Center(child: Text(l10n.errorPrefix(err.toString()))),
     );
   }
 }
@@ -103,6 +105,7 @@ class _GroupedDownloadTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final firstItem = items.first;
 
     // Calculate overall progress or status
@@ -175,7 +178,7 @@ class _GroupedDownloadTile extends ConsumerWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${items.length} Episodes • $completedCount Done',
+                        l10n.episodesCount(items.length, completedCount),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -240,26 +243,27 @@ class _GroupedDownloadTile extends ConsumerWidget {
   }
 
   void _confirmDeleteAll(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete All Episodes'),
+        title: Text(l10n.deleteAllEpisodes),
         content: Text(
-          'Are you sure you want to delete all ${items.length} episodes of "${items.first.item.title}" and their files?',
+          l10n.confirmDeleteAllEpisodes(items.length, items.first.item.title),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               ref.read(downloadsProvider.notifier).removeDownloads(items);
             },
-            child: const Text(
-              'Delete All',
-              style: TextStyle(color: Colors.red),
+            child: Text(
+              l10n.deleteAll,
+              style: const TextStyle(color: Colors.red),
             ),
           ),
         ],
@@ -286,6 +290,7 @@ class _DownloadItemTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isDone = status == TaskStatus.complete;
     final isWorking =
         status == TaskStatus.running || status == TaskStatus.enqueued;
@@ -359,7 +364,7 @@ class _DownloadItemTile extends ConsumerWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    isDone ? "Completed" : _getStatusText(status),
+                    isDone ? l10n.completed : _getStatusText(status, l10n),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: isDone
                           ? Colors.green
@@ -411,12 +416,12 @@ class _DownloadItemTile extends ConsumerWidget {
                         Icons.play_circle_fill_rounded,
                         color: Colors.green,
                       ),
-                      onPressed: () => _playLocalFile(context, ref),
+                      onPressed: () => _playLocalFile(context, ref, l10n),
                       iconSize: 28,
                     ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline_rounded),
-                    onPressed: () => _confirmDelete(context, ref),
+                    onPressed: () => _confirmDelete(context, ref, l10n),
                     color: theme.colorScheme.error.withValues(alpha: 0.8),
                     visualDensity: VisualDensity.compact,
                   ),
@@ -429,7 +434,7 @@ class _DownloadItemTile extends ConsumerWidget {
     );
 
     final tile = InkWell(
-      onTap: isDone ? () => _playLocalFile(context, ref) : null,
+      onTap: isDone ? () => _playLocalFile(context, ref, l10n) : null,
       borderRadius: BorderRadius.circular(LayoutConstants.radiusLg),
       child: content,
     );
@@ -454,26 +459,26 @@ class _DownloadItemTile extends ConsumerWidget {
     );
   }
 
-  String _getStatusText(TaskStatus status) {
+  String _getStatusText(TaskStatus status, AppLocalizations l10n) {
     switch (status) {
       case TaskStatus.enqueued:
-        return 'Queued...';
+        return l10n.statusQueued;
       case TaskStatus.running:
-        return 'Downloading...';
+        return l10n.statusDownloading;
       case TaskStatus.complete:
-        return 'Finished';
+        return l10n.statusFinished;
       case TaskStatus.failed:
-        return 'Failed';
+        return l10n.statusFailed;
       case TaskStatus.canceled:
-        return 'Canceled';
+        return l10n.statusCanceled;
       case TaskStatus.paused:
-        return 'Paused';
+        return l10n.statusPaused;
       default:
-        return 'Waiting...';
+        return l10n.statusWaiting;
     }
   }
 
-  Future<void> _playLocalFile(BuildContext context, WidgetRef ref) async {
+  Future<void> _playLocalFile(BuildContext context, WidgetRef ref, AppLocalizations l10n) async {
     final downloadService = ref.read(downloadServiceProvider);
     final File? file = await downloadService.getDownloadedFile(
       item.item,
@@ -483,8 +488,8 @@ class _DownloadItemTile extends ConsumerWidget {
     if (file == null || !await file.exists()) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('File not found on disk. Removing record.'),
+          SnackBar(
+            content: Text(l10n.fileNotFoundRemoving),
           ),
         );
       }
@@ -500,25 +505,23 @@ class _DownloadItemTile extends ConsumerWidget {
     }
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
+  void _confirmDelete(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Download'),
-        content: const Text(
-          'Are you sure you want to delete this download and its file?',
-        ),
+        title: Text(l10n.deleteDownload),
+        content: Text(l10n.confirmDeleteDownload),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               ref.read(downloadsProvider.notifier).removeDownload(item);
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),

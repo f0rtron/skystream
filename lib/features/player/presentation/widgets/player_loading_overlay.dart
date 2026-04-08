@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../player_controller.dart';
+import '../../../../shared/widgets/custom_widgets.dart';
 
 class PlayerLoadingOverlay extends StatelessWidget {
   final VoidCallback onDoubleTap;
@@ -9,6 +10,7 @@ class PlayerLoadingOverlay extends StatelessWidget {
   final List<SourceAttemptEntry> sourceAttempts;
   final VoidCallback? onGoLive;
   final VoidCallback? onSkip;
+  final bool isTv;
 
   const PlayerLoadingOverlay({
     super.key,
@@ -18,6 +20,7 @@ class PlayerLoadingOverlay extends StatelessWidget {
     required this.sourceAttempts,
     this.onGoLive,
     this.onSkip,
+    this.isTv = false,
   });
 
   @override
@@ -28,56 +31,66 @@ class PlayerLoadingOverlay extends StatelessWidget {
       onGoLive: onGoLive,
       onSkip: onSkip,
       onBack: onBack,
+      isTv: isTv,
     );
 
     return GestureDetector(
       onDoubleTap: onDoubleTap,
       behavior: HitTestBehavior.translucent,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.92),
-                    Colors.black.withValues(alpha: 0.86),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          if (phase.showBack)
-            Positioned(
-              top: MediaQuery.viewPaddingOf(context).top + 16,
-              left: 16,
-              child: Container(
+      // ReadingOrderTraversalPolicy makes D-pad traverse all focusable widgets
+      // by their rendered screen position across all Positioned branches in the
+      // Stack — so the top-left back button is reachable from the action buttons.
+      child: FocusTraversalGroup(
+        policy: ReadingOrderTraversalPolicy(),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 34,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.92),
+                      Colors.black.withValues(alpha: 0.86),
+                    ],
                   ),
-                  tooltip: 'Go Back',
-                  onPressed: onBack,
                 ),
               ),
             ),
-          Positioned.fill(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: content,
+            if (phase.showBack)
+              Positioned(
+                top: MediaQuery.viewPaddingOf(context).top + 16,
+                left: 16,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: CustomButton(
+                    showFocusHighlight: isTv,
+                    onPressed: onBack,
+                    child: const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                        size: 34,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            Positioned.fill(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: content,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -89,6 +102,7 @@ class _LoadingCard extends StatelessWidget {
   final VoidCallback? onGoLive;
   final VoidCallback? onSkip;
   final VoidCallback? onBack;
+  final bool isTv;
 
   const _LoadingCard({
     required this.phase,
@@ -96,6 +110,7 @@ class _LoadingCard extends StatelessWidget {
     this.onGoLive,
     this.onSkip,
     this.onBack,
+    this.isTv = false,
   });
 
   @override
@@ -194,6 +209,9 @@ class _LoadingCard extends StatelessWidget {
                         icon: Icons.fast_forward_rounded,
                         onPressed: onSkip,
                         primary: true,
+                        isTv: isTv,
+                        // First button gets autofocus on TV to seed D-pad navigation.
+                        autofocus: isTv,
                       ),
                     if (phase.showGoLive && onGoLive != null)
                       _ActionButton(
@@ -201,13 +219,21 @@ class _LoadingCard extends StatelessWidget {
                         icon: Icons.live_tv,
                         onPressed: onGoLive,
                         primary: false,
+                        isTv: isTv,
+                        // Autofocus if Skip isn't shown.
+                        autofocus: isTv && onSkip == null,
                       ),
-                    if (phase.kind == PlaybackUiPhaseKind.error && onBack != null)
+                    if (phase.kind == PlaybackUiPhaseKind.error &&
+                        onBack != null)
                       _ActionButton(
                         label: 'Go Back',
                         icon: Icons.arrow_back_rounded,
                         onPressed: onBack,
                         primary: false,
+                        isTv: isTv,
+                        // Autofocus on TV when it's the only action button.
+                        autofocus:
+                            isTv && onSkip == null && !phase.showGoLive,
                       ),
                   ],
                 ),
@@ -258,12 +284,16 @@ class _ActionButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onPressed;
   final bool primary;
+  final bool isTv;
+  final bool autofocus;
 
   const _ActionButton({
     required this.label,
     required this.icon,
     required this.onPressed,
     required this.primary,
+    this.isTv = false,
+    this.autofocus = false,
   });
 
   @override
@@ -272,6 +302,20 @@ class _ActionButton extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [Icon(icon, size: 18), const SizedBox(width: 8), Text(label)],
     );
+
+    // On TV use CustomButton so the D-pad focus ring is visible.
+    if (isTv) {
+      return CustomButton(
+        showFocusHighlight: true,
+        autofocus: autofocus,
+        isPrimary: primary,
+        onPressed: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: child,
+        ),
+      );
+    }
 
     if (primary) {
       return FilledButton(
