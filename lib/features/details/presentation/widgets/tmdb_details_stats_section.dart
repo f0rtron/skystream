@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:skystream/l10n/generated/app_localizations.dart';
 import '../../../../core/models/tmdb_details.dart';

@@ -9,6 +9,7 @@ import 'package:screen_brightness/screen_brightness.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:video_view/video_view.dart' as vv;
+import '../../../../l10n/generated/app_localizations.dart';
 import '../player_controller.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../../core/models/torrent_status.dart';
@@ -318,8 +319,9 @@ class SkyStreamPlayerControlsState
     // Clear the PiP method channel handler to prevent a stale handler from
     // accessing the disposed provider after the player exits.
     if (Platform.isAndroid && !_isTv) {
-      const MethodChannel('dev.akash.skystream.player/pip')
-          .setMethodCallHandler(null);
+      const MethodChannel(
+        'dev.akash.skystream.player/pip',
+      ).setMethodCallHandler(null);
     }
     super.dispose();
   }
@@ -567,11 +569,7 @@ class SkyStreamPlayerControlsState
 
   Future<void> _handleDragStart(DragStartDetails details) async {
     final size = MediaQuery.sizeOf(context);
-    await _gestureHandler.handleDragStart(
-      details,
-      size.width,
-      size.height,
-    );
+    await _gestureHandler.handleDragStart(details, size.width, size.height);
   }
 
   void _handleDragUpdate(DragUpdateDetails details) {
@@ -737,10 +735,7 @@ class SkyStreamPlayerControlsState
     if (_isInPip || isSmallWindow) return const SizedBox.shrink();
 
     if (uiPhase.fullscreenBlocking) {
-      return _buildLoadingUI(
-        phase: uiPhase,
-        sourceAttempts: sourceAttempts,
-      );
+      return _buildLoadingUI(phase: uiPhase, sourceAttempts: sourceAttempts);
     }
 
     return MouseRegion(
@@ -1068,8 +1063,12 @@ class SkyStreamPlayerControlsState
                                             ? Icons.lock
                                             : Icons.lock_open,
                                         label: _isLocked
-                                            ? AppLocalizations.of(context)!.unlock
-                                            : AppLocalizations.of(context)!.lock,
+                                            ? AppLocalizations.of(
+                                                context,
+                                              )!.unlock
+                                            : AppLocalizations.of(
+                                                context,
+                                              )!.lock,
                                         onTap: _toggleLock,
                                         highlight: _isLocked,
                                       ),
@@ -1078,7 +1077,9 @@ class SkyStreamPlayerControlsState
                                       order: const NumericFocusOrder(1),
                                       child: _buildActionButton(
                                         icon: Icons.source,
-                                        label: AppLocalizations.of(context)!.sources,
+                                        label: AppLocalizations.of(
+                                          context,
+                                        )!.sources,
                                         onTap: () =>
                                             PlayerBottomSheets.showSourceSelection(
                                               context: context,
@@ -1089,7 +1090,10 @@ class SkyStreamPlayerControlsState
                                                     playerControllerProvider
                                                         .notifier,
                                                   )
-                                                  .changeStream(s, manualSelection: true),
+                                                  .changeStream(
+                                                    s,
+                                                    manualSelection: true,
+                                                  ),
                                             ),
                                       ),
                                     ),
@@ -1097,7 +1101,9 @@ class SkyStreamPlayerControlsState
                                       order: const NumericFocusOrder(2),
                                       child: _buildActionButton(
                                         icon: Icons.subtitles,
-                                        label: AppLocalizations.of(context)!.tracks,
+                                        label: AppLocalizations.of(
+                                          context,
+                                        )!.tracks,
                                         onTap: () =>
                                             PlayerBottomSheets.showTracksSelection(
                                               context: context,
@@ -1131,7 +1137,9 @@ class SkyStreamPlayerControlsState
                                         order: const NumericFocusOrder(4),
                                         child: _buildActionButton(
                                           icon: Icons.folder,
-                                          label: AppLocalizations.of(context)!.content,
+                                          label: AppLocalizations.of(
+                                            context,
+                                          )!.content,
                                           onTap: () =>
                                               PlayerBottomSheets.showContentSelection(
                                                 context: context,
@@ -1153,7 +1161,9 @@ class SkyStreamPlayerControlsState
                                         order: const NumericFocusOrder(5),
                                         child: _buildActionButton(
                                           icon: Icons.info_outline,
-                                          label: AppLocalizations.of(context)!.stats,
+                                          label: AppLocalizations.of(
+                                            context,
+                                          )!.stats,
                                           onTap: () {
                                             setState(
                                               () => _showTorrentInfo =
@@ -1167,7 +1177,9 @@ class SkyStreamPlayerControlsState
                                       order: const NumericFocusOrder(6),
                                       child: _buildActionButton(
                                         icon: Icons.aspect_ratio,
-                                        label: AppLocalizations.of(context)!.resize,
+                                        label: AppLocalizations.of(
+                                          context,
+                                        )!.resize,
                                         onTap: cycleResize,
                                       ),
                                     ),
@@ -1176,7 +1188,9 @@ class SkyStreamPlayerControlsState
                                         order: const NumericFocusOrder(7),
                                         child: _buildActionButton(
                                           icon: Icons.skip_next,
-                                          label: AppLocalizations.of(context)!.next,
+                                          label: AppLocalizations.of(
+                                            context,
+                                          )!.next,
                                           onTap: () => ref
                                               .read(
                                                 playerControllerProvider
@@ -1197,7 +1211,9 @@ class SkyStreamPlayerControlsState
                                         order: const NumericFocusOrder(8),
                                         child: _buildActionButton(
                                           icon: Icons.picture_in_picture_alt,
-                                          label: AppLocalizations.of(context)!.pip,
+                                          label: AppLocalizations.of(
+                                            context,
+                                          )!.pip,
                                           onTap: _enterPip,
                                         ),
                                       ),
@@ -1213,7 +1229,9 @@ class SkyStreamPlayerControlsState
                                         order: const NumericFocusOrder(9),
                                         child: _buildActionButton(
                                           icon: Icons.screen_rotation,
-                                          label: AppLocalizations.of(context)!.rotate,
+                                          label: AppLocalizations.of(
+                                            context,
+                                          )!.rotate,
                                           onTap: _toggleOrientation,
                                         ),
                                       ),
@@ -1227,8 +1245,12 @@ class SkyStreamPlayerControlsState
                                               ? Icons.fullscreen_exit
                                               : Icons.fullscreen,
                                           label: _isFullscreen
-                                              ? AppLocalizations.of(context)!.windowed
-                                              : AppLocalizations.of(context)!.fullscreen,
+                                              ? AppLocalizations.of(
+                                                  context,
+                                                )!.windowed
+                                              : AppLocalizations.of(
+                                                  context,
+                                                )!.fullscreen,
                                           onTap: toggleFullscreen,
                                         ),
                                       ),
