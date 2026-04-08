@@ -325,13 +325,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => _buildErrorState(context, AppErrorMessages.from(err), ref),
+      error: (err, stack) => _buildErrorState(context, AppErrorMessages.from(err, l10n), ref),
     );
   }
 
   Widget _buildErrorState(BuildContext context, String error, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final bool isOffline = error.contains('No internet connection');
+    final bool isOffline = error == l10n.noInternetError;
 
     return Center(
       child: Padding(

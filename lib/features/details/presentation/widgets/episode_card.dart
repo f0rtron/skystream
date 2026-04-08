@@ -16,6 +16,7 @@ import '../download_launcher.dart';
 import '../downloaded_file_provider.dart';
 import 'download_progress_dialog.dart';
 import 'download_management_dialog.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
 class EpisodeCard extends HookConsumerWidget {
   final Episode episode;
@@ -31,6 +32,7 @@ class EpisodeCard extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final historyRepo = ref.watch(historyRepositoryProvider);
     final historyItem = ref.watch(
       watchHistoryProvider.select(
@@ -57,7 +59,7 @@ class EpisodeCard extends HookConsumerWidget {
     String? statusBadge;
 
     if (progress > 0.02) {
-      statusBadge = progress > 0.98 ? "WATCHED" : "WATCHING";
+      statusBadge = progress > 0.98 ? l10n.watched.toUpperCase() : l10n.watching.toUpperCase();
     }
 
     if (historyItem != null && statusBadge == null) {
@@ -67,7 +69,7 @@ class EpisodeCard extends HookConsumerWidget {
       final eEpisode = episode.episode;
 
       if (eSeason == hSeason && eEpisode == hEpisode) {
-        statusBadge = "LAST WATCHED";
+        statusBadge = l10n.lastWatched.toUpperCase();
       }
     }
 

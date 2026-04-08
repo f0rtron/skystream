@@ -106,6 +106,12 @@ abstract class AppLocalizations {
   /// **'SkyStream'**
   String get appTitle;
 
+  /// No description provided for @languageName.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageName;
+
   /// No description provided for @home.
   ///
   /// In en, this message translates to:
@@ -1875,6 +1881,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Paused'**
   String get paused;
+
+  /// No description provided for @watched.
+  ///
+  /// In en, this message translates to:
+  /// **'Watched'**
+  String get watched;
+
+  /// No description provided for @watching.
+  ///
+  /// In en, this message translates to:
+  /// **'Watching'**
+  String get watching;
+
+  /// No description provided for @lastWatched.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Watched'**
+  String get lastWatched;
+
+  /// No description provided for @movie.
+  ///
+  /// In en, this message translates to:
+  /// **'Movie'**
+  String get movie;
+
+  /// No description provided for @tvShow.
+  ///
+  /// In en, this message translates to:
+  /// **'TV Show'**
+  String get tvShow;
+
+  /// No description provided for @failedToLoadContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load content'**
+  String get failedToLoadContent;
+
+  /// No description provided for @director.
+  ///
+  /// In en, this message translates to:
+  /// **'Director'**
+  String get director;
+
+  /// No description provided for @creator.
+  ///
+  /// In en, this message translates to:
+  /// **'Creator'**
+  String get creator;
+
+  /// No description provided for @showMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Show More'**
+  String get showMore;
+
+  /// No description provided for @showLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Less'**
+  String get showLess;
+
+  /// No description provided for @viewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View All'**
+  String get viewAll;
+
+  /// No description provided for @seasonsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Seasons'**
+  String seasonsCount(int count);
+
+  /// No description provided for @noInternetError.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection'**
+  String get noInternetError;
+
+  /// No description provided for @timeoutError.
+  ///
+  /// In en, this message translates to:
+  /// **'Request timed out. Please try again.'**
+  String get timeoutError;
+
+  /// No description provided for @serverError.
+  ///
+  /// In en, this message translates to:
+  /// **'Server error. Please try again later.'**
+  String get serverError;
+
+  /// No description provided for @contentNotFoundError.
+  ///
+  /// In en, this message translates to:
+  /// **'Content not found.'**
+  String get contentNotFoundError;
+
+  /// No description provided for @accessDeniedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Access denied. Check your credentials.'**
+  String get accessDeniedError;
+
+  /// No description provided for @serviceUnavailableError.
+  ///
+  /// In en, this message translates to:
+  /// **'Server is unavailable. Try again later.'**
+  String get serviceUnavailableError;
+
+  /// No description provided for @generalError.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get generalError;
+
+  /// No description provided for @skip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get skip;
+
+  /// No description provided for @goLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Go Live'**
+  String get goLive;
+
+  /// No description provided for @dismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get dismiss;
+
+  /// No description provided for @nextUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Up'**
+  String get nextUp;
+
+  /// No description provided for @sourceAttempt.
+  ///
+  /// In en, this message translates to:
+  /// **'Source {index} of {total}'**
+  String sourceAttempt(int index, int total);
+
+  /// No description provided for @trying.
+  ///
+  /// In en, this message translates to:
+  /// **'Trying'**
+  String get trying;
+
+  /// No description provided for @failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get failed;
+
+  /// No description provided for @selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get selected;
+
+  /// No description provided for @playing.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing'**
+  String get playing;
+
+  /// No description provided for @pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pending;
 }
 
 class _AppLocalizationsDelegate

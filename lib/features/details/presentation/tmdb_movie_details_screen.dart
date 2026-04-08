@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/storage/history_repository.dart';
 import '../../../../core/utils/responsive_breakpoints.dart';
 import '../data/tmdb_details_provider.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 import 'widgets/tmdb_details_desktop_hero.dart';
 import 'widgets/provider_search_section.dart';
@@ -43,6 +44,7 @@ class TmdbMovieDetailsScreen extends ConsumerStatefulWidget {
 
 class _TmdbMovieDetailsScreenState
     extends ConsumerState<TmdbMovieDetailsScreen> {
+  AppLocalizations get l10n => AppLocalizations.of(context)!;
   bool _isDescriptionExpanded = false;
   late ScrollController _scrollController;
   final ValueNotifier<bool> _showAppBarTitle = ValueNotifier<bool>(false);
@@ -147,7 +149,7 @@ class _TmdbMovieDetailsScreenState
                   children: [
                     _buildTmdbLogo(),
                     const SizedBox(width: 12),
-                    _buildTopBadge(context, isMovie ? "MOVIE" : "TV SHOW"),
+                    _buildTopBadge(context, isMovie ? l10n.movie.toUpperCase() : l10n.tvShow.toUpperCase()),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -179,14 +181,14 @@ class _TmdbMovieDetailsScreenState
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                "Failed to load content",
+                l10n.failedToLoadContent,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: () => ref.invalidate(movieDetailsProvider(params)),
                 icon: const Icon(Icons.refresh),
-                label: const Text("Retry"),
+                label: Text(l10n.retry),
               ),
             ],
           ),
@@ -555,7 +557,7 @@ class _TmdbMovieDetailsScreenState
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              "${(progress * 100).toInt()}% watched",
+                              l10n.percentWatched((progress * 100).toInt()),
                               style: TextStyle(
                                 color: theme.colorScheme.primary,
                                 fontSize: 13,
@@ -578,7 +580,7 @@ class _TmdbMovieDetailsScreenState
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     _buildTmdbLogo(),
-                    _buildTopBadge(context, isMovie ? "MOVIE" : "TV SHOW"),
+                    _buildTopBadge(context, isMovie ? l10n.movie.toUpperCase() : l10n.tvShow.toUpperCase()),
                     _buildIconInfo(context, Icons.calendar_today_rounded, year),
                     _buildIconInfo(
                       context,
@@ -598,7 +600,7 @@ class _TmdbMovieDetailsScreenState
                       _buildIconInfo(
                         context,
                         Icons.layers_rounded,
-                        "${data.seasons.length} Seasons",
+                        l10n.seasonsCount(data.seasons.length),
                       ),
                   ],
                 ),
@@ -614,7 +616,7 @@ class _TmdbMovieDetailsScreenState
                     ),
                     children: [
                       TextSpan(
-                        text: isMovie ? "Director: " : "Creator: ",
+                        text: isMovie ? "${l10n.director}: " : "${l10n.creator}: ",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Theme.of(
@@ -659,10 +661,10 @@ class _TmdbMovieDetailsScreenState
                             padding: const EdgeInsets.only(top: 4.0),
                             child: Row(
                               children: [
-                                Text(
-                                  _isDescriptionExpanded
-                                      ? "Show Less"
-                                      : "Show More",
+                                  Text(
+                                    _isDescriptionExpanded
+                                        ? l10n.showLess
+                                        : l10n.showMore,
                                   style: TextStyle(
                                     color: Theme.of(
                                       context,
@@ -719,7 +721,7 @@ class _TmdbMovieDetailsScreenState
 
                 // Movie Details Table
                 Text(
-                  isMovie ? "MOVIE DETAILS" : "SHOW DETAILS",
+                  isMovie ? l10n.movieDetails.toUpperCase() : l10n.showDetails.toUpperCase(),
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 16,
@@ -729,24 +731,24 @@ class _TmdbMovieDetailsScreenState
                 ),
                 const SizedBox(height: 16),
                 if (tagline.isNotEmpty)
-                  _buildDetailRow("Tagline", "\"$tagline\""),
-                _buildDetailRow("Status", status),
+                  _buildDetailRow(l10n.tagline, "\"$tagline\""),
+                _buildDetailRow(l10n.status, status),
                 _buildDetailRow(
-                  isMovie ? "Release Date" : "First Air Date",
+                  isMovie ? l10n.releaseDate : l10n.firstAirDate,
                   DateFormat(
                     'MMMM d, yyyy',
                   ).format(DateTime.parse(releaseDate)),
                 ),
                 if (budget > 0)
                   _buildDetailRow(
-                    "Budget",
+                    l10n.budgetLabel,
                     NumberFormat.currency(
                       symbol: '\$',
                       decimalDigits: 0,
                     ).format(budget),
                   ),
-                _buildDetailRow("Origin Country", data.originCountry),
-                _buildDetailRow("Original Language", data.originalLanguage),
+                _buildDetailRow(l10n.originCountry, data.originCountry),
+                _buildDetailRow(l10n.originalLanguage, data.originalLanguage),
 
                 const SizedBox(height: 32),
 

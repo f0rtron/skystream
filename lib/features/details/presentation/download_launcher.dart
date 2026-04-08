@@ -163,9 +163,9 @@ class DownloadLauncher {
                   isCanceled = true;
                   Navigator.of(ctx).pop();
                 },
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text('Cancel'),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(AppLocalizations.of(context)!.cancel),
                 ),
               ),
             ],

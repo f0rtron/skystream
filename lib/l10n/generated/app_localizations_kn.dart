@@ -12,6 +12,9 @@ class AppLocalizationsKn extends AppLocalizations {
   String get appTitle => 'SkyStream';
 
   @override
+  String get languageName => 'ಕನ್ನಡ';
+
+  @override
   String get home => 'ಮುಖಪುಟ';
 
   @override
@@ -688,7 +691,7 @@ class AppLocalizationsKn extends AppLocalizations {
   String get startOver => 'ಮೊದಲಿನಿಂದ ಪ್ರಾರಂಭಿಸಿ';
 
   @override
-  String get goBack => 'ಹಿಂದಕ್ಕೆ ಹೋಗಿ';
+  String get goBack => 'ಹಿಂದೆ ಹೋಗಿ';
 
   @override
   String get resolving => 'ಪರಿಹರಿಸಲಾಗುತ್ತಿದೆ...';
@@ -756,7 +759,7 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String percentWatched(int percent) {
-    return '$percent% ವೀಕ್ಷಿಸಲಾಗಿದೆ';
+    return '%$percent ನೋಡಲಾಗಿದೆ';
   }
 
   @override
@@ -996,4 +999,97 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get paused => 'ವಿರಾಮಗೊಳಿಸಲಾಗಿದೆ';
+
+  @override
+  String get watched => 'ನೋಡಲಾಗಿದೆ';
+
+  @override
+  String get watching => 'ನೋಡಲಾಗುತ್ತಿದೆ';
+
+  @override
+  String get lastWatched => 'ಕೊನೆಯದಾಗಿ ನೋಡಲಾಗಿದೆ';
+
+  @override
+  String get movie => 'ಚಲನಚಿತ್ರ';
+
+  @override
+  String get tvShow => 'ಟಿವಿ ಶೋ';
+
+  @override
+  String get failedToLoadContent => 'ವಿಷಯವನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ';
+
+  @override
+  String get director => 'ನಿರ್ದೇಶಕ';
+
+  @override
+  String get creator => 'ಸೃಷ್ಟಿಕರ್ತ';
+
+  @override
+  String get showMore => 'ಹೆಚ್ಚು ತೋರಿಸಿ';
+
+  @override
+  String get showLess => 'ಕಡಿಮೆ ತೋರಿಸಿ';
+
+  @override
+  String get viewAll => 'ಎಲ್ಲವನ್ನೂ ನೋಡಿ';
+
+  @override
+  String seasonsCount(int count) {
+    return '$count ಸೀಸನ್‌ಗಳು';
+  }
+
+  @override
+  String get noInternetError => 'ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕವಿಲ್ಲ';
+
+  @override
+  String get timeoutError => 'ವಿನಂತಿಯ ಸಮಯ ಮೀರಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get serverError => 'ಸರ್ವರ್ ದೋಷ. ದಯವಿಟ್ಟು ನಂತರ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get contentNotFoundError => 'ವಿಷಯ ಕಂಡುಬಂದಿಲ್ಲ.';
+
+  @override
+  String get accessDeniedError =>
+      'ಪ್ರವೇಶ ನಿರಾಕರಿಸಲಾಗಿದೆ. ನಿಮ್ಮ ರುಜುವಾತುಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.';
+
+  @override
+  String get serviceUnavailableError =>
+      'ಸರ್ವರ್ ಅಲಭ್ಯವಾಗಿದೆ. ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get generalError => 'ಏನೋ ತಪ್ಪಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String get skip => 'ಬಿಟ್ಟುಬಿಡಿ';
+
+  @override
+  String get goLive => 'ಲೈವ್ ಹೋಗಿ';
+
+  @override
+  String get dismiss => 'ತೆಗೆದುಹಾಕಿ';
+
+  @override
+  String get nextUp => 'ಮುಂದಿನದು';
+
+  @override
+  String sourceAttempt(int index, int total) {
+    return 'ಮೂಲ $index (ಒಟ್ಟು $total)';
+  }
+
+  @override
+  String get trying => 'ಪ್ರಯತ್ನಿಸಲಾಗುತ್ತಿದೆ';
+
+  @override
+  String get failed => 'ವಿಫಲವಾಗಿದೆ';
+
+  @override
+  String get selected => 'ಆಯ್ಕೆ ಮಾಡಲಾಗಿದೆ';
+
+  @override
+  String get playing => 'ಪ್ಲೇ ಆಗುತ್ತಿದೆ';
+
+  @override
+  String get pending => 'ಬಾಕಿ ಇದೆ';
 }

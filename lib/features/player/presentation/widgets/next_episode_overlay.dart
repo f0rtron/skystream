@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class NextEpisodeOverlay extends StatefulWidget {
   final String nextEpisodeTitle;
@@ -59,6 +60,7 @@ class _NextEpisodeOverlayState extends State<NextEpisodeOverlay>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Align(
       alignment: Alignment.bottomRight,
       child: Padding(
@@ -115,9 +117,9 @@ class _NextEpisodeOverlayState extends State<NextEpisodeOverlay>
                         ],
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Next Up',
+                          l10n.nextUp,
                           style: TextStyle(
                             color: Colors.white70,
                             letterSpacing: 1.2,
@@ -134,7 +136,7 @@ class _NextEpisodeOverlayState extends State<NextEpisodeOverlay>
                           color: Colors.white60,
                           size: 20,
                         ),
-                        tooltip: 'Dismiss',
+                        tooltip: l10n.dismiss,
                       ),
                     ],
                   ),
@@ -164,13 +166,13 @@ class _NextEpisodeOverlayState extends State<NextEpisodeOverlay>
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.play_arrow_rounded, size: 24),
-                          SizedBox(width: 8),
+                          const Icon(Icons.play_arrow_rounded, size: 24),
+                          const SizedBox(width: 8),
                           Text(
-                            'Play Now',
+                            l10n.playNow,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,

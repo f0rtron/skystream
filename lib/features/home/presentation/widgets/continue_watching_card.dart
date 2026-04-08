@@ -152,7 +152,7 @@ class ContinueWatchingCard extends ConsumerWidget {
                 const SizedBox(height: 8),
                 ListTile(
                   leading: const Icon(Icons.info_outline),
-                  title: const Text('View Details'),
+                  title: Text(AppLocalizations.of(context)!.viewDetails),
                   onTap: () {
                     Navigator.pop(context);
                     context.push(

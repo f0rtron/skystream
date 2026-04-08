@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../player_controller.dart';
 import '../../../../shared/widgets/custom_widgets.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
 class PlayerLoadingOverlay extends StatelessWidget {
   final VoidCallback onDoubleTap;
@@ -115,6 +116,7 @@ class _LoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final showSourcePanel =
         phase.showsInlineSourcePanel && sourceAttempts.length > 1;
     const cardPadding = EdgeInsets.symmetric(horizontal: 24, vertical: 24);
@@ -187,7 +189,7 @@ class _LoadingCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    'Source ${phase.attemptIndex} of ${phase.attemptTotal}',
+                    l10n.sourceAttempt(phase.attemptIndex!, phase.attemptTotal!),
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.78),
                       fontSize: 12,
@@ -205,7 +207,7 @@ class _LoadingCard extends StatelessWidget {
                   children: [
                     if (onSkip != null)
                       _ActionButton(
-                        label: 'Skip',
+                        label: l10n.skip,
                         icon: Icons.fast_forward_rounded,
                         onPressed: onSkip,
                         primary: true,
@@ -215,7 +217,7 @@ class _LoadingCard extends StatelessWidget {
                       ),
                     if (phase.showGoLive && onGoLive != null)
                       _ActionButton(
-                        label: 'Go Live',
+                        label: l10n.goLive,
                         icon: Icons.live_tv,
                         onPressed: onGoLive,
                         primary: false,
@@ -226,7 +228,7 @@ class _LoadingCard extends StatelessWidget {
                     if (phase.kind == PlaybackUiPhaseKind.error &&
                         onBack != null)
                       _ActionButton(
-                        label: 'Go Back',
+                        label: l10n.goBack,
                         icon: Icons.arrow_back_rounded,
                         onPressed: onBack,
                         primary: false,
@@ -414,7 +416,7 @@ class _SourceAttemptRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (icon, color, statusLabel) = _statusPresentation(attempt.status);
+    final (icon, color, statusLabel) = _statusPresentation(context, attempt.status);
     final highlight = attempt.isCurrent;
 
     return Material(
@@ -470,7 +472,8 @@ class _SourceAttemptRow extends StatelessWidget {
     );
   }
 
-  (Widget?, Color, String) _statusPresentation(SourceAttemptStatus status) {
+  (Widget?, Color, String) _statusPresentation(BuildContext context, SourceAttemptStatus status) {
+    final l10n = AppLocalizations.of(context)!;
     switch (status) {
       case SourceAttemptStatus.trying:
         return (
@@ -483,25 +486,25 @@ class _SourceAttemptRow extends StatelessWidget {
             ),
           ),
           Colors.white,
-          'Trying',
+          l10n.trying,
         );
       case SourceAttemptStatus.failed:
         return (
           Icon(Icons.close_rounded, size: 16, color: Colors.red.shade300),
           Colors.red.shade300,
-          'Failed',
+          l10n.failed,
         );
       case SourceAttemptStatus.selected:
         return (
           const Icon(Icons.radio_button_checked, size: 16, color: Colors.white),
           Colors.white,
-          'Selected',
+          l10n.selected,
         );
       case SourceAttemptStatus.playing:
         return (
           Icon(Icons.check_circle, size: 16, color: Colors.green.shade300),
           Colors.green.shade300,
-          'Playing',
+          l10n.playing,
         );
       case SourceAttemptStatus.pending:
         return (
@@ -511,7 +514,7 @@ class _SourceAttemptRow extends StatelessWidget {
             color: Colors.white54,
           ),
           Colors.white70,
-          'Pending',
+          l10n.pending,
         );
     }
   }

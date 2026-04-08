@@ -12,6 +12,32 @@ import '../general_settings_provider.dart';
 import '../../../../core/providers/locale_provider.dart';
 import 'package:skystream/l10n/generated/app_localizations.dart';
 
+/// Returns a localized label for a player gesture.
+String getGestureLabel(PlayerGesture gesture, AppLocalizations l10n) {
+  switch (gesture) {
+    case PlayerGesture.volume:
+      return l10n.volume;
+    case PlayerGesture.brightness:
+      return l10n.brightness;
+    case PlayerGesture.none:
+      return l10n.none;
+  }
+}
+
+/// Returns a localized label for a resize mode string.
+String getResizeModeLabel(String mode, AppLocalizations l10n) {
+  switch (mode.toLowerCase()) {
+    case 'fit':
+      return l10n.fit;
+    case 'zoom':
+      return l10n.zoom;
+    case 'stretch':
+      return l10n.stretch;
+    default:
+      return mode;
+  }
+}
+
 /// Returns a human-readable label for a home screen route.
 String getHomeScreenLabel(String route, AppLocalizations l10n) {
   switch (route) {
@@ -145,18 +171,7 @@ void showGestureDialog(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: PlayerGesture.values.map((g) {
-              String label;
-              switch (g) {
-                case PlayerGesture.volume:
-                  label = l10n.volume;
-                  break;
-                case PlayerGesture.brightness:
-                  label = l10n.brightness;
-                  break;
-                case PlayerGesture.none:
-                  label = l10n.none;
-                  break;
-              }
+              String label = getGestureLabel(g, l10n);
               return RadioListTile<PlayerGesture>(
                 title: Text(label),
                 value: g,
@@ -662,34 +677,48 @@ void showLanguageDialog(
   Locale currentLocale,
 ) {
   final l10n = AppLocalizations.of(context)!;
-  final options = [
-    {'label': l10n.english, 'locale': const Locale('en', 'US')},
-    {'label': l10n.hindi, 'locale': const Locale('hi')},
-    {'label': l10n.kannada, 'locale': const Locale('kn')},
-  ];
 
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
       surfaceTintColor: Colors.transparent,
       title: Text(l10n.selectLanguage),
-      content: RadioGroup<Locale>(
-        groupValue: currentLocale,
-        onChanged: (val) {
-          if (val == null) return;
-          ref.read(localeProvider.notifier).setLocale(val);
-          Navigator.pop(context);
-        },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: options.map((opt) {
-            final locale = opt['locale'] as Locale;
-            return RadioListTile<Locale>(
-              title: Text(opt['label'] as String),
-              value: locale,
-            );
-          }).toList(),
+      content: FutureBuilder<List<Map<String, dynamic>>>(
+        future: Future.wait(
+          AppLocalizations.supportedLocales.map((locale) async {
+            final localL10n = await AppLocalizations.delegate.load(locale);
+            return {'label': localL10n.languageName, 'locale': locale};
+          }),
         ),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const SizedBox(
+              height: 100,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final options = snapshot.data!;
+
+          return RadioGroup<Locale>(
+            groupValue: currentLocale,
+            onChanged: (val) {
+              if (val == null) return;
+              ref.read(localeProvider.notifier).setLocale(val);
+              Navigator.pop(context);
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: options.map((opt) {
+                final locale = opt['locale'] as Locale;
+                return RadioListTile<Locale>(
+                  title: Text(opt['label'] as String),
+                  value: locale,
+                );
+              }).toList(),
+            ),
+          );
+        },
       ),
     ),
   );

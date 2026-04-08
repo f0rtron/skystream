@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
+import 'package:skystream/l10n/generated/app_localizations.dart';
 import '../../../../core/utils/layout_constants.dart';
 import '../../../../shared/widgets/cards_wrapper.dart';
 
@@ -50,6 +51,7 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
   @override
   Widget build(BuildContext context) {
     if (widget.mediaList.isEmpty) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context)!;
 
     final isDesktop = context.isDesktop;
     final listHeight = isDesktop ? 350.0 : 230.0;
@@ -126,7 +128,7 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
                     child: Row(
                       children: [
                         Text(
-                          "View All",
+                          l10n.viewAll,
                           style: TextStyle(
                             color: Theme.of(
                               context,

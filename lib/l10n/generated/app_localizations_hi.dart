@@ -12,6 +12,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get appTitle => 'SkyStream';
 
   @override
+  String get languageName => 'हिन्दी';
+
+  @override
   String get home => 'होम';
 
   @override
@@ -33,7 +36,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get updateAvailable => 'अपडेट उपलब्ध है';
 
   @override
-  String get retry => 'पुन: प्रयास करें';
+  String get retry => 'पुनः प्रयास करें';
 
   @override
   String get factoryReset => 'फ़ैक्टरी रीसेट';
@@ -678,7 +681,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get startOver => 'शुरू से शुरू करें';
 
   @override
-  String get goBack => 'वापस जाएं';
+  String get goBack => 'पीछे जाएं';
 
   @override
   String get resolving => 'समाधान हो रहा है...';
@@ -984,4 +987,97 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get paused => 'रुका हुआ';
+
+  @override
+  String get watched => 'देखा गया';
+
+  @override
+  String get watching => 'देख रहे हैं';
+
+  @override
+  String get lastWatched => 'पिछली बार देखा गया';
+
+  @override
+  String get movie => 'फिल्म';
+
+  @override
+  String get tvShow => 'टीवी शो';
+
+  @override
+  String get failedToLoadContent => 'सामग्री लोड करने में विफल';
+
+  @override
+  String get director => 'निर्देशक';
+
+  @override
+  String get creator => 'निर्माता';
+
+  @override
+  String get showMore => 'अधिक दिखाएं';
+
+  @override
+  String get showLess => 'कम दिखाएं';
+
+  @override
+  String get viewAll => 'सभी देखें';
+
+  @override
+  String seasonsCount(int count) {
+    return '$count सीजन';
+  }
+
+  @override
+  String get noInternetError => 'कोई इंटरनेट कनेक्शन नहीं';
+
+  @override
+  String get timeoutError =>
+      'अनुरोध का समय समाप्त हो गया। कृपया पुन: प्रयास करें।';
+
+  @override
+  String get serverError => 'सर्वर त्रुटि। कृपया बाद में पुन: प्रयास करें।';
+
+  @override
+  String get contentNotFoundError => 'सामग्री नहीं मिली।';
+
+  @override
+  String get accessDeniedError => 'पहुंच अस्वीकृत। अपनी साख जांचें।';
+
+  @override
+  String get serviceUnavailableError =>
+      'सर्वर अनुपलब्ध है। बाद में पुन: प्रयास करें।';
+
+  @override
+  String get generalError => 'कुछ गलत हो गया। कृपया पुन: प्रयास करें।';
+
+  @override
+  String get skip => 'छोड़ें';
+
+  @override
+  String get goLive => 'लाइव जाएं';
+
+  @override
+  String get dismiss => 'हटाएं';
+
+  @override
+  String get nextUp => 'आगे';
+
+  @override
+  String sourceAttempt(int index, int total) {
+    return 'स्रोत $index का $total';
+  }
+
+  @override
+  String get trying => 'कोशिश कर रहे हैं';
+
+  @override
+  String get failed => 'विफल';
+
+  @override
+  String get selected => 'चयनित';
+
+  @override
+  String get playing => 'चल रहा है';
+
+  @override
+  String get pending => 'पेंडिंग';
 }

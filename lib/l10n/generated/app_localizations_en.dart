@@ -12,6 +12,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'SkyStream';
 
   @override
+  String get languageName => 'English';
+
+  @override
   String get home => 'Home';
 
   @override
@@ -982,4 +985,96 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paused => 'Paused';
+
+  @override
+  String get watched => 'Watched';
+
+  @override
+  String get watching => 'Watching';
+
+  @override
+  String get lastWatched => 'Last Watched';
+
+  @override
+  String get movie => 'Movie';
+
+  @override
+  String get tvShow => 'TV Show';
+
+  @override
+  String get failedToLoadContent => 'Failed to load content';
+
+  @override
+  String get director => 'Director';
+
+  @override
+  String get creator => 'Creator';
+
+  @override
+  String get showMore => 'Show More';
+
+  @override
+  String get showLess => 'Show Less';
+
+  @override
+  String get viewAll => 'View All';
+
+  @override
+  String seasonsCount(int count) {
+    return '$count Seasons';
+  }
+
+  @override
+  String get noInternetError => 'No internet connection';
+
+  @override
+  String get timeoutError => 'Request timed out. Please try again.';
+
+  @override
+  String get serverError => 'Server error. Please try again later.';
+
+  @override
+  String get contentNotFoundError => 'Content not found.';
+
+  @override
+  String get accessDeniedError => 'Access denied. Check your credentials.';
+
+  @override
+  String get serviceUnavailableError =>
+      'Server is unavailable. Try again later.';
+
+  @override
+  String get generalError => 'Something went wrong. Please try again.';
+
+  @override
+  String get skip => 'Skip';
+
+  @override
+  String get goLive => 'Go Live';
+
+  @override
+  String get dismiss => 'Dismiss';
+
+  @override
+  String get nextUp => 'Next Up';
+
+  @override
+  String sourceAttempt(int index, int total) {
+    return 'Source $index of $total';
+  }
+
+  @override
+  String get trying => 'Trying';
+
+  @override
+  String get failed => 'Failed';
+
+  @override
+  String get selected => 'Selected';
+
+  @override
+  String get playing => 'Playing';
+
+  @override
+  String get pending => 'Pending';
 }

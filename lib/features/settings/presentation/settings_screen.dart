@@ -87,13 +87,7 @@ class SettingsScreen extends ConsumerWidget {
                   SettingsTile(
                     icon: Icons.translate_rounded,
                     title: l10n.language,
-                    subtitle: Localizations.localeOf(context).languageCode == 'en'
-                        ? l10n.english
-                        : (Localizations.localeOf(context).languageCode == 'hi'
-                            ? l10n.hindi
-                            : (Localizations.localeOf(context).languageCode == 'kn'
-                                ? l10n.kannada
-                                : l10n.unknown)),
+                    subtitle: l10n.languageName,
                     isLast: true,
                     onTap: () => showLanguageDialog(
                       context,
@@ -123,9 +117,7 @@ class SettingsScreen extends ConsumerWidget {
                   SettingsTile(
                     icon: Icons.swipe_vertical_rounded,
                     title: l10n.leftGesture,
-                    subtitle:
-                        playerSettings.leftGesture.name[0].toUpperCase() +
-                        playerSettings.leftGesture.name.substring(1),
+                    subtitle: getGestureLabel(playerSettings.leftGesture, l10n),
                     onTap: () => showGestureDialog(
                       context,
                       ref,
@@ -136,9 +128,7 @@ class SettingsScreen extends ConsumerWidget {
                   SettingsTile(
                     icon: Icons.swipe_vertical_rounded,
                     title: l10n.rightGesture,
-                    subtitle:
-                        playerSettings.rightGesture.name[0].toUpperCase() +
-                        playerSettings.rightGesture.name.substring(1),
+                    subtitle: getGestureLabel(playerSettings.rightGesture, l10n),
                     onTap: () => showGestureDialog(
                       context,
                       ref,
@@ -201,7 +191,7 @@ class SettingsScreen extends ConsumerWidget {
                   SettingsTile(
                     icon: Icons.aspect_ratio_rounded,
                     title: l10n.defaultResizeMode,
-                    subtitle: playerSettings.defaultResizeMode,
+                    subtitle: getResizeModeLabel(playerSettings.defaultResizeMode, l10n),
                     onTap: () => showResizeDialog(
                       context,
                       ref,

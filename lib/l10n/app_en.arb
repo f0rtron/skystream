@@ -1,6 +1,7 @@
 {
   "@@locale": "en",
   "appTitle": "SkyStream",
+  "languageName": "English",
   "home": "Home",
   "search": "Search",
   "discover": "Discover",
@@ -485,5 +486,64 @@
         "type": "String"
       }
     }
-  }
+  },
+  "watched": "Watched",
+  "watching": "Watching",
+  "lastWatched": "Last Watched",
+  "movie": "Movie",
+  "tvShow": "TV Show",
+  "failedToLoadContent": "Failed to load content",
+  "retry": "Retry",
+  "director": "Director",
+  "creator": "Creator",
+  "showMore": "Show More",
+  "showLess": "Show Less",
+  "movieDetails": "Movie Details",
+  "showDetails": "Show Details",
+  "viewAll": "View All",
+  "viewDetails": "View Details",
+  "percentWatched": "{percent}% watched",
+  "@percentWatched": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "seasonsCount": "{count} Seasons",
+  "@seasonsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noInternetError": "No internet connection",
+  "timeoutError": "Request timed out. Please try again.",
+  "serverError": "Server error. Please try again later.",
+  "contentNotFoundError": "Content not found.",
+  "accessDeniedError": "Access denied. Check your credentials.",
+  "serviceUnavailableError": "Server is unavailable. Try again later.",
+  "generalError": "Something went wrong. Please try again.",
+  "skip": "Skip",
+  "goLive": "Go Live",
+  "goBack": "Go Back",
+  "dismiss": "Dismiss",
+  "nextUp": "Next Up",
+  "sourceAttempt": "Source {index} of {total}",
+  "@sourceAttempt": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trying": "Trying",
+  "failed": "Failed",
+  "selected": "Selected",
+  "playing": "Playing",
+  "pending": "Pending"
 }
