@@ -26,6 +26,7 @@ import '../../../../core/providers/device_info_provider.dart';
 import '../../../../core/utils/app_utils.dart';
 import '../../settings/presentation/player_settings_provider.dart';
 import '../../../../core/services/local_proxy_service.dart';
+import '../../../../core/utils/stream_quality_sorter.dart';
 
 // Sentinel so copyWith can distinguish "not passed" from "explicitly null".
 const Object _keep = Object();
@@ -1286,9 +1287,18 @@ class PlayerController extends Notifier<PlayerState> {
         state = state.copyWith(streamSubtitle: "Fetching sources...");
         if (await _handleFallbackTorrent()) return;
 
-        final streams = await activeProvider.loadStreams(_videoUrl);
+        final rawStreams = await activeProvider.loadStreams(_videoUrl);
         if (!_isCurrentSourceSession(sourceSessionId)) return;
-        if (streams.isNotEmpty) {
+        if (rawStreams.isNotEmpty) {
+          // Sort streams by quality preference based on current network type.
+          // Wi-Fi → wifiQuality preference, mobile/other → mobileQuality.
+          // Sources with unrecognised quality labels go to the end (best-effort).
+          final settings = ref.read(playerSettingsProvider).asData?.value;
+          final streams = settings == null
+              ? rawStreams
+              : await _sortedByQuality(rawStreams, settings);
+          if (!_isCurrentSourceSession(sourceSessionId)) return;
+
           final initialIndex = _findSavedStreamIndex(streams);
           state = state.copyWith(
             streams: streams,
@@ -2656,6 +2666,15 @@ class PlayerController extends Notifier<PlayerState> {
     }
 
     return start; // Fallback to initial
+  }
+
+  Future<List<StreamResult>> _sortedByQuality(
+    List<StreamResult> streams,
+    PlayerSettings settings,
+  ) async {
+    final onWifi = await isOnWifi();
+    final preference = onWifi ? settings.wifiQuality : settings.mobileQuality;
+    return sortStreamsByQuality(streams, preference);
   }
 
   String _getProviderDisplayName(String providerName) {

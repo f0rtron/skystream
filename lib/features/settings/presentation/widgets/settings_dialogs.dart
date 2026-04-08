@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../shared/widgets/custom_widgets.dart';
 import '../../../../core/providers/device_info_provider.dart';
 import '../../../../core/services/external_player_service.dart';
@@ -8,6 +10,7 @@ import '../../../../core/storage/settings_repository.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../../core/utils/app_utils.dart';
 import '../player_settings_provider.dart';
+import '../../../../core/utils/stream_quality_sorter.dart';
 import '../general_settings_provider.dart';
 import '../../../../core/providers/locale_provider.dart';
 import 'package:skystream/l10n/generated/app_localizations.dart';
@@ -122,7 +125,11 @@ String getPlayerDisplayName(String? playerId, AppLocalizations l10n) {
 }
 
 /// Returns a human-readable label for a DoH provider.
-String getDohProviderLabel(DohProvider provider, String customUrl, AppLocalizations l10n) {
+String getDohProviderLabel(
+  DohProvider provider,
+  String customUrl,
+  AppLocalizations l10n,
+) {
   switch (provider) {
     case DohProvider.cloudflare:
       return l10n.cloudflare;
@@ -174,10 +181,7 @@ void showGestureDialog(
             mainAxisSize: MainAxisSize.min,
             children: PlayerGesture.values.map((g) {
               String label = getGestureLabel(g, l10n);
-              return RadioListTile<PlayerGesture>(
-                title: Text(label),
-                value: g,
-              );
+              return RadioListTile<PlayerGesture>(title: Text(label), value: g);
             }).toList(),
           ),
         ),
@@ -243,10 +247,12 @@ void showResizeDialog(BuildContext context, WidgetRef ref, String current) {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: options
-                .map((e) => RadioListTile<String>(
-                      title: Text(e['label']!),
-                      value: e['value']!,
-                    ))
+                .map(
+                  (e) => RadioListTile<String>(
+                    title: Text(e['label']!),
+                    value: e['value']!,
+                  ),
+                )
                 .toList(),
           ),
         ),
@@ -725,6 +731,219 @@ void showLanguageDialog(
             ),
           );
         },
+      ),
+    ),
+  );
+}
+
+/// Shows a beautiful dialog with information about the developer.
+void showDeveloperDialog(BuildContext context) {
+  final colorScheme = Theme.of(context).colorScheme;
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      surfaceTintColor: Colors.transparent,
+      contentPadding: const EdgeInsets.all(24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Profile Picture
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: colorScheme.primary, width: 2),
+            ),
+            child: const CircleAvatar(
+              radius: 48,
+              backgroundImage: NetworkImage('https://github.com/akashdh11.png'),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Name
+          Text(
+            'Akash Hiremath',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Short Tagline
+          Text(
+            'Mobile App Developer',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Social Links
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _SocialButton(
+                svgUrl:
+                    'https://raw.githubusercontent.com/simple-icons/simple-icons/11.10.0/icons/github.svg',
+                color: const Color(
+                  0xFF909692,
+                ), // GitHub Official Black/Dark Grey
+                onTap: () => launchUrl(
+                  Uri.parse('https://github.com/akashdh11'),
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
+              const SizedBox(width: 12),
+              _SocialButton(
+                svgUrl:
+                    'https://raw.githubusercontent.com/simple-icons/simple-icons/11.10.0/icons/linkedin.svg',
+                color: const Color(0xFF2d65bc), // LinkedIn Official Blue
+                onTap: () => launchUrl(
+                  Uri.parse('https://www.linkedin.com/in/akashdh11'),
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
+              const SizedBox(width: 12),
+              _SocialButton(
+                svgUrl:
+                    'https://raw.githubusercontent.com/simple-icons/simple-icons/11.10.0/icons/discord.svg',
+                color: const Color(0xFF5865F2), // Discord Blurple
+                onTap: () => launchUrl(
+                  Uri.parse('https://discord.gg/73XGA8Mxn9'),
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
+              const SizedBox(width: 12),
+              _SocialButton(
+                svgUrl:
+                    'https://raw.githubusercontent.com/simple-icons/simple-icons/11.10.0/icons/telegram.svg',
+                color: const Color(0xFF5baae3), // Telegram Official Blue
+                onTap: () => launchUrl(
+                  Uri.parse('https://t.me/+Ez5Vsv2pUUFjZmNl'),
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
+    ),
+  );
+}
+
+class _SocialButton extends StatelessWidget {
+  final String svgUrl;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _SocialButton({
+    required this.svgUrl,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color.withOpacity(0.15),
+      shape: const CircleBorder(),
+      child: IconButton(
+        icon: SvgPicture.network(
+          svgUrl,
+          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+          width: 24,
+          height: 24,
+          placeholderBuilder: (context) => SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: color.withOpacity(0.5),
+            ),
+          ),
+        ),
+        onPressed: onTap,
+        tooltip: 'Open link',
+      ),
+    );
+  }
+}
+
+/// Shows a dialog to pick a [QualityPreference] for [title] (Wi-Fi or Mobile).
+void showQualityDialog(
+  BuildContext context,
+  WidgetRef ref, {
+  required String title,
+  required QualityPreference current,
+  required Future<void> Function(QualityPreference) onChanged,
+}) {
+  const options = QualityPreference.values;
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      surfaceTintColor: Colors.transparent,
+      title: Text(title),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RadioGroup<QualityPreference>(
+              groupValue: current,
+              onChanged: (val) {
+                if (val == null) return;
+                onChanged(val);
+                Navigator.pop(ctx);
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: options
+                    .map(
+                      (q) => RadioListTile<QualityPreference>(
+                        title: Text(qualityPreferenceLabel(q)),
+                        subtitle: q == QualityPreference.any
+                            ? const Text('Keep sources in original order')
+                            : null,
+                        value: q,
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+            const Divider(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 14,
+                    color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Quality is not guaranteed. Sources are sorted by preference, but playback depends on what the provider actually offers.',
+                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     ),
   );

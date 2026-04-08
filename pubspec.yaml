@@ -82,6 +82,7 @@ dependencies:
   flutter_cache_manager: ^3.4.1
   path: ^1.9.1
   http: ^1.6.0
+  connectivity_plus: ^6.0.0
   html_unescape: ^2.0.0
   html: ^0.15.6
   background_downloader: ^9.5.4

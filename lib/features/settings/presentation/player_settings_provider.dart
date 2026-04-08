@@ -3,6 +3,17 @@ import '../../../core/storage/settings_repository.dart';
 
 enum PlayerGesture { brightness, volume, none }
 
+/// Preferred playback quality tier. Plugins don't guarantee a specific
+/// quality but sources are sorted so the preferred tier is tried first.
+enum QualityPreference {
+  any,   // no preference — keep original order
+  q360,  // 360p
+  q480,  // 480p / SD
+  q720,  // 720p / HD
+  q1080, // 1080p / FHD
+  q4k,   // 4K / UHD / 2160p
+}
+
 class PlayerSettings {
   final PlayerGesture leftGesture;
   final PlayerGesture rightGesture;
@@ -19,6 +30,10 @@ class PlayerSettings {
   preferredPlayer; // null = internal, 'vlc' / 'mpv' etc. = external
   final int readaheadSeconds;
   final double subtitlePosition;
+  /// Quality to prefer when on Wi-Fi. Default: 4K (best available).
+  final QualityPreference wifiQuality;
+  /// Quality to prefer when on mobile data. Default: 1080p.
+  final QualityPreference mobileQuality;
 
   const PlayerSettings({
     this.leftGesture = PlayerGesture.brightness,
@@ -35,6 +50,8 @@ class PlayerSettings {
     this.preferredPlayer,
     this.readaheadSeconds = 180,
     this.subtitlePosition = 100.0,
+    this.wifiQuality = QualityPreference.q4k,
+    this.mobileQuality = QualityPreference.q1080,
   });
 
   PlayerSettings copyWith({
@@ -53,6 +70,8 @@ class PlayerSettings {
     bool clearPreferredPlayer = false,
     int? readaheadSeconds,
     double? subtitlePosition,
+    QualityPreference? wifiQuality,
+    QualityPreference? mobileQuality,
   }) {
     return PlayerSettings(
       leftGesture: leftGesture ?? this.leftGesture,
@@ -73,6 +92,8 @@ class PlayerSettings {
           : (preferredPlayer ?? this.preferredPlayer),
       readaheadSeconds: readaheadSeconds ?? this.readaheadSeconds,
       subtitlePosition: subtitlePosition ?? this.subtitlePosition,
+      wifiQuality: wifiQuality ?? this.wifiQuality,
+      mobileQuality: mobileQuality ?? this.mobileQuality,
     );
   }
 }
@@ -144,6 +165,14 @@ class PlayerSettingsNotifier extends AsyncNotifier<PlayerSettings> {
     final subPos =
          (storage.getPlayerSetting('player_sub_pos') as num?)?.toDouble() ??
          100.0;
+    final wifiQ = _parseQuality(
+      storage.getPlayerSetting<String>('player_wifi_quality'),
+      QualityPreference.q4k,
+    );
+    final mobileQ = _parseQuality(
+      storage.getPlayerSetting<String>('player_mobile_quality'),
+      QualityPreference.q1080,
+    );
 
     return PlayerSettings(
       leftGesture: _parse(l),
@@ -160,6 +189,8 @@ class PlayerSettingsNotifier extends AsyncNotifier<PlayerSettings> {
       preferredPlayer: prefPlayer,
       readaheadSeconds: rSecons,
       subtitlePosition: subPos,
+      wifiQuality: wifiQ,
+      mobileQuality: mobileQ,
     );
   }
 
@@ -273,10 +304,30 @@ class PlayerSettingsNotifier extends AsyncNotifier<PlayerSettings> {
     state = AsyncData(newState);
   }
 
+  Future<void> setWifiQuality(QualityPreference q) async {
+    await _repository.setPlayerSetting('player_wifi_quality', q.name);
+    final current = state.asData?.value ?? const PlayerSettings();
+    state = AsyncData(current.copyWith(wifiQuality: q));
+  }
+
+  Future<void> setMobileQuality(QualityPreference q) async {
+    await _repository.setPlayerSetting('player_mobile_quality', q.name);
+    final current = state.asData?.value ?? const PlayerSettings();
+    state = AsyncData(current.copyWith(mobileQuality: q));
+  }
+
   PlayerGesture _parse(String s) {
     return PlayerGesture.values.firstWhere(
       (e) => e.name == s,
       orElse: () => PlayerGesture.none,
+    );
+  }
+
+  QualityPreference _parseQuality(String? s, QualityPreference fallback) {
+    if (s == null) return fallback;
+    return QualityPreference.values.firstWhere(
+      (e) => e.name == s,
+      orElse: () => fallback,
     );
   }
 }
