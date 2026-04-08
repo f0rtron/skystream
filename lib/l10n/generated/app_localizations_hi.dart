@@ -66,7 +66,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get leftGesture => 'लेफ्ट जेस्चर';
 
   @override
-  String get rightGesture => 'राइट जेಸ್ಚರ್';
+  String get rightGesture => 'राइट जेस्चर';
 
   @override
   String get doubleTapToSeek => 'सीक करने के लिए डबल टैप करें';

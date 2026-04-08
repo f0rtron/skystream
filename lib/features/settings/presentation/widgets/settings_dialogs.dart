@@ -80,14 +80,16 @@ void showDefaultHomeScreenDialog(
           ref.read(generalSettingsProvider.notifier).setDefaultHomeScreen(val);
           Navigator.pop(context);
         },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: options.map((opt) {
-            return RadioListTile<String>(
-              title: Text(opt['label']!),
-              value: opt['route']!,
-            );
-          }).toList(),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: options.map((opt) {
+              return RadioListTile<String>(
+                title: Text(opt['label']!),
+                value: opt['route']!,
+              );
+            }).toList(),
+          ),
         ),
       ),
     ),
@@ -237,14 +239,16 @@ void showResizeDialog(BuildContext context, WidgetRef ref, String current) {
           ref.read(playerSettingsProvider.notifier).setDefaultResizeMode(val);
           Navigator.pop(ctx);
         },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: options
-              .map((e) => RadioListTile<String>(
-                    title: Text(e['label']!),
-                    value: e['value']!,
-                  ))
-              .toList(),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: options
+                .map((e) => RadioListTile<String>(
+                      title: Text(e['label']!),
+                      value: e['value']!,
+                    ))
+                .toList(),
+          ),
         ),
       ),
     ),
@@ -707,15 +711,17 @@ void showLanguageDialog(
               ref.read(localeProvider.notifier).setLocale(val);
               Navigator.pop(context);
             },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: options.map((opt) {
-                final locale = opt['locale'] as Locale;
-                return RadioListTile<Locale>(
-                  title: Text(opt['label'] as String),
-                  value: locale,
-                );
-              }).toList(),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: options.map((opt) {
+                  final locale = opt['locale'] as Locale;
+                  return RadioListTile<Locale>(
+                    title: Text(opt['label'] as String),
+                    value: locale,
+                  );
+                }).toList(),
+              ),
             ),
           );
         },
