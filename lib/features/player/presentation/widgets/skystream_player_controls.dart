@@ -1292,6 +1292,7 @@ class SkyStreamPlayerControlsState
           ? () =>
                 ref.read(playerControllerProvider.notifier).skipLoadingOverlay()
           : null,
+      onGoLive: () => ref.read(playerControllerProvider.notifier).goLive(),
     );
   }
 }

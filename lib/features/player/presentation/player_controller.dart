@@ -84,7 +84,6 @@ class PlaybackUiPhase {
   final String? detail;
   final bool fullscreenBlocking;
   final bool preserveCurrentFrame;
-  final bool showBack;
   final bool showGoLive;
   final int? attemptIndex;
   final int? attemptTotal;
@@ -96,7 +95,6 @@ class PlaybackUiPhase {
     this.detail,
     this.fullscreenBlocking = false,
     this.preserveCurrentFrame = false,
-    this.showBack = false,
     this.showGoLive = false,
     this.attemptIndex,
     this.attemptTotal,
@@ -130,7 +128,6 @@ class PlaybackUiPhase {
     Object? detail = _keep,
     bool? fullscreenBlocking,
     bool? preserveCurrentFrame,
-    bool? showBack,
     bool? showGoLive,
     Object? attemptIndex = _keep,
     Object? attemptTotal = _keep,
@@ -142,7 +139,6 @@ class PlaybackUiPhase {
       detail: detail == _keep ? this.detail : detail as String?,
       fullscreenBlocking: fullscreenBlocking ?? this.fullscreenBlocking,
       preserveCurrentFrame: preserveCurrentFrame ?? this.preserveCurrentFrame,
-      showBack: showBack ?? this.showBack,
       showGoLive: showGoLive ?? this.showGoLive,
       attemptIndex: attemptIndex == _keep
           ? this.attemptIndex
@@ -210,7 +206,6 @@ class PlayerState {
     this.uiPhase = const PlaybackUiPhase(
       kind: PlaybackUiPhaseKind.bootstrapping,
       fullscreenBlocking: true,
-      showBack: true,
     ),
     this.sourceAttempts = const [],
     this.currentAttemptIndex,
@@ -434,7 +429,6 @@ class PlayerController extends Notifier<PlayerState> {
     String? detail,
     bool? fullscreenBlocking,
     bool? preserveCurrentFrame,
-    bool? showBack,
     bool? showGoLive,
     int? attemptIndex,
     int? attemptTotal,
@@ -448,7 +442,6 @@ class PlayerController extends Notifier<PlayerState> {
     } else if (_hasConfirmedPlaybackFrame) {
       effectiveFullscreenBlocking = false;
     } else if (state.userSkippedOverlay && kind != PlaybackUiPhaseKind.idle) {
-      // User dismissed the initial overlay; suppress non-error blocking phases.
       effectiveFullscreenBlocking = false;
     } else {
       effectiveFullscreenBlocking = fullscreenBlocking ?? true;
@@ -461,7 +454,6 @@ class PlayerController extends Notifier<PlayerState> {
       detail: detail,
       fullscreenBlocking: effectiveFullscreenBlocking,
       preserveCurrentFrame: preserveCurrentFrame ?? _hasConfirmedPlaybackFrame,
-      showBack: showBack ?? (kind != PlaybackUiPhaseKind.idle),
       showGoLive: showGoLive ?? false,
       attemptIndex: attemptIndex,
       attemptTotal: attemptTotal,
@@ -494,7 +486,6 @@ class PlayerController extends Notifier<PlayerState> {
         detail: detail,
         fullscreenBlocking: true,
         preserveCurrentFrame: false,
-        showBack: true,
         attemptIndex: attemptIndex,
         attemptTotal: attemptTotal,
       ),
@@ -506,7 +497,6 @@ class PlayerController extends Notifier<PlayerState> {
     String? title,
     String? subtitle,
     String? detail,
-    bool? showBack,
   }) {
     _setUiPhase(
       _composeUiPhase(
@@ -516,7 +506,6 @@ class PlayerController extends Notifier<PlayerState> {
         detail: detail,
         fullscreenBlocking: false,
         preserveCurrentFrame: true,
-        showBack: showBack ?? false,
       ),
     );
   }
@@ -532,8 +521,7 @@ class PlayerController extends Notifier<PlayerState> {
             "Try again later",
         fullscreenBlocking: true,
         preserveCurrentFrame: true,
-        showBack: true,
-        attemptIndex: null, // Not relevant on a terminal error
+        attemptIndex: null,
         attemptTotal: null,
       ),
     );
@@ -858,7 +846,22 @@ class PlayerController extends Notifier<PlayerState> {
           }
         } else {
           // Error during active playback.
-          if (state.isLive) return;
+          if (state.isLive && state.currentStream != null) {
+            if (_isRecoveringFromStall) return; // already reconnecting
+            if (kDebugMode) {
+              debugPrint("VideoView live stream error. Triggering reconnect...");
+            }
+            _isRecoveringFromStall = true;
+            _enterRuntimePhase(
+              kind: PlaybackUiPhaseKind.reconnectingLive,
+              detail: "Reconnecting to live stream...",
+            );
+            changeStream(state.currentStream!, resetPosition: true);
+            Future.delayed(const Duration(seconds: 10), () {
+              _isRecoveringFromStall = false;
+            });
+            return;
+          }
           _markSourceAttempt(
             state.currentStreamIndex,
             SourceAttemptStatus.failed,
@@ -1025,8 +1028,9 @@ class PlayerController extends Notifier<PlayerState> {
   }
 
   void _handleBufferStall() {
-    if (!_hasConfirmedPlaybackFrame)
+    if (!_hasConfirmedPlaybackFrame) {
       return; // ignore stalls during source health check
+    }
     if (_isLiveStream(_videoUrl)) return;
 
     final now = DateTime.now();
@@ -1079,9 +1083,21 @@ class PlayerController extends Notifier<PlayerState> {
           retryNextStream(sourceSessionId: state.sourceSessionId);
         }
       } else {
-        // Error during active playback — live streams handle reconnection
-        // separately via completed/finishedTimes listeners, skip them here.
-        if (state.isLive) return;
+        // Error during active playback.
+        if (state.isLive && state.currentStream != null) {
+          if (_isRecoveringFromStall) return; // watchdog already reconnecting
+          if (kDebugMode) debugPrint("Live stream error. Triggering reconnect...");
+          _isRecoveringFromStall = true;
+          _enterRuntimePhase(
+            kind: PlaybackUiPhaseKind.reconnectingLive,
+            detail: "Reconnecting to live stream...",
+          );
+          changeStream(state.currentStream!, resetPosition: true);
+          Future.delayed(const Duration(seconds: 10), () {
+            _isRecoveringFromStall = false;
+          });
+          return;
+        }
         _markSourceAttempt(
           state.currentStreamIndex,
           SourceAttemptStatus.failed,
@@ -1161,11 +1177,11 @@ class PlayerController extends Notifier<PlayerState> {
             }
             _isRecoveringFromStall = true;
 
-            // Recovery: Toggle play/pause or trigger a re-sync
+            // Recovery: reconnect live streams from scratch; kick VOD.
             if (state.isLive && state.currentStream != null) {
-              changeStream(state.currentStream!, resetPosition: false);
+              changeStream(state.currentStream!, resetPosition: true);
             } else {
-              _player.play(); // Simple kick
+              _player.play();
             }
 
             // prevent multi-trigger
@@ -2023,6 +2039,26 @@ class PlayerController extends Notifier<PlayerState> {
     state = state.copyWith(resumePromptPosition: null);
   }
 
+  /// Jumps back to the live edge. For DVR streams, seeks to the end of the
+  /// known duration; for pure live streams, forces a full reconnect.
+  Future<void> goLive() async {
+    if (!state.isLive || state.currentStream == null) return;
+    final dur = state.useExoPlayer
+        ? Duration(
+            milliseconds: _videoViewController?.mediaInfo.value?.duration ?? 0,
+          )
+        : _player.state.duration;
+    if (dur > Duration.zero) {
+      await seekTo(dur);
+    } else {
+      _enterRuntimePhase(
+        kind: PlaybackUiPhaseKind.reconnectingLive,
+        detail: "Reconnecting to live stream...",
+      );
+      changeStream(state.currentStream!, resetPosition: true);
+    }
+  }
+
   Future<void> changeStream(
     StreamResult stream, {
     bool isRevert = false,
@@ -2241,9 +2277,8 @@ class PlayerController extends Notifier<PlayerState> {
 
   void revertToPreviousStream(String message) {
     if (state.previousStream == null) {
-      state = state.copyWith(
-        errorMessage: "Stream failed. No fallback available.",
-      );
+      // No previous stream to revert to — skip to the next available source.
+      retryNextStream(sourceSessionId: state.sourceSessionId);
       return;
     }
     _revertMessage = message;
@@ -2627,11 +2662,13 @@ class PlayerController extends Notifier<PlayerState> {
               // Walk candidates in preference order; stop at the first one
               // whose result we have and which is healthy.
               for (final c in candidates) {
-                if (!results.containsKey(c))
+                if (!results.containsKey(c)) {
                   break; // still waiting for a higher-priority one
+                }
                 if (results[c]!) {
-                  if (kDebugMode)
+                  if (kDebugMode) {
                     debugPrint("Stream $c is healthy (early-exit)");
+                  }
                   completer.complete(c);
                   return;
                 }
@@ -2650,8 +2687,9 @@ class PlayerController extends Notifier<PlayerState> {
                 SourceAttemptStatus.failed,
                 isCurrent: false,
               );
-              if (results.length == candidates.length)
+              if (results.length == candidates.length) {
                 completer.complete(start);
+              }
             });
       }
 

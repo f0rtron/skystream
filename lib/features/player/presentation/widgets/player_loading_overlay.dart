@@ -59,29 +59,28 @@ class PlayerLoadingOverlay extends StatelessWidget {
                 ),
               ),
             ),
-            if (phase.showBack)
-              Positioned(
-                top: MediaQuery.viewPaddingOf(context).top + 16,
-                left: 16,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.5),
-                    shape: BoxShape.circle,
-                  ),
-                  child: CustomButton(
-                    showFocusHighlight: isTv,
-                    onPressed: onBack,
-                    child: const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: 34,
-                      ),
+            Positioned(
+              top: MediaQuery.viewPaddingOf(context).top + 16,
+              left: 16,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: CustomButton(
+                  showFocusHighlight: isTv,
+                  onPressed: onBack,
+                  child: const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 34,
                     ),
                   ),
                 ),
               ),
+            ),
             Positioned.fill(
               child: Center(
                 child: Padding(
