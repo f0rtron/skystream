@@ -350,7 +350,6 @@ class _CustomButtonState extends State<CustomButton> {
               : BorderSide.none,
           elevation: 0,
           shadowColor: Colors.transparent,
-          padding: EdgeInsets.zero,
         ),
         child: widget.child,
       );
@@ -361,7 +360,6 @@ class _CustomButtonState extends State<CustomButton> {
       autofocus: widget.autofocus,
       onPressed: widget.onPressed,
       style: TextButton.styleFrom(
-        padding: EdgeInsets.zero,
         backgroundColor: showHighlight
             ? primaryColor.withValues(alpha: 0.15)
             : null,
