@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/storage/settings_repository.dart';
+import '../../player/domain/entity/subtitle_model.dart';
+import '../../player/data/subtitle_providers.dart';
+import '../../../core/network/dio_client_provider.dart';
 
 enum PlayerGesture { brightness, volume, none }
 
@@ -35,6 +38,15 @@ class PlayerSettings {
   /// Quality to prefer when on mobile data. Default: 1080p.
   final QualityPreference mobileQuality;
 
+  // Subtitle Accounts
+  final String osUsername;
+  final String osPassword;
+  final String osApiKey;
+  final String subdlEmail;
+  final String subdlPassword;
+  final String subdlApiKey;
+  final String subsourceApiKey;
+
   const PlayerSettings({
     this.leftGesture = PlayerGesture.brightness,
     this.rightGesture = PlayerGesture.volume,
@@ -52,6 +64,13 @@ class PlayerSettings {
     this.subtitlePosition = 100.0,
     this.wifiQuality = QualityPreference.q4k,
     this.mobileQuality = QualityPreference.q1080,
+    this.osUsername = '',
+    this.osPassword = '',
+    this.osApiKey = '',
+    this.subdlEmail = '',
+    this.subdlPassword = '',
+    this.subdlApiKey = '',
+    this.subsourceApiKey = '',
   });
 
   PlayerSettings copyWith({
@@ -72,6 +91,13 @@ class PlayerSettings {
     double? subtitlePosition,
     QualityPreference? wifiQuality,
     QualityPreference? mobileQuality,
+    String? osUsername,
+    String? osPassword,
+    String? osApiKey,
+    String? subdlEmail,
+    String? subdlPassword,
+    String? subdlApiKey,
+    String? subsourceApiKey,
   }) {
     return PlayerSettings(
       leftGesture: leftGesture ?? this.leftGesture,
@@ -94,6 +120,13 @@ class PlayerSettings {
       subtitlePosition: subtitlePosition ?? this.subtitlePosition,
       wifiQuality: wifiQuality ?? this.wifiQuality,
       mobileQuality: mobileQuality ?? this.mobileQuality,
+      osUsername: osUsername ?? this.osUsername,
+      osPassword: osPassword ?? this.osPassword,
+      osApiKey: osApiKey ?? this.osApiKey,
+      subdlEmail: subdlEmail ?? this.subdlEmail,
+      subdlPassword: subdlPassword ?? this.subdlPassword,
+      subdlApiKey: subdlApiKey ?? this.subdlApiKey,
+      subsourceApiKey: subsourceApiKey ?? this.subsourceApiKey,
     );
   }
 }
@@ -173,6 +206,13 @@ class PlayerSettingsNotifier extends AsyncNotifier<PlayerSettings> {
       storage.getPlayerSetting<String>('player_mobile_quality'),
       QualityPreference.q1080,
     );
+    final osUser = storage.getPlayerSetting<String>('player_os_user') ?? '';
+    final osPass = storage.getPlayerSetting<String>('player_os_pass') ?? '';
+    final osKey = storage.getPlayerSetting<String>('player_os_key') ?? '';
+    final dlEmail = storage.getPlayerSetting<String>('player_subdl_email') ?? '';
+    final dlPass = storage.getPlayerSetting<String>('player_subdl_pass') ?? '';
+    final dlKey = storage.getPlayerSetting<String>('player_subdl_key') ?? '';
+    final ssKey = storage.getPlayerSetting<String>('player_ss_key') ?? '';
 
     return PlayerSettings(
       leftGesture: _parse(l),
@@ -191,6 +231,13 @@ class PlayerSettingsNotifier extends AsyncNotifier<PlayerSettings> {
       subtitlePosition: subPos,
       wifiQuality: wifiQ,
       mobileQuality: mobileQ,
+      osUsername: osUser,
+      osPassword: osPass,
+      osApiKey: osKey,
+      subdlEmail: dlEmail,
+      subdlPassword: dlPass,
+      subdlApiKey: dlKey,
+      subsourceApiKey: ssKey,
     );
   }
 
@@ -314,6 +361,69 @@ class PlayerSettingsNotifier extends AsyncNotifier<PlayerSettings> {
     await _repository.setPlayerSetting('player_mobile_quality', q.name);
     final current = state.asData?.value ?? const PlayerSettings();
     state = AsyncData(current.copyWith(mobileQuality: q));
+  }
+
+  Future<void> setOpenSubtitlesCredentials(String user, String pass, [String? key]) async {
+    await _repository.setPlayerSetting('player_os_user', user);
+    await _repository.setPlayerSetting('player_os_pass', pass);
+    if (key != null) {
+      await _repository.setPlayerSetting('player_os_key', key);
+    }
+    final current = state.asData?.value ?? const PlayerSettings();
+    state = AsyncData(current.copyWith(osUsername: user, osPassword: pass, osApiKey: key));
+  }
+
+  Future<void> setSubDlAuth({required String apiKey, String? email, String? pass}) async {
+    await _repository.setPlayerSetting('player_subdl_key', apiKey);
+    if (email != null) await _repository.setPlayerSetting('player_subdl_email', email);
+    if (pass != null) await _repository.setPlayerSetting('player_subdl_pass', pass);
+    
+    final current = state.asData?.value ?? const PlayerSettings();
+    state = AsyncData(current.copyWith(
+      subdlApiKey: apiKey,
+      subdlEmail: email ?? current.subdlEmail, 
+      subdlPassword: pass ?? current.subdlPassword,
+    ));
+  }
+
+  Future<void> setSubDlApiKey(String key) async {
+    await _repository.setPlayerSetting('player_subdl_key', key);
+    final current = state.asData?.value ?? const PlayerSettings();
+    state = AsyncData(current.copyWith(subdlApiKey: key));
+  }
+
+  Future<void> setSubSourceApiKey(String key) async {
+    await _repository.setPlayerSetting('player_ss_key', key);
+    final current = state.asData?.value ?? const PlayerSettings();
+    state = AsyncData(current.copyWith(subsourceApiKey: key));
+  }
+
+  /// Verifies OpenSubtitles credentials without saving.
+  Future<bool> verifyOpenSubtitles(String user, String pass, [String? key]) async {
+    final dio = ref.read(dioClientProvider);
+    final provider = OpenSubtitlesProvider(dio, username: user, password: pass, apiKey: key);
+    return await provider.verifyCredentials();
+  }
+
+  /// Verifies SubDL credentials via login and returns the fetched key or error.
+  Future<({String? key, String? error})> verifySubDl(String email, String pass) async {
+    final dio = ref.read(dioClientProvider);
+    final provider = SubDLProvider(dio, email: email, password: pass);
+    return await provider.login(email, pass);
+  }
+
+  /// Verifies SubDL API Key without saving.
+  Future<bool> verifySubDlKey(String key) async {
+    final dio = ref.read(dioClientProvider);
+    final provider = SubDLProvider(dio, apiKey: key);
+    return await provider.verifyKey();
+  }
+
+  /// Verifies SubSource API Key without saving.
+  Future<bool> verifySubSource(String key) async {
+    final dio = ref.read(dioClientProvider);
+    final provider = SubSourceProvider(dio, apiKey: key);
+    return await provider.verifyKey();
   }
 
   PlayerGesture _parse(String s) {

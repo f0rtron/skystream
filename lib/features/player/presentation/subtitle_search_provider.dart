@@ -5,10 +5,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:flutter/foundation.dart';
 
 import '../../../core/network/dio_client_provider.dart';
 import '../data/subtitle_providers.dart';
 import '../domain/entity/subtitle_model.dart';
+import '../../settings/presentation/player_settings_provider.dart';
 
 const Map<String, String> subtitleLanguages = {
   'English': 'en',
@@ -22,31 +24,72 @@ const Map<String, String> subtitleLanguages = {
   'Malayalam': 'ml',
   'Punjabi': 'pa',
   'Arabic': 'ar',
+  'Assamese': 'as',
+  'Belarusian': 'be',
+  'Bulgarian': 'bg',
+  'Czech': 'cs',
+  'German': 'de',
+  'Greek': 'el',
   'Spanish': 'es',
   'French': 'fr',
-  'German': 'de',
-  'Russian': 'ru',
-  'Chinese': 'zh',
+  'Hebrew': 'he',
+  'Croatian': 'hr',
+  'Hungarian': 'hu',
+  'Indonesian': 'id',
+  'Italian': 'it',
   'Japanese': 'ja',
   'Korean': 'ko',
-  'Turkish': 'tr',
+  'Latvian': 'lv',
+  'Macedonian': 'mk',
+  'Dutch': 'nl',
+  'Polish': 'pl',
   'Portuguese': 'pt',
-  'Indonesian': 'id',
+  'Romanian': 'ro',
+  'Russian': 'ru',
+  'Swedish': 'sv',
+  'Turkish': 'tr',
+  'Ukrainian': 'uk',
+  'Urdu': 'ur',
   'Vietnamese': 'vi',
+  'Chinese': 'zh',
 };
 
 class SubtitleSearchNotifier extends Notifier<AsyncValue<List<OnlineSubtitle>?>> {
   late List<SubtitleProvider> _providers;
+  CancelToken? _cancelToken;
+  int _activeSearchId = 0;
 
   @override
   AsyncValue<List<OnlineSubtitle>?> build() {
-    final dio = ref.read(dioClientProvider);
-    _providers = [
-      OpenSubtitlesProvider(dio),
-      SubDLProvider(dio),
-      SubSourceProvider(dio),
-    ];
+    ref.onDispose(() {
+      _cancelToken?.cancel();
+    });
+    
+    // Watch settings to update providers if they change
+    ref.listen(playerSettingsProvider, (previous, next) {
+      if (next.hasValue) {
+        _initializeProviders();
+      }
+    });
+
+    _initializeProviders();
     return const AsyncData(null);
+  }
+
+  void _initializeProviders() {
+    final dio = ref.read(dioClientProvider);
+    final settings = ref.read(playerSettingsProvider).asData?.value ?? const PlayerSettings();
+    
+    _providers = [
+      OpenSubtitlesProvider(
+        dio, 
+        username: settings.osUsername, 
+        password: settings.osPassword,
+        apiKey: settings.osApiKey,
+      ),
+      SubDLProvider(dio, apiKey: settings.subdlApiKey),
+      SubSourceProvider(dio, apiKey: settings.subsourceApiKey),
+    ];
   }
 
   Future<void> search({
@@ -57,31 +100,55 @@ class SubtitleSearchNotifier extends Notifier<AsyncValue<List<OnlineSubtitle>?>>
     int? episode,
     String? language,
   }) async {
+    // 1. Cancel previous search
+    _cancelToken?.cancel();
+    _cancelToken = CancelToken();
+    
+    // 2. Increment search ID to ignore late results from previous calls
+    final searchId = ++_activeSearchId;
+
+    if (kDebugMode) {
+      print("🔍 [SubtitleSearch] Starting search #$searchId for: $query (IMDB: $imdbId)");
+    }
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      final List<OnlineSubtitle> allResults = [];
-      
-      final lang = language ?? ref.read(subtitleLanguageProvider);
-      
-      final searchTasks = _providers.map((pr) => pr.search(
+    
+    final List<OnlineSubtitle> allResults = [];
+    final lang = language ?? ref.read(subtitleLanguageProvider);
+    int completedProviders = 0;
+
+    for (final provider in _providers) {
+      provider.search(
         query: query,
         imdbId: imdbId,
         tmdbId: tmdbId,
         season: season,
         episode: episode,
         language: lang,
-      ));
-
-      final resultsList = await Future.wait(searchTasks);
-      for (final results in resultsList) {
-        allResults.addAll(results);
-      }
-      
-      return allResults;
-    });
+        cancelToken: _cancelToken,
+      ).then((results) {
+        if (!ref.mounted || searchId != _activeSearchId) return;
+        
+        if (results.isNotEmpty) {
+          allResults.addAll(results);
+          state = AsyncData(List.from(allResults));
+        }
+      }).catchError((e) {
+        if (e is DioException && e.type == DioExceptionType.cancel) return;
+        if (kDebugMode) print("${provider.name} search failed: $e");
+      }).whenComplete(() {
+        if (!ref.mounted || searchId != _activeSearchId) return;
+        
+        completedProviders++;
+        // If all finished and no results found, ensure we transition from loading to empty data
+        if (completedProviders == _providers.length && allResults.isEmpty) {
+          state = const AsyncData([]);
+        }
+      });
+    }
   }
 
   Future<String?> downloadAndPrepare(OnlineSubtitle subtitle) async {
+    _initializeProviders();
     final dio = ref.read(dioClientProvider);
     final provider = _providers.firstWhere((p) => p.name == subtitle.source);
     

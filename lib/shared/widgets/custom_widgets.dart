@@ -163,6 +163,8 @@ class CustomTextField extends StatefulWidget {
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onSubmitted;
   final String? hintText;
+  final bool obscureText;
+  final TextInputType? keyboardType;
 
   const CustomTextField({
     super.key,
@@ -172,6 +174,8 @@ class CustomTextField extends StatefulWidget {
     this.textInputAction,
     this.onSubmitted,
     this.hintText,
+    this.obscureText = false,
+    this.keyboardType,
   });
 
   @override
@@ -265,6 +269,8 @@ class _CustomTextFieldState extends State<CustomTextField> {
           ),
       autofocus: widget.autofocus,
       textInputAction: widget.textInputAction ?? TextInputAction.done,
+      obscureText: widget.obscureText,
+      keyboardType: widget.keyboardType,
       onSubmitted: (value) {
         // Call user callback first
         widget.onSubmitted?.call(value);

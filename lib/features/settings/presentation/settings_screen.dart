@@ -269,6 +269,43 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: LayoutConstants.spacingLg),
+              SettingsGroup(
+                title: 'Subtitle Accounts',
+                children: [
+                  SettingsTile(
+                    icon: Icons.subtitles_rounded,
+                    title: 'OpenSubtitles',
+                    subtitle: playerSettings.osUsername.isNotEmpty
+                        ? 'Logged in as ${playerSettings.osUsername}'
+                        : 'Not logged in',
+                    onTap: () => showOpenSubtitlesAuthDialog(
+                      context,
+                      ref,
+                      playerSettings,
+                    ),
+                  ),
+                  SettingsTile(
+                    icon: Icons.vpn_key_rounded,
+                    title: 'SubDL',
+                    subtitle: playerSettings.subdlApiKey.isNotEmpty
+                        ? 'API Key configured'
+                        : 'Key not set',
+                    onTap: () =>
+                        showSubDlAuthDialog(context, ref, playerSettings),
+                  ),
+                  SettingsTile(
+                    icon: Icons.vpn_key_rounded,
+                    title: 'SubSource',
+                    subtitle: playerSettings.subsourceApiKey.isNotEmpty
+                        ? 'API Key configured'
+                        : 'Key not set',
+                    isLast: true,
+                    onTap: () =>
+                        showSubSourceAuthDialog(context, ref, playerSettings),
+                  ),
+                ],
+              ),
+              const SizedBox(height: LayoutConstants.spacingLg),
               Builder(
                 builder: (context) {
                   final dohState =

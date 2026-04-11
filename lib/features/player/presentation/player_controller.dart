@@ -849,7 +849,9 @@ class PlayerController extends Notifier<PlayerState> {
           if (state.isLive && state.currentStream != null) {
             if (_isRecoveringFromStall) return; // already reconnecting
             if (kDebugMode) {
-              debugPrint("VideoView live stream error. Triggering reconnect...");
+              debugPrint(
+                "VideoView live stream error. Triggering reconnect...",
+              );
             }
             _isRecoveringFromStall = true;
             _enterRuntimePhase(
@@ -1086,7 +1088,8 @@ class PlayerController extends Notifier<PlayerState> {
         // Error during active playback.
         if (state.isLive && state.currentStream != null) {
           if (_isRecoveringFromStall) return; // watchdog already reconnecting
-          if (kDebugMode) debugPrint("Live stream error. Triggering reconnect...");
+          if (kDebugMode)
+            debugPrint("Live stream error. Triggering reconnect...");
           _isRecoveringFromStall = true;
           _enterRuntimePhase(
             kind: PlaybackUiPhaseKind.reconnectingLive,
@@ -1510,23 +1513,7 @@ class PlayerController extends Notifier<PlayerState> {
   }
 
   String _languageName(String code) {
-    const langMap = {
-      'en': 'English',
-      'es': 'Spanish',
-      'fr': 'French',
-      'de': 'German',
-      'it': 'Italian',
-      'ja': 'Japanese',
-      'ko': 'Korean',
-      'zh': 'Chinese',
-      'ru': 'Russian',
-      'pt': 'Portuguese',
-      'ar': 'Arabic',
-      'hi': 'Hindi',
-      'und': 'Unknown',
-    };
-
-    return langMap[code.toLowerCase()] ?? code.toUpperCase();
+    return code.trim();
   }
 
   String _formatTrackLabel({
@@ -1534,17 +1521,60 @@ class PlayerController extends Notifier<PlayerState> {
     String? title,
     String? fallbackId,
   }) {
-    final base = language != null && language.trim().isNotEmpty
-        ? _languageName(language)
-        : ((fallbackId != null && fallbackId.trim().isNotEmpty)
-              ? fallbackId
-              : 'Unknown');
-
+    final List<String> parts = [];
+    if (language != null && language.trim().isNotEmpty) {
+      parts.add(language.trim());
+    }
     if (title != null && title.trim().isNotEmpty) {
-      return '$base (${title.trim()})';
+      parts.add(title.trim());
     }
 
-    return base;
+    if (parts.isNotEmpty) {
+      return parts.join(' - ');
+    }
+
+    return fallbackId != null && fallbackId.trim().isNotEmpty
+        ? (int.tryParse(fallbackId) != null
+              ? 'Audio Track $fallbackId'
+              : fallbackId)
+        : 'Unknown Track';
+  }
+
+  String? _formatTechnicalSubtitle(dynamic track) {
+    try {
+      final List<String> techParts = [];
+
+      // Extract raw technical tags from the track object (media_kit specific)
+      // We use dynamic access as these fields exist in the runtime object but
+      // may not be present in early/stub versions of the class.
+      final String? codec = track.codec?.toString();
+      final String? channels = track.channels?.toString();
+      final dynamic samplerate = track.samplerate;
+
+      if (codec != null && codec.isNotEmpty && codec != 'null') {
+        techParts.add(codec.toUpperCase());
+      }
+
+      if (channels != null &&
+          channels.isNotEmpty &&
+          channels != 'null' &&
+          channels != 'unknown') {
+        techParts.add(channels);
+      }
+
+      if (samplerate != null && samplerate is num && samplerate > 0) {
+        techParts.add(
+          '${(samplerate / 1000).toStringAsFixed(1).replaceAll('.0', '')}kHz',
+        );
+      }
+
+      if (techParts.isNotEmpty) {
+        return techParts.join(' · ');
+      }
+    } catch (_) {
+      // Fallback if specific fields are inaccessible
+    }
+    return null;
   }
 
   Future<void> _openResolvedStream(
@@ -1717,6 +1747,7 @@ class PlayerController extends Notifier<PlayerState> {
               title: track.title,
               fallbackId: track.id,
             ),
+            subtitle: _formatTechnicalSubtitle(track),
             selected: track == _player.state.track.audio,
           ),
         )
@@ -1732,12 +1763,12 @@ class PlayerController extends Notifier<PlayerState> {
               : null,
           selected:
               _player.state.track.subtitle.id == subtitle.url ||
-              _player.state.track.subtitle.title == subtitle.label,
+              _player.state.track.subtitle.id == 'external:${subtitle.url}',
         ),
       ),
       ..._player.state.tracks.subtitle.map(
         (track) => PlayerTrackOption(
-          id: 'embedded:${track.id}',
+          id: track.id,
           label: _formatTrackLabel(
             language: track.language,
             title: track.title,

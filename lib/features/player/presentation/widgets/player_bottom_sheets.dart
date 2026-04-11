@@ -1418,7 +1418,74 @@ class PlayerBottomSheets {
                             ),
                           );
                         }
+
+                        final settings = ref.watch(playerSettingsProvider).asData?.value;
+                        final hasAnyCredentials = settings != null && (
+                          (settings.osUsername.isNotEmpty && settings.osPassword.isNotEmpty && settings.osApiKey.isNotEmpty) ||
+                          settings.subdlApiKey.isNotEmpty ||
+                          settings.subsourceApiKey.isNotEmpty
+                        );
+
                         if (results.isEmpty) {
+                          if (!hasAnyCredentials) {
+                            return Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.vpn_key_rounded,
+                                        size: 48,
+                                        color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Subtitle Accounts Not Configured',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Discovery requires your personal API keys for OpenSubtitles, SubDL, or SubSource.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    FilledButton.icon(
+                                      onPressed: () {
+                                        Navigator.pop(ctx); // Close search
+                                        // The user is already in the player, we'll suggest they go to main settings
+                                        // or we can try to show the specific dialogs here if they were available.
+                                        // For now, let's provide a clear toast or action.
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Go to App Settings > Player > Subtitle Accounts to configure.'),
+                                            duration: Duration(seconds: 4),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.settings_outlined, size: 18),
+                                      label: const Text('View Settings Instructions'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
                           return Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,

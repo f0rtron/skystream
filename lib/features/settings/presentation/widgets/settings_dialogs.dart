@@ -334,8 +334,7 @@ void showSubtitleDialog(
             ],
           ),
           actions: [
-            CustomButton(
-              showFocusHighlight: isTv,
+            TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text(
                 l10n.cancel,
@@ -344,11 +343,8 @@ void showSubtitleDialog(
                 ),
               ),
             ),
-            const SizedBox(width: 8),
             CustomButton(
-              autofocus: true,
               isPrimary: true,
-              showFocusHighlight: isTv,
               onPressed: () {
                 final bg = showBackground ? 0x99000000 : 0x00000000;
                 ref
@@ -946,5 +942,544 @@ void showQualityDialog(
         ),
       ),
     ),
+  );
+}
+
+/// Shows a dialog to enter OpenSubtitles.com credentials.
+/// Shows a dialog to enter OpenSubtitles.com credentials.
+void showOpenSubtitlesAuthDialog(
+  BuildContext context,
+  WidgetRef ref,
+  PlayerSettings settings,
+) {
+  final l10n = AppLocalizations.of(context)!;
+  final userController = TextEditingController(text: settings.osUsername);
+  final passController = TextEditingController(text: settings.osPassword);
+
+  showDialog(
+    context: context,
+    builder: (ctx) {
+      bool isVerifying = false;
+      bool? verifyResult;
+      var isObscure = true;
+
+      return StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          surfaceTintColor: Colors.transparent,
+          title: const Row(
+            children: [
+              Icon(Icons.subtitles_rounded, color: Colors.blue),
+              SizedBox(width: 12),
+              Text('OpenSubtitles'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Enter your account credentials for higher limits and ad-free subtitles.',
+                style: TextStyle(fontSize: 13, color: Colors.white70),
+              ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                controller: userController,
+                decoration: const InputDecoration(
+                  labelText: 'Username',
+                  prefixIcon: Icon(Icons.person_outline, size: 20),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              CustomTextField(
+                controller: passController,
+                obscureText: isObscure,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      isObscure ? Icons.visibility_off : Icons.visibility,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(() => isObscure = !isObscure),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: () => launchUrl(
+                  Uri.parse('https://www.opensubtitles.com/en/users/sign_up'),
+                  mode: LaunchMode.externalApplication,
+                ),
+                icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                label: const Text('Don\'t have an account? Register here'),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  textStyle: const TextStyle(fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            Row(
+              children: [
+                if (verifyResult != null)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text(
+                        verifyResult!
+                            ? 'Connected Successfully'
+                            : 'Connection Failed',
+                        style: TextStyle(
+                          color: verifyResult! ? Colors.green : Colors.red,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                const Spacer(),
+                TextButton(
+                  onPressed: isVerifying ? null : () => Navigator.pop(ctx),
+                  child: Text(
+                    l10n.cancel,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: isVerifying
+                      ? null
+                      : () async {
+                          setState(() => isVerifying = true);
+                          final ok = await ref
+                              .read(playerSettingsProvider.notifier)
+                              .verifyOpenSubtitles(
+                                userController.text.trim(),
+                                passController.text.trim(),
+                              );
+                          if (ctx.mounted) {
+                            setState(() {
+                              isVerifying = false;
+                              verifyResult = ok;
+                            });
+                          }
+                        },
+                  child: isVerifying
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Test Connection'),
+                ),
+                const SizedBox(width: 8),
+                CustomButton(
+                  isPrimary: true,
+                  onPressed: isVerifying
+                      ? null
+                      : () {
+                          ref
+                              .read(playerSettingsProvider.notifier)
+                              .setOpenSubtitlesCredentials(
+                                userController.text.trim(),
+                                passController.text.trim(),
+                              );
+                          Navigator.pop(ctx);
+                        },
+                  child: Text(l10n.save),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+/// Shows a dialog to enter SubDL Account credentials.
+void showSubDlAuthDialog(
+  BuildContext context,
+  WidgetRef ref,
+  PlayerSettings settings,
+) {
+  final l10n = AppLocalizations.of(context)!;
+  final theme = Theme.of(context);
+  final apiKeyController = TextEditingController(text: settings.subdlApiKey);
+  final emailController = TextEditingController(text: settings.subdlEmail);
+  final passController = TextEditingController(text: settings.subdlPassword);
+
+  showDialog(
+    context: context,
+    builder: (ctx) {
+      bool isFetching = false;
+      String? fetchError;
+      bool isObscure = true;
+      bool isVerifyingKey = false;
+      bool? verifyKeyResult;
+
+      return StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          surfaceTintColor: Colors.transparent,
+          title: const Row(
+            children: [
+              Icon(Icons.vpn_key_rounded, color: Colors.orange),
+              SizedBox(width: 12),
+              Text('SubDL API Key'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Enter your SubDL API Key directly, or fetch it using your account credentials below.',
+                style: TextStyle(fontSize: 13, color: Colors.white70),
+              ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                controller: apiKeyController,
+                decoration: const InputDecoration(
+                  labelText: 'API Key',
+                  prefixIcon: Icon(Icons.key_rounded, size: 20),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Row(
+                children: [
+                  Expanded(child: Divider()),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      'OR FETCH VIA ACCOUNT',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white38,
+                      ),
+                    ),
+                  ),
+                  Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email_outlined, size: 20),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              CustomTextField(
+                controller: passController,
+                obscureText: isObscure,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      isObscure ? Icons.visibility_off : Icons.visibility,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(() => isObscure = !isObscure),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: (isFetching || isVerifyingKey)
+                      ? null
+                      : () async {
+                          setState(() {
+                            isFetching = true;
+                            fetchError = null;
+                            verifyKeyResult = null;
+                          });
+                          final result = await ref
+                              .read(playerSettingsProvider.notifier)
+                              .verifySubDl(
+                                emailController.text.trim(),
+                                passController.text.trim(),
+                              );
+                          if (ctx.mounted) {
+                            setState(() {
+                              isFetching = false;
+                              if (result.key != null) {
+                                apiKeyController.text = result.key!;
+                              } else {
+                                fetchError = result.error;
+                              }
+                            });
+                          }
+                        },
+                  icon: isFetching
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.download_rounded, size: 18),
+                  label: const Text('Fetch My API Key'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    backgroundColor: theme.colorScheme.primary.withValues(
+                      alpha: 0.8,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: () => launchUrl(
+                  Uri.parse('https://subdl.com/panel/api'),
+                  mode: LaunchMode.externalApplication,
+                ),
+                icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                label: const Text('Don\'t have an account? Register here'),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  textStyle: const TextStyle(fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            Row(
+              children: [
+                if (fetchError != null || verifyKeyResult != null)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text(
+                        fetchError ??
+                            (verifyKeyResult!
+                                ? 'Key Verified'
+                                : 'Invalid API Key'),
+                        style: TextStyle(
+                          color:
+                              (fetchError != null || verifyKeyResult == false)
+                              ? Colors.redAccent
+                              : Colors.green,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                const Spacer(),
+                TextButton(
+                  onPressed: (isFetching || isVerifyingKey)
+                      ? null
+                      : () => Navigator.pop(ctx),
+                  child: Text(
+                    l10n.cancel,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: (isFetching || isVerifyingKey)
+                      ? null
+                      : () async {
+                          setState(() {
+                            isVerifyingKey = true;
+                            verifyKeyResult = null;
+                            fetchError = null;
+                          });
+                          final ok = await ref
+                              .read(playerSettingsProvider.notifier)
+                              .verifySubDlKey(apiKeyController.text.trim());
+                          if (ctx.mounted) {
+                            setState(() {
+                              isVerifyingKey = false;
+                              verifyKeyResult = ok;
+                            });
+                          }
+                        },
+                  child: isVerifyingKey
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Test Connection'),
+                ),
+                const SizedBox(width: 8),
+                const SizedBox(width: 8),
+                CustomButton(
+                  isPrimary: true,
+                  onPressed: (isFetching || isVerifyingKey)
+                      ? null
+                      : () {
+                          ref
+                              .read(playerSettingsProvider.notifier)
+                              .setSubDlAuth(
+                                apiKey: apiKeyController.text.trim(),
+                                email: emailController.text.trim(),
+                                pass: passController.text.trim(),
+                              );
+                          Navigator.pop(ctx);
+                        },
+                  child: Text(l10n.save),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+/// Shows a dialog to enter SubSource API Key.
+void showSubSourceAuthDialog(
+  BuildContext context,
+  WidgetRef ref,
+  PlayerSettings settings,
+) {
+  final l10n = AppLocalizations.of(context)!;
+  final keyController = TextEditingController(text: settings.subsourceApiKey);
+
+  showDialog(
+    context: context,
+    builder: (ctx) {
+      bool isVerifying = false;
+      bool? verifyResult;
+
+      return StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          surfaceTintColor: Colors.transparent,
+          title: const Row(
+            children: [
+              Icon(Icons.vpn_key_rounded, color: Colors.blue),
+              SizedBox(width: 12),
+              Text('SubSource API Key'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'SubSource works out-of-the-box, but you can add a personal official API key to override the default for better reliability.',
+                style: TextStyle(fontSize: 13, color: Colors.white70),
+              ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                controller: keyController,
+                decoration: const InputDecoration(
+                  labelText: 'API Key (Optional Override)',
+                  prefixIcon: Icon(Icons.key_rounded, size: 20),
+                  border: OutlineInputBorder(),
+                  hintText: 'Enter key to override default',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: () => launchUrl(
+                  Uri.parse('https://subsource.net/dashboard/profile'),
+                  mode: LaunchMode.externalApplication,
+                ),
+                icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                label: const Text('Get your API Key from SubSource Profile'),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  textStyle: const TextStyle(fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            Row(
+              children: [
+                if (verifyResult != null)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Text(
+                        verifyResult! ? 'Key Verified' : 'Invalid API Key',
+                        style: TextStyle(
+                          color: verifyResult! ? Colors.green : Colors.red,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                const Spacer(),
+                TextButton(
+                  onPressed: isVerifying ? null : () => Navigator.pop(ctx),
+                  child: Text(
+                    l10n.cancel,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: isVerifying
+                      ? null
+                      : () async {
+                          setState(() => isVerifying = true);
+                          final ok = await ref
+                              .read(playerSettingsProvider.notifier)
+                              .verifySubSource(keyController.text.trim());
+                          if (ctx.mounted) {
+                            setState(() {
+                              isVerifying = false;
+                              verifyResult = ok;
+                            });
+                          }
+                        },
+                  child: isVerifying
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Test Connection'),
+                ),
+                const SizedBox(width: 8),
+                CustomButton(
+                  isPrimary: true,
+                  onPressed: isVerifying
+                      ? null
+                      : () {
+                          ref
+                              .read(playerSettingsProvider.notifier)
+                              .setSubSourceApiKey(keyController.text.trim());
+                          Navigator.pop(ctx);
+                        },
+                  child: Text(l10n.save),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    },
   );
 }

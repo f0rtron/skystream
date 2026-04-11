@@ -80,6 +80,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
       final native = _player.platform as NativePlayer;
       native.setProperty('network-timeout', '120');
       native.setProperty('force-seekable', 'yes');
+      // Increase metadata probing depth to match VLC (resolves missing language tags)
+      native.setProperty('demuxer-lavf-probesize', '33554432'); // 32MB
+      native.setProperty('demuxer-lavf-analyzeduration', '20'); // 20s
     }
     _videoController = VideoController(_player);
 

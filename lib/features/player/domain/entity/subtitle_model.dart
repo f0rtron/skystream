@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 class OnlineSubtitle {
   final String id;
   final String name;
@@ -58,6 +60,7 @@ abstract class SubtitleProvider {
     int? season,
     int? episode,
     String? language,
+    CancelToken? cancelToken,
   });
 
   Future<String?> getDownloadUrl(OnlineSubtitle subtitle);
