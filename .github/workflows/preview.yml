@@ -200,7 +200,7 @@ jobs:
           retention-days: 7
 
   windows:
-    name: Windows Build
+    name: Windows Build (x64)
     if: ${{ github.event.inputs.build_windows == 'true' }}
     runs-on: windows-latest
     steps:
@@ -227,17 +227,17 @@ jobs:
         
       - name: Compress Release
         run: |
-          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath "skystream-windows.zip"
+          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath "skystream-windows-x64.zip"
 
       - name: Upload Windows Build
         uses: actions/upload-artifact@v4
         with:
-          name: windows
-          path: skystream-windows.zip
+          name: windows-x64
+          path: skystream-windows-x64.zip
           retention-days: 7
 
   linux:
-    name: Linux Build
+    name: Linux Build (x64)
     if: ${{ github.event.inputs.build_linux == 'true' }}
     runs-on: ubuntu-latest
     steps:
@@ -270,11 +270,11 @@ jobs:
       - name: Compress Release
         run: |
           cd build/linux/x64/release/bundle
-          tar -czvf "../../../../../skystream-linux.tar.gz" .
+          tar -czvf "../../../../../skystream-linux-x64.tar.gz" .
 
       - name: Upload Linux Build
         uses: actions/upload-artifact@v4
         with:
-          name: linux
-          path: skystream-linux.tar.gz
+          name: linux-x64
+          path: skystream-linux-x64.tar.gz
           retention-days: 7
