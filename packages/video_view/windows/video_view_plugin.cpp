@@ -670,18 +670,34 @@ public:
 			queueWork([weakThis, playbackSession]() {
 				auto sharedThis = weakThis.lock();
 				if (sharedThis && sharedThis->state > 0) {
-					auto hasVideo = sharedThis->textureBuffer.width > 0 && sharedThis->textureBuffer.height > 0;
-					sharedThis->textureBuffer.width = sharedThis->subTextureBuffer.width = playbackSession.NaturalVideoWidth();
-					sharedThis->textureBuffer.height = sharedThis->subTextureBuffer.height = playbackSession.NaturalVideoHeight();
-					auto newHasVideo = sharedThis->textureBuffer.width > 0 && sharedThis->textureBuffer.height > 0;
+					auto newWidth = (UINT)playbackSession.NaturalVideoWidth();
+					auto newHeight = (UINT)playbackSession.NaturalVideoHeight();
+					// Lock each buffer mutex before updating dimensions so that drawFrame
+					// (called on the Media Foundation thread without going through queueWork)
+					// always sees a consistent width/height pair when it creates or reuses
+					// the D3D11 texture. For adaptive DASH streams NaturalVideoSizeChanged
+					// fires on every quality switch, making this race frequent without the lock.
+					bool hasVideo, newHasVideo;
+					{
+						lock_guard<mutex> lk(sharedThis->videoMutex);
+						hasVideo = sharedThis->textureBuffer.width > 0 && sharedThis->textureBuffer.height > 0;
+						sharedThis->textureBuffer.width = newWidth;
+						sharedThis->textureBuffer.height = newHeight;
+						newHasVideo = newWidth > 0 && newHeight > 0;
+					}
+					{
+						lock_guard<mutex> lk(sharedThis->subtitleMutex);
+						sharedThis->subTextureBuffer.width = newWidth;
+						sharedThis->subTextureBuffer.height = newHeight;
+					}
 					if (sharedThis->state > 2 && hasVideo != newHasVideo && sharedThis->keepScreenOn) {
 						sharedThis->requestKeepScreenOn(sharedThis->textureId, newHasVideo);
 					}
 					if (sharedThis->eventSink) {
 						sharedThis->eventSink->Success(EncodableMap{
 							{ string("event"), string("videoSize") },
-							{ string("width"), EncodableValue((double)sharedThis->textureBuffer.width) },
-							{ string("height"), EncodableValue((double)sharedThis->textureBuffer.height) }
+							{ string("width"), EncodableValue((double)newWidth) },
+							{ string("height"), EncodableValue((double)newHeight) }
 						});
 					}
 				}
@@ -812,22 +828,27 @@ public:
 
 		mediaPlayer.MediaOpened([weakThis](auto, auto) {
 			queueWork([weakThis]() {
-				auto sharedThis = weakThis.lock();
-				if (sharedThis && sharedThis->state == 1) {
-					sharedThis->mediaPlayer.Volume(sharedThis->volume);
-					sharedThis->retryCount = 0;
-					auto playbackSession = sharedThis->mediaPlayer.PlaybackSession();
-					if (sharedThis->streaming) {
-						playbackSession.PlaybackRate(1);
-						sharedThis->position = 0;
-						sharedThis->loadEnd();
-					} else {
-						playbackSession.PlaybackRate(sharedThis->speed);
-						// seek anyway to ensure media is loaded
-						sharedThis->seeking = true;
-						playbackSession.Position(chrono::milliseconds(sharedThis->position));
-						sharedThis->position = 0;
+				try {
+					auto sharedThis = weakThis.lock();
+					if (sharedThis && sharedThis->state == 1) {
+						sharedThis->mediaPlayer.Volume(sharedThis->volume);
+						sharedThis->retryCount = 0;
+						auto playbackSession = sharedThis->mediaPlayer.PlaybackSession();
+						if (sharedThis->streaming) {
+							playbackSession.PlaybackRate(1);
+							sharedThis->position = 0;
+							sharedThis->loadEnd();
+						} else {
+							playbackSession.PlaybackRate(sharedThis->speed);
+							// seek anyway to ensure media is loaded
+							sharedThis->seeking = true;
+							playbackSession.Position(chrono::milliseconds(sharedThis->position));
+							sharedThis->position = 0;
+						}
 					}
+				} catch (...) {
+					auto sharedThis = weakThis.lock();
+					if (sharedThis) sharedThis->sendError("LoadError");
 				}
 			});
 		});

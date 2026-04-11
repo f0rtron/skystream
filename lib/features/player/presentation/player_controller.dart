@@ -340,7 +340,11 @@ class PlayerController extends Notifier<PlayerState> {
 
   bool _isDashStreamUrl(String url) {
     final lower = url.toLowerCase();
-    return lower.contains('.mpd') || lower.contains('manifest.mpd');
+    return lower.contains('.mpd') ||
+        lower.contains('manifest.mpd') ||
+        lower.contains('/dash/') ||
+        lower.contains('format=mpd') ||
+        lower.contains('type=mpd');
   }
 
   bool _streamRequiresNativeDrm(StreamResult stream) {
@@ -365,8 +369,10 @@ class PlayerController extends Notifier<PlayerState> {
     }
 
     // AVPlayer/Windows native backends do not handle DASH playback reliably here.
+    // Check both the resolved URL and the original stream URL to catch proxied
+    // or query-param-based MPD streams that lack a .mpd extension in the resolved URL.
     if ((Platform.isMacOS || Platform.isIOS || Platform.isWindows) &&
-        _isDashStreamUrl(playUrl)) {
+        (_isDashStreamUrl(playUrl) || _isDashStreamUrl(stream.url))) {
       return false;
     }
 
@@ -2825,15 +2831,25 @@ class PlayerController extends Notifier<PlayerState> {
       }
 
       // 0. Hardware decoding preference
+      // Use auto-safe on Windows: 'auto' enables D3D11VA which can crash during
+      // DASH manifest negotiation before codec parameters are fully known.
       final settings = ref.read(playerSettingsProvider).asData?.value;
       if (settings?.hardwareDecoding ?? true) {
-        await native.setProperty('hwdec', 'auto');
+        await native.setProperty(
+          'hwdec',
+          Platform.isWindows ? 'auto-safe' : 'auto',
+        );
       } else {
         await native.setProperty('hwdec', 'no');
       }
 
       // 1. Performance tuning & Anti-Looping
       await native.setProperty('cache', 'yes');
+
+      // Accumulates demuxer-lavf-o options; applied as one combined call below
+      // to prevent later additions (e.g. DRM key) from silently overwriting
+      // earlier ones (e.g. live reconnect seg_max_retry).
+      final demuxerLavfOpts = <String>[];
 
       final isLivePattern =
           _isLiveStream(stream.url) ||
@@ -2861,8 +2877,8 @@ class PlayerController extends Notifier<PlayerState> {
           'reconnect_on_network_error=1,reconnect_delay_max=5,reconnect_on_eof=1,reconnect_streamed=1',
         );
 
-        // HLS demuxer
-        await native.setProperty('demuxer-lavf-o', 'seg_max_retry=5');
+        // HLS/DASH segment retry — collected for combined application below.
+        demuxerLavfOpts.add('seg_max_retry=5');
 
         // Playback
         await native.setProperty('framedrop', 'decoder');
@@ -2886,14 +2902,17 @@ class PlayerController extends Notifier<PlayerState> {
         await native.setProperty('cache', 'yes');
       }
 
-      // Adaptive demuxer cache based on device profile
+      // Adaptive demuxer cache based on device profile.
+      // DASH streams on desktop are capped lower to prevent OOM from aggressive
+      // segment pre-fetch combined with high-bitrate representations.
       final profile = ref.read(deviceProfileProvider).asData?.value;
+      final isDashStream = _isDashStreamUrl(stream.url);
       String cacheSize = "512MiB"; // Default
       if (profile != null) {
         if (profile.isTv) {
           cacheSize = "128MiB"; // Less RAM on TVs
         } else if (profile.isDesktopOS || profile.isTablet) {
-          cacheSize = "1GiB"; // More RAM on Desktop/Tablets
+          cacheSize = isDashStream ? "256MiB" : "1GiB";
         }
       }
 
@@ -2929,23 +2948,32 @@ class PlayerController extends Notifier<PlayerState> {
         }
 
         if (!useVideoView) {
-          await native.setProperty(
-            'demuxer-lavf-o',
-            'cenc_decryption_key=$keyHex',
-          );
+          // Collected into demuxerLavfOpts and applied below to prevent
+          // overwriting live reconnect options (seg_max_retry) set earlier.
+          demuxerLavfOpts.add('cenc_decryption_key=$keyHex');
         } else {
           // If using VideoView on Android, we'd pass DRM keys to the native side here.
         }
       }
 
+      // 3. Apply all demuxer-lavf-o options in a single combined call.
+      //    Multiple setProperty('demuxer-lavf-o', ...) calls overwrite each
+      //    other; joining here ensures live and DRM settings coexist.
+      if (demuxerLavfOpts.isNotEmpty) {
+        await native.setProperty('demuxer-lavf-o', demuxerLavfOpts.join(','));
+      }
+
       try {
         final tempDir = await getTemporaryDirectory();
-        final cookieFile = File('${tempDir.path}/mpv_cookies.txt');
+        // Use p.join to produce a platform-correct path; on Windows the mixed
+        // forward/back-slash path produced by string concatenation can confuse
+        // libmpv's internal path parser.
+        final cookieFile = File(p.join(tempDir.path, 'mpv_cookies.txt'));
         if (!await cookieFile.exists()) {
           await cookieFile.create();
         }
         await native.setProperty('cookies-file', cookieFile.path);
-        await native.setProperty('cookies-file-access', 'read+write');
+        // Note: 'cookies-file-access' is not a valid MPV property and is omitted.
       } catch (e) {
         if (kDebugMode) debugPrint('Failed to set cookies-file: $e');
       }
