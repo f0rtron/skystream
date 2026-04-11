@@ -12,7 +12,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -DANDROID_STL=c++_static -DDE
 
 set(QUICKJS_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../cxx")
 add_definitions(-DCONFIG_VERSION="2024-01-01" -DQUICKJS -DCONFIG_BIGNUM -D_GNU_SOURCE)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funsigned-char")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funsigned-char -Wno-unused-but-set-variable")
 
 add_library(${PLUGIN_NAME} SHARED
   "flutter_js_plugin.cc"
