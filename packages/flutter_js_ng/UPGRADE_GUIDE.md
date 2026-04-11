@@ -30,6 +30,7 @@ To upgrade:
    - `libunicode.h` → QuickJS-NG's `libunicode.h`
    - `libbf.c` → QuickJS-NG's `libbf.c`
    - `libbf.h` → QuickJS-NG's `libbf.h`
+   - `quickjs-c-atomics.h` → QuickJS-NG's `quickjs-c-atomics.h`
 3. The CMakeLists.txt and the C++ bridge (`libfastdev_quickjs_runtime.cpp`) remain unchanged.
 4. Android will compile the new source automatically during `flutter build`.
 

@@ -57,6 +57,7 @@ jobs:
           cp /tmp/quickjs-ng/libbf.c /tmp/build/quickjs/ || true
           cp /tmp/quickjs-ng/libbf.h /tmp/build/quickjs/ || true
           cp /tmp/quickjs-ng/quickjs-atom.h /tmp/build/quickjs/ || true
+          cp /tmp/quickjs-ng/quickjs-c-atomics.h /tmp/build/quickjs/ || true
           cp /tmp/quickjs-ng/quickjs-opcode.h /tmp/build/quickjs/ || true
           cp /tmp/quickjs-ng/list.h /tmp/build/quickjs/ || true
 
@@ -124,7 +125,7 @@ jobs:
             'libregexp.c', 'libregexp.h',
             'libunicode.c', 'libunicode.h',
             'libbf.c', 'libbf.h',
-            'quickjs-atom.h', 'quickjs-opcode.h',
+            'quickjs-atom.h', 'quickjs-c-atomics.h', 'quickjs-opcode.h',
             'libregexp-opcode.h', 'libunicode-table.h', 'list.h'
           )
           foreach ($f in $files) {
@@ -186,7 +187,7 @@ jobs:
           files=(quickjs.c quickjs.h cutils.c cutils.h \
                  libregexp.c libregexp.h libunicode.c libunicode.h \
                  libbf.c libbf.h \
-                 quickjs-atom.h quickjs-opcode.h libregexp-opcode.h \
+                 quickjs-atom.h quickjs-c-atomics.h quickjs-opcode.h libregexp-opcode.h \
                  libunicode-table.h list.h)
           for f in "${files[@]}"; do
             [ -f "/tmp/quickjs-ng/$f" ] && cp "/tmp/quickjs-ng/$f" /tmp/android-quickjs/
