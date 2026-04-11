@@ -12,6 +12,7 @@ import '../../storage/extension_repository.dart';
 import '../../network/cloudflare_bypass.dart';
 import 'package:encrypt/encrypt.dart' as encrypt_lib;
 import 'package:pointycastle/export.dart';
+import 'package:crypto/crypto.dart' as crypto_lib;
 import '../services/plugin_storage_service.dart';
 import '../providers.dart';
 
@@ -480,6 +481,142 @@ class JsEngineService {
       return null;
     });
 
+    // ── Performance Bridge: Batch DOM Queries ──────────────────────────
+    // Reduces N synchronous IPC round-trips to a single call.
+    _runtime.onMessage('dom_query_batch', (dynamic args) {
+      try {
+        final Map<String, dynamic> data = args is Map
+            ? Map<String, dynamic>.from(args)
+            : jsonDecode(args.toString());
+        final String? nodeId = data['nodeId'];
+        final List queries = data['queries'] as List? ?? [];
+
+        if (nodeId == null) return null;
+        final node = _domRegistry[nodeId];
+        if (node == null) return null;
+
+        return queries.map((q) {
+          final Map<String, dynamic> query = q is Map
+              ? Map<String, dynamic>.from(q)
+              : jsonDecode(q.toString());
+          final String selector = query['query'] ?? '*';
+          final String attr = query['attr'] ?? 'textContent';
+          final bool first = query['first'] ?? false;
+
+          final elements = _querySelectorAllWithContains(node, selector);
+          if (first) {
+            if (elements.isEmpty) return null;
+            return _extractAttr(elements.first, attr);
+          }
+          return elements.map((e) => _extractAttr(e, attr)).toList();
+        }).toList();
+      } catch (e) {
+        if (kDebugMode) debugPrint('[DOM Batch Error] $e');
+        return null;
+      }
+    });
+
+    // ── Performance Bridge: Parse + Extract in one isolate call ────────
+    // Parses HTML and extracts all requested data without ever registering
+    // a DOM node, avoiding the overhead of dom_parse + N × dom_query.
+    _runtime.onMessage('dom_parse_and_extract', (dynamic args) {
+      final Map<String, dynamic> data = args is Map
+          ? Map<String, dynamic>.from(args)
+          : jsonDecode(args.toString());
+      final String? callbackId = data['id'];
+      final String html = data['html'] ?? '';
+      final Map<String, dynamic> extractionMap =
+          Map<String, dynamic>.from(data['extract'] ?? {});
+
+      compute(_parseAndExtract, _ParseAndExtractParams(html, extractionMap))
+          .then((result) {
+        if (callbackId != null) {
+          _runtime.evaluate(
+            "_resolveDartAsync('$callbackId', ${jsonEncode(result)}, false)",
+          );
+        }
+      }).catchError((e) {
+        if (callbackId != null) {
+          _runtime.evaluate(
+            "_resolveDartAsync('$callbackId', ${jsonEncode(e.toString())}, true)",
+          );
+        }
+      });
+      return null;
+    });
+
+    // ── Performance Bridge: Native Regex ───────────────────────────────
+    // Dart's RegExp uses ICU and is significantly faster than QuickJS regex
+    // on large strings (e.g., extracting URLs from inline scripts).
+    _runtime.onMessage('regex_match_all', (dynamic args) {
+      try {
+        final Map<String, dynamic> data = args is Map
+            ? Map<String, dynamic>.from(args)
+            : jsonDecode(args.toString());
+        final String text = data['text'] ?? '';
+        final String pattern = data['pattern'] ?? '';
+        final int group = data['group'] ?? 0;
+        final bool caseSensitive = data['caseSensitive'] ?? true;
+
+        final regex = RegExp(pattern, caseSensitive: caseSensitive);
+        final matches = regex.allMatches(text);
+        return matches
+            .map((m) => m.group(group))
+            .where((g) => g != null)
+            .toList();
+      } catch (e) {
+        if (kDebugMode) debugPrint('[Regex Bridge Error] $e');
+        return [];
+      }
+    });
+
+    // ── Performance Bridge: Native JSON Extraction ─────────────────────
+    // Parse large JSON responses in Dart and extract specific keys,
+    // avoiding the overhead of JSON.parse() in QuickJS.
+    _runtime.onMessage('json_extract', (dynamic args) {
+      try {
+        final Map<String, dynamic> data = args is Map
+            ? Map<String, dynamic>.from(args)
+            : jsonDecode(args.toString());
+        final String jsonStr = data['json'] ?? '{}';
+        final List paths = data['paths'] as List? ?? [];
+
+        final dynamic parsed = jsonDecode(jsonStr);
+        final Map<String, dynamic> result = {};
+
+        for (final path in paths) {
+          final String key = path.toString();
+          result[key] = _extractJsonPath(parsed, key);
+        }
+        return result;
+      } catch (e) {
+        if (kDebugMode) debugPrint('[JSON Extract Error] $e');
+        return null;
+      }
+    });
+
+    // ── Performance Bridge: Crypto Hashing ─────────────────────────────
+    // MD5 and SHA256 are used by some providers for API authentication.
+    _runtime.onMessage('crypto_md5', (dynamic args) {
+      try {
+        final input = args.toString();
+        return crypto_lib.md5.convert(utf8.encode(input)).toString();
+      } catch (e) {
+        if (kDebugMode) debugPrint('[Crypto MD5 Error] $e');
+        return null;
+      }
+    });
+
+    _runtime.onMessage('crypto_sha256', (dynamic args) {
+      try {
+        final input = args.toString();
+        return crypto_lib.sha256.convert(utf8.encode(input)).toString();
+      } catch (e) {
+        if (kDebugMode) debugPrint('[Crypto SHA256 Error] $e');
+        return null;
+      }
+    });
+
     _runtime.evaluate("""
       const _dartAsyncRegistry = {};
       globalThis._resolveDartAsync = function(id, result, isError) {
@@ -805,6 +942,93 @@ class JsEngineService {
           this.origin = this.protocol + "//" + this.host;
         }
         toString() { return this.href; }
+      };
+
+      // ── Performance Helpers (Native Bridge) ──────────────────────────
+      // These functions offload expensive operations to the Dart runtime.
+      // Plugins can opt-in to use them for significant speed improvements.
+
+      /**
+       * Batch DOM queries — executes multiple CSS selectors in a single
+       * native call, eliminating per-query IPC overhead.
+       * @param {string} nodeId - DOM node ID from parseHtml()
+       * @param {Array<{query: string, attr?: string, first?: boolean}>} queries
+       * @returns {Array} - Array of results, one per query
+       */
+      globalThis.nativeDomBatch = function(nodeId, queries) {
+        var res = sendMessage('dom_query_batch', JSON.stringify({
+          nodeId: nodeId,
+          queries: queries
+        }));
+        if (typeof res === 'string') res = JSON.parse(res);
+        return res || [];
+      };
+
+      /**
+       * Combined HTML parse + extract — parses HTML and extracts all
+       * requested data in a single background isolate call.
+       * @param {string} html - Raw HTML string
+       * @param {Object} extractionMap - { key: { query, attr? } }
+       * @returns {Promise<Object>} - { key: [values] }
+       */
+      globalThis.nativeExtract = function(html, extractionMap) {
+        return _dartAsyncCall('dom_parse_and_extract', {
+          html: html,
+          extract: extractionMap
+        });
+      };
+
+      /**
+       * Native regex — runs Dart's ICU-based RegExp on large strings.
+       * @param {string} text - Input text
+       * @param {string} pattern - Regex pattern
+       * @param {number} [group=0] - Capture group to return
+       * @param {boolean} [caseSensitive=true]
+       * @returns {Array<string>} - All matches
+       */
+      globalThis.nativeRegex = function(text, pattern, group, caseSensitive) {
+        var res = sendMessage('regex_match_all', JSON.stringify({
+          text: text,
+          pattern: pattern,
+          group: group || 0,
+          caseSensitive: caseSensitive !== false
+        }));
+        if (typeof res === 'string') res = JSON.parse(res);
+        return res || [];
+      };
+
+      /**
+       * Native JSON extraction — parses JSON and extracts values at
+       * specific dot-notation paths in Dart.
+       * @param {string} jsonStr - Raw JSON string
+       * @param {Array<string>} paths - Dot-notation paths (e.g., 'data.items')
+       * @returns {Object} - { path: value }
+       */
+      globalThis.nativeJsonExtract = function(jsonStr, paths) {
+        var res = sendMessage('json_extract', JSON.stringify({
+          json: jsonStr,
+          paths: paths
+        }));
+        if (typeof res === 'string') res = JSON.parse(res);
+        return res || {};
+      };
+
+      /**
+       * Native MD5 hash.
+       * @param {string} input
+       * @returns {string} - Hex-encoded MD5 hash
+       */
+      globalThis.nativeMd5 = function(input) {
+        return sendMessage('crypto_md5', String(input)) || '';
+      };
+
+      /**
+       * Native SHA256 hash.
+       * @param {string} input
+       * @returns {string} - Hex-encoded SHA256 hash
+       */
+      globalThis.nativeSha256 = function(input) {
+        return sendMessage('crypto_sha256', String(input)) || '';
       };
     """);
   }
@@ -1177,9 +1401,136 @@ class JsEngineService {
       'outerHTML': element.outerHtml,
     };
   }
+
+  /// Extracts a specific attribute value from an HTML element.
+  /// Used by dom_query_batch for efficient per-element attribute extraction.
+  String? _extractAttr(html_dom.Element element, String attr) {
+    switch (attr) {
+      case 'textContent':
+        return element.text;
+      case 'innerHTML':
+        return element.innerHtml;
+      case 'outerHTML':
+        return element.outerHtml;
+      case 'tagName':
+        return element.localName;
+      case 'className':
+        return element.className;
+      default:
+        return element.attributes[attr];
+    }
+  }
+
+  /// Extracts a value from a parsed JSON object using dot-notation path.
+  /// Supports simple paths like 'data.items' and array wildcards like 'items[*].title'.
+  dynamic _extractJsonPath(dynamic obj, String path) {
+    final parts = path.split('.');
+    dynamic current = obj;
+
+    for (final part in parts) {
+      if (current == null) return null;
+
+      // Handle array wildcard: items[*]
+      if (part.endsWith('[*]')) {
+        final key = part.substring(0, part.length - 3);
+        if (key.isNotEmpty) {
+          if (current is Map) {
+            current = current[key];
+          } else {
+            return null;
+          }
+        }
+        if (current is List) {
+          // Collect remaining path from all array items
+          final remainingPath = parts.sublist(parts.indexOf(part) + 1).join('.');
+          if (remainingPath.isEmpty) return current;
+          return current.map((item) => _extractJsonPath(item, remainingPath)).toList();
+        }
+        return null;
+      }
+
+      // Handle array index: items[0]
+      final indexMatch = RegExp(r'^(.+)\[(\d+)\]$').firstMatch(part);
+      if (indexMatch != null) {
+        final key = indexMatch.group(1)!;
+        final index = int.parse(indexMatch.group(2)!);
+        if (current is Map) current = current[key];
+        if (current is List && index < current.length) {
+          current = current[index];
+        } else {
+          return null;
+        }
+        continue;
+      }
+
+      // Simple key access
+      if (current is Map) {
+        current = current[part];
+      } else {
+        return null;
+      }
+    }
+    return current;
+  }
 }
 
 // Global top-level function for compute() compatibility
 html_dom.Document _parseHtml(String html) {
   return html_parser.parse(html);
+}
+
+/// Parameters for the _parseAndExtract isolate function.
+class _ParseAndExtractParams {
+  final String html;
+  final Map<String, dynamic> extractionMap;
+  const _ParseAndExtractParams(this.html, this.extractionMap);
+}
+
+/// Top-level function that runs in a background isolate via compute().
+/// Parses HTML and extracts all requested data in a single call,
+/// avoiding the overhead of multiple dom_query round-trips.
+Map<String, dynamic> _parseAndExtract(_ParseAndExtractParams params) {
+  final doc = html_parser.parse(params.html);
+  final Map<String, dynamic> result = {};
+
+  for (final entry in params.extractionMap.entries) {
+    final key = entry.key;
+    final spec = entry.value is Map
+        ? Map<String, dynamic>.from(entry.value)
+        : <String, dynamic>{};
+    final String selector = spec['query'] ?? '*';
+    final String attr = spec['attr'] ?? 'textContent';
+    final bool first = spec['first'] ?? false;
+
+    final elements = doc.querySelectorAll(selector);
+    if (first) {
+      if (elements.isEmpty) {
+        result[key] = null;
+      } else {
+        result[key] = _extractAttrStatic(elements.first, attr);
+      }
+    } else {
+      result[key] = elements.map((e) => _extractAttrStatic(e, attr)).toList();
+    }
+  }
+  return result;
+}
+
+/// Static attribute extractor for use inside compute() isolates.
+/// (Cannot reference instance methods from a top-level function.)
+String? _extractAttrStatic(html_dom.Element element, String attr) {
+  switch (attr) {
+    case 'textContent':
+      return element.text;
+    case 'innerHTML':
+      return element.innerHtml;
+    case 'outerHTML':
+      return element.outerHtml;
+    case 'tagName':
+      return element.localName;
+    case 'className':
+      return element.className;
+    default:
+      return element.attributes[attr];
+  }
 }
