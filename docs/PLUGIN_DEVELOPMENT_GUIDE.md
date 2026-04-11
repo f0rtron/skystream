@@ -249,7 +249,32 @@ If you prefer raw objects, ensure they match these definitions:
 </details>
 
 <details>
-<summary><b>Advanced Features</b></summary>
+<summary><b>Advanced Features & Performance</b></summary>
+
+### Performance Helpers (Native Bridge)
+SkyStream provides specialized methods that offload heavy processing (like DOM scraping and Regex) to the native Dart engine, which is much faster than running in the JS environment.
+
+| Function | Signature | Use Case |
+| :--- | :--- | :--- |
+| **Batch DOM** | `nativeDomBatch(nodeId, queries)` | Run many CSS selectors synchronously without IPC overhead. |
+| **Extract All** | `await nativeExtract(html, schema)` | Parse HTML and extract everything in a background isolate. |
+| **Native Regex** | `nativeRegex(string, pattern)` | Use native ICU regex engines for heavy string parsing. |
+| **JSON Path** | `nativeJsonExtract(json, paths)` | Avoid `JSON.parse()` on huge payloads. |
+| **Hashing** | `nativeMd5(str)` / `nativeSha256(str)` | Fast hash calculation for API auth. |
+
+**Example: Converting DOM Queries to nativeExtract**
+```javascript
+// Slow: Blocks JS thread, multiple round trips
+const doc = await parseHtml(html);
+const title = doc.querySelector('.title').textContent;
+const img = doc.querySelector('img').getAttribute('src');
+
+// Fast: Non-blocking, single isolate execution
+const data = await nativeExtract(html, {
+  title: { query: '.title', attr: 'textContent', first: true },
+  img: { query: 'img', attr: 'src', first: true }
+});
+```
 
 ### Native SDK Helpers
 SkyStream Gen 2 provides high-level SDK helpers for complex tasks like settings, captcha, and crypto.
@@ -258,7 +283,7 @@ SkyStream Gen 2 provides high-level SDK helpers for complex tasks like settings,
 | :--- | :--- | :--- |
 | **Settings** | `registerSettings(schema)` | Register plugin settings (Toggles, Selects, Input). |
 | **Captcha** | `await solveCaptcha(key, url)` | Opens a captcha solver for the user. Returns token. |
-| **Crypto** | `await crypto.decryptAES(data, key, iv)`| Optimized AES decryption bridge. |
+| **Crypto AES** | `await crypto.decryptAES(data, key, iv)`| Optimized AES decryption bridge. |
 
 **Using Settings:**
 ```javascript

@@ -1,0 +1,213 @@
+# Build QuickJS-NG native libraries for Windows and Linux.
+# Android compiles from source via CMake/NDK during flutter build.
+# iOS/macOS use JavaScriptCore (system framework, no build needed).
+#
+# This workflow:
+#   1. Downloads QuickJS-NG source
+#   2. Downloads the flutter_js C bridge wrapper
+#   3. Compiles shared libraries for Windows (x64, arm64) and Linux (x64, arm64)
+#   4. Uploads artifacts for manual integration
+
+name: Build QuickJS-NG Natives
+
+on:
+  workflow_dispatch:
+    inputs:
+      quickjs_ng_version:
+        description: 'QuickJS-NG version tag (e.g., v0.9.0)'
+        required: true
+        default: 'v0.9.0'
+
+jobs:
+  # ─── Build for Linux ──────────────────────────────────────────────
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+    steps:
+      - name: Checkout SkyStream
+        uses: actions/checkout@v4
+
+      - name: Install ARM64 Cross-Compiler
+        if: matrix.arch == 'arm64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      - name: Clone QuickJS-NG
+        run: |
+          git clone --depth 1 --branch ${{ github.event.inputs.quickjs_ng_version }} \
+            https://github.com/quickjs-ng/quickjs.git /tmp/quickjs-ng
+
+      - name: Prepare source directory
+        run: |
+          mkdir -p /tmp/build/quickjs
+          # Copy QuickJS-NG core files
+          cp /tmp/quickjs-ng/quickjs.c /tmp/build/quickjs/
+          cp /tmp/quickjs-ng/quickjs.h /tmp/build/quickjs/
+          cp /tmp/quickjs-ng/cutils.c /tmp/build/quickjs/
+          cp /tmp/quickjs-ng/cutils.h /tmp/build/quickjs/
+          cp /tmp/quickjs-ng/libregexp.c /tmp/build/quickjs/
+          cp /tmp/quickjs-ng/libregexp.h /tmp/build/quickjs/
+          cp /tmp/quickjs-ng/libregexp-opcode.h /tmp/build/quickjs/ || true
+          cp /tmp/quickjs-ng/libunicode.c /tmp/build/quickjs/
+          cp /tmp/quickjs-ng/libunicode.h /tmp/build/quickjs/
+          cp /tmp/quickjs-ng/libunicode-table.h /tmp/build/quickjs/ || true
+          cp /tmp/quickjs-ng/quickjs-atom.h /tmp/build/quickjs/ || true
+          cp /tmp/quickjs-ng/quickjs-opcode.h /tmp/build/quickjs/ || true
+          cp /tmp/quickjs-ng/list.h /tmp/build/quickjs/ || true
+
+      - name: Build shared library
+        run: |
+          cd /tmp/build
+          cat > CMakeLists.txt << 'EOF'
+          cmake_minimum_required(VERSION 3.6.0)
+          project(quickjs_c_bridge C CXX)
+
+          set(CMAKE_C_STANDARD 11)
+          set(CMAKE_CXX_STANDARD 17)
+          set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCONFIG_VERSION=\"2024-01-01\" -fPIC")
+          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -DQUICKJS -fPIC")
+
+          include_directories(quickjs)
+
+          add_library(quickjs_c_bridge_plugin SHARED
+              quickjs/cutils.c
+              quickjs/libregexp.c
+              quickjs/libunicode.c
+              quickjs/quickjs.c
+          )
+
+          target_link_libraries(quickjs_c_bridge_plugin m dl pthread)
+          EOF
+
+          mkdir build && cd build
+          if [ "${{ matrix.arch }}" == "arm64" ]; then
+            cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++
+          else
+            cmake .. -DCMAKE_BUILD_TYPE=Release
+          fi
+          make -j$(nproc)
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: /tmp/build/build/libquickjs_c_bridge_plugin.so
+
+  # ─── Build for Windows ────────────────────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+    steps:
+      - name: Checkout SkyStream
+        uses: actions/checkout@v4
+
+      - name: Clone QuickJS-NG
+        run: |
+          git clone --depth 1 --branch ${{ github.event.inputs.quickjs_ng_version }} `
+            https://github.com/quickjs-ng/quickjs.git C:\quickjs-ng
+
+      - name: Prepare source directory
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path C:\build\quickjs
+          $files = @(
+            'quickjs.c', 'quickjs.h',
+            'cutils.c', 'cutils.h',
+            'libregexp.c', 'libregexp.h',
+            'libunicode.c', 'libunicode.h',
+            'quickjs-atom.h', 'quickjs-opcode.h',
+            'libregexp-opcode.h', 'libunicode-table.h', 'list.h'
+          )
+          foreach ($f in $files) {
+            $src = "C:\quickjs-ng\$f"
+            if (Test-Path $src) {
+              Copy-Item $src "C:\build\quickjs\"
+            }
+          }
+
+      - name: Build shared library
+        shell: pwsh
+        run: |
+          cd C:\build
+          @"
+          cmake_minimum_required(VERSION 3.6.0)
+          project(quickjs_c_bridge C CXX)
+
+          set(CMAKE_C_STANDARD 11)
+          set(CMAKE_CXX_STANDARD 17)
+          add_definitions(-DCONFIG_VERSION="2024-01-01" -DQUICKJS)
+
+          include_directories(quickjs)
+
+          add_library(quickjs_c_bridge SHARED
+              quickjs/cutils.c
+              quickjs/libregexp.c
+              quickjs/libunicode.c
+              quickjs/quickjs.c
+          )
+          "@ | Set-Content CMakeLists.txt
+
+          mkdir build; cd build
+          $arch = if ("${{ matrix.arch }}" -eq "arm64") { "ARM64" } else { "x64" }
+          cmake .. -A $arch
+          cmake --build . --config Release
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}
+          path: C:\build\build\Release\quickjs_c_bridge.dll
+
+  # ─── Copy Android source (for CMake/NDK build) ────────────────────
+  prepare-android-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout SkyStream
+        uses: actions/checkout@v4
+
+      - name: Clone QuickJS-NG
+        run: |
+          git clone --depth 1 --branch ${{ github.event.inputs.quickjs_ng_version }} \
+            https://github.com/quickjs-ng/quickjs.git /tmp/quickjs-ng
+
+      - name: Prepare Android source
+        run: |
+          mkdir -p /tmp/android-quickjs
+          files=(quickjs.c quickjs.h cutils.c cutils.h \
+                 libregexp.c libregexp.h libunicode.c libunicode.h \
+                 quickjs-atom.h quickjs-opcode.h libregexp-opcode.h \
+                 libunicode-table.h list.h)
+          for f in "${files[@]}"; do
+            [ -f "/tmp/quickjs-ng/$f" ] && cp "/tmp/quickjs-ng/$f" /tmp/android-quickjs/
+          done
+
+      - name: Upload Android source
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-quickjs-ng-source
+          path: /tmp/android-quickjs/
+
+  # ─── Summary ───────────────────────────────────────────────────────
+  summary:
+    needs: [build-linux, build-windows, prepare-android-source]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "## QuickJS-NG Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- **linux-x64 & linux-arm64**: \`libquickjs_c_bridge_plugin.so\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **windows-x64 & windows-arm64**: \`quickjs_c_bridge.dll\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **android-quickjs-ng-source**: C source files for NDK build" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Download the artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "2. Copy Linux \`libquickjs_c_bridge_plugin.so\` → \`packages/flutter_js_ng/linux/shared/<arch>/\`" >> $GITHUB_STEP_SUMMARY
+          echo "3. Copy Windows \`quickjs_c_bridge.dll\` → \`packages/flutter_js_ng/windows/shared/<arch>/\`" >> $GITHUB_STEP_SUMMARY
+          echo "4. Copy Android source files → \`packages/flutter_js_ng/android/src/main/c/quickjs/\`" >> $GITHUB_STEP_SUMMARY
