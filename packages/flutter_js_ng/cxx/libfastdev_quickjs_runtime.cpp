@@ -9,6 +9,7 @@
 #endif
 #include <functional>
 #include <future>
+#include <ctime>
 #ifdef _MSC_VER
 #define DLLEXPORT __declspec(dllexport)
 #else
