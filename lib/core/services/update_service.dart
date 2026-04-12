@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:collection/collection.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:version/version.dart';
 
@@ -53,7 +55,7 @@ class UpdateService {
     Function(double) onProgress,
   ) async {
     try {
-      final asset = _findPlatformAsset(release);
+      final asset = await findPlatformAsset(release);
       if (asset == null) return null;
 
       final dir = await getApplicationDocumentsDirectory();
@@ -76,29 +78,105 @@ class UpdateService {
     }
   }
 
-  GithubAsset? _findPlatformAsset(GithubRelease release) {
+  Future<GithubAsset?> findPlatformAsset(GithubRelease release) async {
+    final assets =
+        release.assets.where((a) => !a.name.contains('debug')).toList();
+
     if (Platform.isAndroid) {
-      return release.assets.firstWhere(
-        (a) => a.name.endsWith('.apk'),
-        orElse: () => throw Exception('No APK found'),
-      );
+      final info = await DeviceInfoPlugin().androidInfo;
+      final abis = info.supportedAbis;
+
+      // 1. Match specific ABI (arm64-v8a, armeabi-v7a, x86_64)
+      for (final abi in abis) {
+        final match = assets.firstWhereOrNull(
+            (a) => a.name.contains('android') && a.name.contains(abi));
+        if (match != null) return match;
+      }
+
+      // 2. Fallback to universal
+      final universal = assets.firstWhereOrNull(
+          (a) => a.name.contains('android') && a.name.contains('universal'));
+      if (universal != null) return universal;
+
+      // 3. Last resort: any APK
+      return assets.firstWhereOrNull(
+          (a) => a.name.contains('android') && a.name.endsWith('.apk'));
     } else if (Platform.isWindows) {
-      return release.assets.firstWhere(
+      final arch = Platform.environment['PROCESSOR_ARCHITECTURE']
+              ?.toLowerCase() ??
+          'x64';
+      final isArm = arch.contains('arm') || arch.contains('aarch64');
+      final archTag = isArm ? 'arm64' : 'x64';
+
+      // 1. Match windows specific build with architecture
+      var match = assets.firstWhereOrNull(
+        (a) => a.name.contains('windows') && a.name.contains(archTag),
+      );
+
+      // Fallback for x86_64 / amd64 naming
+      if (match == null && !isArm) {
+        match = assets.firstWhereOrNull(
+          (a) => a.name.contains('windows') && a.name.contains('x86_64'),
+        );
+      }
+
+      if (match != null) return match;
+
+      // 2. Fallback to any windows installer
+      return assets.firstWhereOrNull(
         (a) =>
-            a.name.endsWith('.exe') ||
-            a.name.endsWith('.msix') ||
-            a.name.endsWith('.zip'),
-        orElse: () => throw Exception('No Windows installer found'),
+            a.name.contains('windows') &&
+            (a.name.endsWith('.exe') ||
+                a.name.endsWith('.msix') ||
+                a.name.endsWith('.zip')),
       );
     } else if (Platform.isMacOS) {
-      return release.assets.firstWhere(
-        (a) => a.name.endsWith('.dmg') || a.name.endsWith('.zip'),
-        orElse: () => throw Exception('No DMG or ZIP found'),
+      final info = await DeviceInfoPlugin().macOsInfo;
+      final arch = info.arch; // e.g. "arm64" or "x86_64"
+
+      // Match architecture in filename if present
+      var match = assets.firstWhereOrNull(
+          (a) => a.name.contains('macos') && a.name.contains(arch));
+
+      // Fallback for x64 alias
+      if (match == null && arch == 'x86_64') {
+        match = assets.firstWhereOrNull(
+            (a) => a.name.contains('macos') && a.name.contains('x64'));
+      }
+
+      if (match != null) return match;
+
+      return assets.firstWhereOrNull(
+        (a) =>
+            a.name.contains('macos') &&
+            (a.name.endsWith('.dmg') || a.name.endsWith('.zip')),
       );
     } else if (Platform.isLinux) {
-      return release.assets.firstWhere(
-        (a) => a.name.endsWith('.AppImage') || a.name.endsWith('.deb'),
-        orElse: () => throw Exception('No Linux installer found'),
+      final version = Platform.version.toLowerCase();
+      final isArm = version.contains('arm') || version.contains('aarch64');
+      final archTag = isArm ? 'arm64' : 'x64';
+
+      // 1. Try matching architecture
+      var match = assets.firstWhereOrNull(
+        (a) => a.name.contains('linux') && a.name.contains(archTag),
+      );
+
+      // Fallback for x86_64 alias
+      if (match == null && !isArm) {
+        match = assets.firstWhereOrNull(
+          (a) => a.name.contains('linux') && a.name.contains('x86_64'),
+        );
+      }
+
+      if (match != null) return match;
+
+      // 2. Fallback to any Linux installer type
+      return assets.firstWhereOrNull(
+        (a) =>
+            a.name.contains('linux') &&
+            (a.name.endsWith('.AppImage') ||
+                a.name.endsWith('.deb') ||
+                a.name.endsWith('.tar.gz')),
       );
     }
     return null;

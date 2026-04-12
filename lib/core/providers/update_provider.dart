@@ -64,10 +64,18 @@ class UpdateController extends Notifier<UpdateState> {
 
   Future<void> downloadAndInstall(GithubRelease release) async {
     // For iOS, just open the release URL
-    if (Platform.isIOS) {
-      if (await canLaunchUrl(Uri.parse(release.htmlUrl))) {
-        await launchUrl(Uri.parse(release.htmlUrl));
+    // For iOS and Desktop platforms, use browser-managed downloads
+    if (Platform.isIOS ||
+        Platform.isWindows ||
+        Platform.isMacOS ||
+        Platform.isLinux) {
+      final asset = await _service.findPlatformAsset(release);
+      final url = asset?.browserDownloadUrl ?? release.htmlUrl;
+
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       }
+      state = UpdateInitial();
       return;
     }
 
