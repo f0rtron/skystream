@@ -18,6 +18,7 @@ import 'download_progress_dialog.dart';
 import 'download_management_dialog.dart';
 import 'episode_card.dart';
 import 'package:skystream/core/providers/device_info_provider.dart';
+import 'package:skystream/core/utils/responsive_breakpoints.dart';
 import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class DetailsSeasonListWrapper extends ConsumerWidget {
@@ -100,6 +101,14 @@ class DetailsActionButtons extends HookConsumerWidget {
 
     final playFocusNode = useFocusNode();
     final isTv = ref.watch(deviceProfileProvider).asData?.value.isTv ?? false;
+    final isMobile = context.isMobile;
+
+    final btnPadding = EdgeInsets.symmetric(
+      vertical: isMobile
+          ? LayoutConstants.spacingSm
+          : LayoutConstants.spacingMd,
+      horizontal: LayoutConstants.spacingMd,
+    );
 
     final pos = targetEpisode != null
         ? historyRepo.getEpisodePosition(
@@ -154,7 +163,7 @@ class DetailsActionButtons extends HookConsumerWidget {
             }
           : null,
       child: Padding(
-        padding: const EdgeInsets.all(LayoutConstants.spacingMd),
+        padding: btnPadding,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: isLaunching
@@ -230,10 +239,7 @@ class DetailsActionButtons extends HookConsumerWidget {
               );
             },
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: LayoutConstants.spacingSm,
-                horizontal: LayoutConstants.spacingMd,
-              ),
+              padding: btnPadding,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -263,10 +269,7 @@ class DetailsActionButtons extends HookConsumerWidget {
                         );
                   },
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: LayoutConstants.spacingSm,
-                horizontal: LayoutConstants.spacingMd,
-              ),
+              padding: btnPadding,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: isDownloading
