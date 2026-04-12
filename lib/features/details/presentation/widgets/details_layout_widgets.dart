@@ -124,10 +124,7 @@ class DetailsActionButtons extends HookConsumerWidget {
     String playLabel = isResuming ? l10n.resume : l10n.play;
     if (targetEpisode != null && !isMovie) {
       if (isSingleSeason) {
-        playLabel = l10n.playEpisodeOnly(
-          playLabel,
-          targetEpisode.episode,
-        );
+        playLabel = l10n.playEpisodeOnly(playLabel, targetEpisode.episode);
       } else {
         playLabel = l10n.playEpisode(
           playLabel,
@@ -233,7 +230,10 @@ class DetailsActionButtons extends HookConsumerWidget {
               );
             },
             child: Padding(
-              padding: const EdgeInsets.all(LayoutConstants.spacingMd),
+              padding: const EdgeInsets.symmetric(
+                vertical: LayoutConstants.spacingSm,
+                horizontal: LayoutConstants.spacingMd,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -263,7 +263,10 @@ class DetailsActionButtons extends HookConsumerWidget {
                         );
                   },
             child: Padding(
-              padding: const EdgeInsets.all(LayoutConstants.spacingMd),
+              padding: const EdgeInsets.symmetric(
+                vertical: LayoutConstants.spacingSm,
+                horizontal: LayoutConstants.spacingMd,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: isDownloading
@@ -367,14 +370,17 @@ class DetailsActionButtons extends HookConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         progressWidget,
-        Row(
-          children: [
-            Expanded(child: playBtn),
-            if (showDownload) ...[
-              const SizedBox(width: LayoutConstants.spacingSm),
-              Expanded(child: downloadBtn),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: playBtn),
+              if (showDownload) ...[
+                const SizedBox(width: LayoutConstants.spacingSm),
+                Expanded(child: downloadBtn),
+              ],
             ],
-          ],
+          ),
         ),
       ],
     );
