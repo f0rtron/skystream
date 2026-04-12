@@ -1246,9 +1246,9 @@ class PlayerBottomSheets {
                         hintText: AppLocalizations.of(
                           context,
                         )!.searchSubtitleNameHint,
-                        prefixIcon: const Icon(
+                        prefixIcon: Icon(
                           Icons.search,
-                          color: Colors.white70,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -1352,8 +1352,8 @@ class PlayerBottomSheets {
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: isSelected
-                                      ? Colors.white
-                                      : Colors.white70,
+                                      ? theme.colorScheme.onPrimary
+                                      : theme.colorScheme.onSurfaceVariant,
                                 ),
                               ),
                               selected: isSelected,
@@ -1376,7 +1376,8 @@ class PlayerBottomSheets {
                                 }
                               },
                               selectedColor: theme.colorScheme.primary,
-                              backgroundColor: Colors.white10,
+                              backgroundColor:
+                                  theme.colorScheme.surfaceContainerHighest,
                               showCheckmark: false,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 4,
@@ -1402,29 +1403,38 @@ class PlayerBottomSheets {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.subtitles_rounded,
                                   size: 64,
-                                  color: Colors.white24,
+                                  color: theme.colorScheme.onSurfaceVariant
+                                      .withValues(alpha: 0.3),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   AppLocalizations.of(
                                     context,
                                   )!.enterSearchSubtitlePrompt,
-                                  style: const TextStyle(color: Colors.white38),
+                                  style: TextStyle(
+                                    color: theme.colorScheme.onSurfaceVariant
+                                        .withValues(alpha: 0.5),
+                                  ),
                                 ),
                               ],
                             ),
                           );
                         }
 
-                        final settings = ref.watch(playerSettingsProvider).asData?.value;
-                        final hasAnyCredentials = settings != null && (
-                          (settings.osUsername.isNotEmpty && settings.osPassword.isNotEmpty && settings.osApiKey.isNotEmpty) ||
-                          settings.subdlApiKey.isNotEmpty ||
-                          settings.subsourceApiKey.isNotEmpty
-                        );
+                        final settings = ref
+                            .watch(playerSettingsProvider)
+                            .asData
+                            ?.value;
+                        final hasAnyCredentials =
+                            settings != null &&
+                            ((settings.osUsername.isNotEmpty &&
+                                    settings.osPassword.isNotEmpty &&
+                                    settings.osApiKey.isNotEmpty) ||
+                                settings.subdlApiKey.isNotEmpty ||
+                                settings.subsourceApiKey.isNotEmpty);
 
                         if (results.isEmpty) {
                           if (!hasAnyCredentials) {
@@ -1437,13 +1447,17 @@ class PlayerBottomSheets {
                                     Container(
                                       padding: const EdgeInsets.all(16),
                                       decoration: BoxDecoration(
-                                        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.1),
+                                        color: theme
+                                            .colorScheme
+                                            .primaryContainer
+                                            .withValues(alpha: 0.1),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         Icons.vpn_key_rounded,
                                         size: 48,
-                                        color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                                        color: theme.colorScheme.primary
+                                            .withValues(alpha: 0.5),
                                       ),
                                     ),
                                     const SizedBox(height: 16),
@@ -1461,7 +1475,8 @@ class PlayerBottomSheets {
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 13,
-                                        color: theme.colorScheme.onSurfaceVariant,
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                                     const SizedBox(height: 24),
@@ -1471,15 +1486,24 @@ class PlayerBottomSheets {
                                         // The user is already in the player, we'll suggest they go to main settings
                                         // or we can try to show the specific dialogs here if they were available.
                                         // For now, let's provide a clear toast or action.
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           const SnackBar(
-                                            content: Text('Go to App Settings > Player > Subtitle Accounts to configure.'),
+                                            content: Text(
+                                              'Go to App Settings > Player > Subtitle Accounts to configure.',
+                                            ),
                                             duration: Duration(seconds: 4),
                                           ),
                                         );
                                       },
-                                      icon: const Icon(Icons.settings_outlined, size: 18),
-                                      label: const Text('View Settings Instructions'),
+                                      icon: const Icon(
+                                        Icons.settings_outlined,
+                                        size: 18,
+                                      ),
+                                      label: const Text(
+                                        'View Settings Instructions',
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -1490,17 +1514,21 @@ class PlayerBottomSheets {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.subtitles_off_rounded,
                                   size: 64,
-                                  color: Colors.white24,
+                                  color: theme.colorScheme.onSurfaceVariant
+                                      .withValues(alpha: 0.3),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   AppLocalizations.of(
                                     context,
                                   )!.noSubtitleResults,
-                                  style: const TextStyle(color: Colors.white38),
+                                  style: TextStyle(
+                                    color: theme.colorScheme.onSurfaceVariant
+                                        .withValues(alpha: 0.5),
+                                  ),
                                 ),
                               ],
                             ),
@@ -1583,9 +1611,10 @@ class PlayerBottomSheets {
   }
 
   static Widget _buildShimmerLoading(BuildContext context) {
+    final theme = Theme.of(context);
     return Shimmer.fromColors(
-      baseColor: Colors.white12,
-      highlightColor: Colors.white24,
+      baseColor: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+      highlightColor: theme.colorScheme.onSurface.withValues(alpha: 0.2),
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: 6,
@@ -1601,7 +1630,9 @@ class PlayerBottomSheets {
                       width: 200,
                       height: 14,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.1,
+                        ),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -1612,7 +1643,9 @@ class PlayerBottomSheets {
                           width: 60,
                           height: 18,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.1,
+                            ),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -1621,7 +1654,9 @@ class PlayerBottomSheets {
                           width: 80,
                           height: 14,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.1,
+                            ),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
