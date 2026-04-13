@@ -115,6 +115,10 @@ SkyStream is not on the App Store. You must **sideload** it using a computer.
 - [Impactor](https://impactor.khcrysalis.dev/) (Free and OpenSource) or [Sideloadly](https://sideloadly.io/) (Free)
 - [iTunes](https://support.apple.com/en-us/106372) (if on Windows)
 
+**Guide**
+- [Impactor Guide](https://impactor.khcrysalis.dev/docs/getting-started/installing/)
+- [Sideloadly Video Guide](https://www.youtube.com/watch?v=vqTsavQc3lQ)
+
 **Steps:**
 1. Download `skystream-ios-unsigned-v2.2.1.ipa` from the [Releases Page](https://github.com/akashdh11/skystream/releases/latest).
 2. Open **Impactor** or **Sideloadly** on your computer.
