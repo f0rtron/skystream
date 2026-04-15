@@ -5,7 +5,9 @@ import '../config/tmdb_config.dart';
 
 class TmdbService {
   static final _yearRegex = RegExp(r'\b(19|20)\d{2}\b');
+  static const _suggestionsCacheTtl = Duration(days: 1);
   final Dio _dio;
+  final Map<String, _SuggestionCacheEntry> _suggestionsCache = {};
 
   TmdbService(Dio baseDio)
     : _dio = Dio(baseDio.options.copyWith(baseUrl: TmdbConfig.baseUrl)) {
@@ -426,6 +428,68 @@ class TmdbService {
     return [];
   }
 
+  /// Fetches search suggestions from TMDB multi-search.
+  ///
+  /// Returns title-only suggestions for movie/tv results, deduplicated and
+  /// capped to 10 items.
+  Future<List<String>> getSuggestions({
+    required String query,
+    String language = 'en-US',
+  }) async {
+    final trimmed = query.trim();
+    if (trimmed.length < 2) return [];
+    if (TmdbConfig.apiKey.isEmpty) return [];
+
+    final cacheKey = '${language.toLowerCase()}|${trimmed.toLowerCase()}';
+    final cached = _suggestionsCache[cacheKey];
+    if (cached != null &&
+        DateTime.now().difference(cached.cachedAt) < _suggestionsCacheTtl) {
+      return cached.suggestions;
+    }
+
+    try {
+      final response = await _dio.get(
+        '/search/multi',
+        queryParameters: {
+          'api_key': TmdbConfig.apiKey,
+          'query': trimmed,
+          'language': language,
+          'include_adult': false,
+        },
+      );
+
+      if (response.statusCode != 200) return [];
+
+      final results = List<Map<String, dynamic>>.from(
+        response.data['results'] ?? const [],
+      );
+
+      final seen = <String>{};
+      final suggestions = <String>[];
+      for (final item in results) {
+        final mediaType = item['media_type']?.toString();
+        if (mediaType != 'movie' && mediaType != 'tv') continue;
+
+        final title = (item['title'] ?? item['name'])?.toString().trim();
+        if (title == null || title.isEmpty) continue;
+
+        if (seen.add(title)) {
+          suggestions.add(title);
+          if (suggestions.length == 10) break;
+        }
+      }
+
+      _suggestionsCache[cacheKey] = _SuggestionCacheEntry(
+        suggestions: suggestions,
+        cachedAt: DateTime.now(),
+      );
+
+      return suggestions;
+    } catch (_) {
+      return [];
+    }
+  }
+
   Future<List<MultimediaItem>> _getDiscoveryResults(
     String path,
     String fullLanguageCode,
@@ -698,4 +762,14 @@ class TmdbService {
     }
     return null;
   }
+}
+
+class _SuggestionCacheEntry {
+  final List<String> suggestions;
+  final DateTime cachedAt;
+
+  const _SuggestionCacheEntry({
+    required this.suggestions,
+    required this.cachedAt,
+  });
 }

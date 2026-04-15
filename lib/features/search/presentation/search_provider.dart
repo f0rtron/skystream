@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/extensions/extension_manager.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
+import '../../discover/data/tmdb_provider.dart';
 
 class ProviderSearchResult {
   final String providerId;
@@ -218,3 +219,85 @@ final searchResultsProvider = StreamProvider<SearchAggregateState>((ref) {
 
   return searchAllProviders(query, manager, isCancelled: () => cancelled);
 });
+
+class SearchSuggestionState {
+  final List<String> suggestions;
+  final bool isLoading;
+  final String query;
+
+  const SearchSuggestionState({
+    this.suggestions = const [],
+    this.isLoading = false,
+    this.query = '',
+  });
+
+  SearchSuggestionState copyWith({
+    List<String>? suggestions,
+    bool? isLoading,
+    String? query,
+  }) {
+    return SearchSuggestionState(
+      suggestions: suggestions ?? this.suggestions,
+      isLoading: isLoading ?? this.isLoading,
+      query: query ?? this.query,
+    );
+  }
+}
+
+class SearchSuggestionController extends Notifier<SearchSuggestionState> {
+  Timer? _debounce;
+
+  @override
+  SearchSuggestionState build() {
+    ref.onDispose(() {
+      _debounce?.cancel();
+    });
+    return const SearchSuggestionState();
+  }
+
+  void onQueryChanged(String query) {
+    if (query == state.query) return;
+
+    final trimmed = query.trim();
+    if (trimmed.length < 2) {
+      _debounce?.cancel();
+      state = state.copyWith(
+        query: query,
+        suggestions: const [],
+        isLoading: false,
+      );
+      return;
+    }
+
+    state = state.copyWith(query: query, isLoading: true);
+
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () async {
+      try {
+        final tmdb = ref.read(tmdbServiceProvider);
+        final suggestions = await tmdb.getSuggestions(
+          query: query,
+          language: 'en-US',
+        );
+        if (state.query == query) {
+          state = state.copyWith(suggestions: suggestions, isLoading: false);
+        }
+      } catch (_) {
+        if (state.query == query) {
+          state = state.copyWith(suggestions: const [], isLoading: false);
+        }
+      }
+    });
+  }
+
+  void clear() {
+    _debounce?.cancel();
+    state = const SearchSuggestionState();
+  }
+}
+
+final searchSuggestionControllerProvider =
+    NotifierProvider.autoDispose<
+      SearchSuggestionController,
+      SearchSuggestionState
+    >(SearchSuggestionController.new);

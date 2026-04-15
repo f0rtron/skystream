@@ -21,10 +21,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     super.initState();
     // Restore any previously committed query into the text field.
     _controller.text = ref.read(searchQueryProvider);
+    _focusNode.addListener(_onFocusChanged);
+  }
+
+  void _onFocusChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChanged);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -32,15 +38,34 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   void _submitSearch(String val) {
     final trimmed = val.trim();
+    _controller.value = TextEditingValue(
+      text: trimmed,
+      selection: TextSelection.collapsed(offset: trimmed.length),
+    );
+    ref.read(searchSuggestionControllerProvider.notifier).clear();
     ref.read(searchQueryProvider.notifier).set(trimmed);
     // Dismiss keyboard after submitting, just like YouTube / browser.
     _focusNode.unfocus();
   }
 
+  void _fillSuggestion(String suggestion) {
+    _controller.value = TextEditingValue(
+      text: suggestion,
+      selection: TextSelection.collapsed(offset: suggestion.length),
+    );
+    ref.read(searchSuggestionControllerProvider.notifier).onQueryChanged(suggestion);
+    _focusNode.requestFocus();
+  }
+
   @override
   Widget build(BuildContext context) {
     final searchResultsAsync = ref.watch(searchResultsProvider);
+    final suggestionState = ref.watch(searchSuggestionControllerProvider);
     final l10n = AppLocalizations.of(context)!;
+    final typedLongEnough = suggestionState.query.trim().length >= 2;
+    final hasSuggestionContent =
+        suggestionState.isLoading || suggestionState.suggestions.isNotEmpty;
+    final showSuggestions = typedLongEnough && hasSuggestionContent;
 
     return Scaffold(
       appBar: AppBar(
@@ -82,6 +107,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     icon: const Icon(Icons.clear),
                     onPressed: () {
                       _controller.clear();
+                      ref.read(searchSuggestionControllerProvider.notifier).clear();
                       ref.read(searchQueryProvider.notifier).set('');
                     },
                   );
@@ -97,6 +123,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   // Android & iOS keyboards. On desktop, Enter maps to the
                   // same onSubmitted callback — identical to YouTube / browser.
                   textInputAction: TextInputAction.search,
+                  onChanged: (val) {
+                    ref
+                        .read(searchSuggestionControllerProvider.notifier)
+                        .onQueryChanged(val);
+                  },
                   onSubmitted: _submitSearch,
                   decoration: InputDecoration(
                     hintText: l10n.searchHint,
@@ -128,15 +159,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     ),
                     suffixIcon: suffix,
                   ),
-                  // NOTE: No onChanged / debounce here — search only fires
-                  // on explicit submit (keyboard Search key or Enter).
                 );
               },
             ),
           ),
         ),
       ),
-      body: searchResultsAsync.when(
+      body: showSuggestions
+          ? _buildSuggestionsView(context, suggestionState)
+          : searchResultsAsync.when(
         data: (state) {
           final allResults = state.results.expand((e) => e.results).toList();
 
@@ -172,6 +203,43 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text(l10n.errorPrefix(err.toString()))),
       ),
+    );
+  }
+
+  Widget _buildSuggestionsView(
+    BuildContext context,
+    SearchSuggestionState suggestionState,
+  ) {
+    if (suggestionState.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (suggestionState.suggestions.isEmpty) {
+      return Center(
+        child: Text(
+          'No results found',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: suggestionState.suggestions.length,
+      itemBuilder: (context, index) {
+        final suggestion = suggestionState.suggestions[index];
+        return ListTile(
+          leading: const Icon(Icons.search_rounded),
+          title: Text(suggestion),
+          trailing: IconButton(
+            tooltip: 'Fill query',
+            icon: const Icon(Icons.north_west_rounded),
+            onPressed: () => _fillSuggestion(suggestion),
+          ),
+          onTap: () => _submitSearch(suggestion),
+        );
+      },
     );
   }
 
