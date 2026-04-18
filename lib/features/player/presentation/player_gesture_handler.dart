@@ -1,141 +1,190 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import '../../settings/presentation/player_settings_provider.dart';
 
-class PlayerGestureHandler extends ChangeNotifier {
-  final Future<PlayerSettings> Function() getSettings;
-  final bool isTv;
-  final bool isDesktop;
+part 'player_gesture_handler.g.dart';
+
+@immutable
+class PlayerGestureState {
+  final PlayerGesture? currentGesture;
+  final bool showOSD;
+  final IconData osdIcon;
+  final double? osdValue;
+  final String osdLabel;
+  final Alignment osdAlignment;
+  final Duration? swipeSeekValue;
+
+  const PlayerGestureState({
+    this.currentGesture,
+    this.showOSD = false,
+    this.osdIcon = Icons.settings,
+    this.osdValue,
+    this.osdLabel = "",
+    this.osdAlignment = Alignment.center,
+    this.swipeSeekValue,
+  });
+
+  PlayerGestureState copyWith({
+    PlayerGesture? currentGesture,
+    bool? showOSD,
+    IconData? osdIcon,
+    double? osdValue,
+    String? osdLabel,
+    Alignment? osdAlignment,
+    Duration? swipeSeekValue,
+  }) {
+    return PlayerGestureState(
+      currentGesture: currentGesture ?? this.currentGesture,
+      showOSD: showOSD ?? this.showOSD,
+      osdIcon: osdIcon ?? this.osdIcon,
+      osdValue: osdValue ?? this.osdValue,
+      osdLabel: osdLabel ?? this.osdLabel,
+      osdAlignment: osdAlignment ?? this.osdAlignment,
+      swipeSeekValue: swipeSeekValue ?? this.swipeSeekValue,
+    );
+  }
+}
+
+@Riverpod(keepAlive: true)
+class PlayerGestureHandler extends _$PlayerGestureHandler {
+  // We will initialize these via a setup method since they depend on the specific player instance
+  Future<PlayerSettings> Function()? getSettings;
+  bool? isTv;
+  bool? isDesktop;
 
   // State from player
-  Duration Function() getDuration;
-  Duration Function() getPosition;
-  bool Function() canSeek;
-  double Function() getMaxVolumeLevel;
+  Duration Function()? getDuration;
+  Duration Function()? getPosition;
+  bool Function()? canSeek;
+  double Function()? getMaxVolumeLevel;
 
   // Callbacks to interact with UI
-  final VoidCallback onInteraction;
-  final VoidCallback onHideControls;
-  final Future<void> Function(Duration) onSeekRelative;
-  final Future<void> Function(Duration) onSeekTo;
-  final Future<double> Function() getVolumeLevel;
-  final Future<double> Function(double value) setVolumeLevel;
-  final Future<double> Function(double step) changeVolumeLevel;
-  final Future<double> Function() toggleMuteLevel;
-  final void Function(bool isLeft, Offset tapPos, int seekSeconds)
+  VoidCallback? onInteraction;
+  VoidCallback? onHideControls;
+  Future<void> Function(Duration)? onSeekRelative;
+  Future<void> Function(Duration)? onSeekTo;
+  Future<double> Function()? getVolumeLevel;
+  Future<double> Function(double value)? setVolumeLevel;
+  Future<double> Function(double step)? onVolumeChange;
+  Future<double> Function()? toggleMuteLevel;
+  void Function(bool isLeft, Offset tapPos, int seekSeconds)?
   onDoubleTapAnimationStart;
-
-  // Local State
-  PlayerGesture? currentGesture;
-  bool showOSD = false;
-  IconData osdIcon = Icons.settings;
-  double? osdValue;
-  String osdLabel = "";
-  Alignment osdAlignment = Alignment.center;
-  Duration? swipeSeekValue;
 
   double _boostLevel = 1.0;
   Timer? _osdTimer;
   PlayerSettings? _cachedSettings;
 
-  bool get supportsVolumeBoost => getMaxVolumeLevel() > 1.0;
-
-  PlayerGestureHandler({
-    required this.getSettings,
-    required this.isTv,
-    required this.isDesktop,
-    required this.getDuration,
-    required this.getPosition,
-    required this.canSeek,
-    required this.getMaxVolumeLevel,
-    required this.onInteraction,
-    required this.onHideControls,
-    required this.onSeekRelative,
-    required this.onSeekTo,
-    required this.getVolumeLevel,
-    required this.setVolumeLevel,
-    required this.changeVolumeLevel,
-    required this.toggleMuteLevel,
-    required this.onDoubleTapAnimationStart,
-  });
+  bool get supportsVolumeBoost => getMaxVolumeLevel?.call() != null && getMaxVolumeLevel!() > 1.0;
 
   @override
-  void dispose() {
-    _osdTimer?.cancel();
-    super.dispose();
+  PlayerGestureState build() {
+    ref.onDispose(() {
+      _osdTimer?.cancel();
+    });
+    return const PlayerGestureState();
+  }
+
+  void init({
+    required Future<PlayerSettings> Function() getSettings,
+    required bool isTv,
+    required bool isDesktop,
+    required Duration Function() getDuration,
+    required Duration Function() getPosition,
+    required bool Function() canSeek,
+    required double Function() getMaxVolumeLevel,
+    required VoidCallback onInteraction,
+    required VoidCallback onHideControls,
+    required Future<void> Function(Duration) onSeekRelative,
+    required Future<void> Function(Duration) onSeekTo,
+    required Future<double> Function() getVolumeLevel,
+    required Future<double> Function(double value) setVolumeLevel,
+    required Future<double> Function(double step) onVolumeChange,
+    required Future<double> Function() toggleMuteLevel,
+    required void Function(bool isLeft, Offset tapPos, int seekSeconds)
+    onDoubleTapAnimationStart,
+  }) {
+    this.getSettings = getSettings;
+    this.isTv = isTv;
+    this.isDesktop = isDesktop;
+    this.getDuration = getDuration;
+    this.getPosition = getPosition;
+    this.canSeek = canSeek;
+    this.getMaxVolumeLevel = getMaxVolumeLevel;
+    this.onInteraction = onInteraction;
+    this.onHideControls = onHideControls;
+    this.onSeekRelative = onSeekRelative;
+    this.onSeekTo = onSeekTo;
+    this.getVolumeLevel = getVolumeLevel;
+    this.setVolumeLevel = setVolumeLevel;
+    this.onVolumeChange = onVolumeChange;
+    this.toggleMuteLevel = toggleMuteLevel;
+    this.onDoubleTapAnimationStart = onDoubleTapAnimationStart;
   }
 
   void _triggerOSDTimer() {
     _osdTimer?.cancel();
     _osdTimer = Timer(const Duration(seconds: 1), () {
-      showOSD = false;
-      notifyListeners();
+      state = state.copyWith(showOSD: false);
     });
   }
 
-  /// Dismiss the OSD overlay (e.g. on tap). Call [notifyListeners] so listeners can rebuild.
   void dismissOSD() {
-    showOSD = false;
-    notifyListeners();
+    state = state.copyWith(showOSD: false);
   }
 
   void showToast(String message, IconData icon) {
-    showOSD = true;
-    osdIcon = icon;
-    osdLabel = message;
-    osdValue = null;
-    osdAlignment = Alignment.bottomCenter;
-    notifyListeners();
+    state = state.copyWith(
+      showOSD: true,
+      osdIcon: icon,
+      osdLabel: message,
+      osdValue: null,
+      osdAlignment: Alignment.bottomCenter,
+    );
 
     _osdTimer?.cancel();
     _osdTimer = Timer(const Duration(seconds: 2), () {
-      showOSD = false;
-      notifyListeners();
+      state = state.copyWith(showOSD: false);
     });
   }
 
   // Pixels from each edge that are reserved for system gestures.
-  // Touches starting inside these zones are ignored to avoid conflicts with
-  // Android/iOS swipe-from-edge system gestures (back, notification shade, etc.).
   static const double _edgeExclusionHorizontal = 48.0; // left/right
-  static const double _edgeExclusionTop = 48.0; // top (notification shade)
+  static const double _edgeExclusionTop = 48.0; // top
 
   Future<void> handleDragStart(
     DragStartDetails details,
     double screenWidth,
     double screenHeight,
   ) async {
-    if (isTv || isDesktop) return;
+    if ((isTv ?? false) || (isDesktop ?? false)) return;
 
     final x = details.globalPosition.dx;
     final y = details.globalPosition.dy;
 
-    // Ignore touches near the left/right edges (system back gesture on Android)
-    // or near the top edge (notification shade pull-down on Android/iOS).
     if (x < _edgeExclusionHorizontal ||
         x > screenWidth - _edgeExclusionHorizontal ||
         y < _edgeExclusionTop) {
       return;
     }
-    // Use cached settings to avoid async gap on every swipe start.
-    // Refresh the cache in the background after each use.
-    final settings = _cachedSettings ?? await getSettings();
+
+    if (getSettings == null) return;
+    final settings = _cachedSettings ?? await getSettings!();
     _cachedSettings ??= settings;
-    getSettings().then((s) => _cachedSettings = s);
+    getSettings!().then((s) => _cachedSettings = s);
 
     PlayerGesture type = PlayerGesture.none;
+    Alignment alignment = state.osdAlignment;
     if (x < screenWidth / 2) {
       type = settings.leftGesture;
-      osdAlignment = Alignment.centerRight; // Opposite side
+      alignment = Alignment.centerRight; // Opposite side
     } else {
       type = settings.rightGesture;
-      osdAlignment = Alignment.centerLeft; // Opposite side
+      alignment = Alignment.centerLeft; // Opposite side
     }
 
     if (type == PlayerGesture.none) return;
-
-    currentGesture = type;
 
     double startVal = 0.5;
     if (type == PlayerGesture.brightness) {
@@ -145,53 +194,66 @@ class PlayerGestureHandler extends ChangeNotifier {
         startVal = 0.5;
       }
     } else {
-      startVal = await getVolumeLevel();
+      if (getVolumeLevel == null) return;
+      startVal = await getVolumeLevel!();
       _boostLevel = supportsVolumeBoost && startVal > 1.0 ? startVal : 1.0;
     }
 
-    showOSD = true;
-    osdIcon = _getIconForValue(type, startVal);
-    osdValue = startVal;
-    osdLabel = type == PlayerGesture.brightness ? "Brightness" : "Volume";
-    notifyListeners();
+    state = state.copyWith(
+      currentGesture: type,
+      showOSD: true,
+      osdIcon: _getIconForValue(type, startVal),
+      osdValue: startVal,
+      osdLabel: type == PlayerGesture.brightness ? "Brightness" : "Volume",
+      osdAlignment: alignment,
+    );
 
     _osdTimer?.cancel();
   }
 
   void handleDragUpdate(DragUpdateDetails details) {
-    if (currentGesture == null || currentGesture == PlayerGesture.none) return;
+    if (state.currentGesture == null || state.currentGesture == PlayerGesture.none) return;
 
     final delta = -details.primaryDelta! / 300;
 
-    final double min = (currentGesture == PlayerGesture.brightness)
+    final double min = (state.currentGesture == PlayerGesture.brightness)
         ? -0.05
         : 0.0;
-    final double max = (currentGesture == PlayerGesture.brightness)
+    final double max = (state.currentGesture == PlayerGesture.brightness)
         ? 1.0
-        : getMaxVolumeLevel();
+        : (getMaxVolumeLevel?.call() ?? 1.0);
 
-    final double newVal = ((osdValue ?? 0.0) + delta).clamp(min, max);
+    final double newVal = ((state.osdValue ?? 0.0) + delta).clamp(min, max);
 
-    osdValue = newVal;
-    osdIcon = _getIconForValue(currentGesture!, newVal);
-
-    if (currentGesture == PlayerGesture.brightness) {
+    if (state.currentGesture == PlayerGesture.brightness) {
       if (newVal <= 0.0) {
         ScreenBrightness().resetApplicationScreenBrightness();
-        osdLabel = "Auto";
+        state = state.copyWith(
+          osdValue: newVal,
+          osdIcon: _getIconForValue(state.currentGesture!, newVal),
+          osdLabel: "Auto",
+        );
       } else {
         ScreenBrightness().setApplicationScreenBrightness(newVal);
-        osdLabel = "Brightness";
+        state = state.copyWith(
+          osdValue: newVal,
+          osdIcon: _getIconForValue(state.currentGesture!, newVal),
+          osdLabel: "Brightness",
+        );
       }
     } else {
       _boostLevel = supportsVolumeBoost && newVal > 1.0 ? newVal : 1.0;
-      unawaited(setVolumeLevel(newVal));
+      final Future<double>? future = setVolumeLevel?.call(newVal);
+      unawaited(future?.then((_) => null) ?? Future.value());
+      state = state.copyWith(
+        osdValue: newVal,
+        osdIcon: _getIconForValue(state.currentGesture!, newVal),
+      );
     }
-    notifyListeners();
   }
 
   void handleDragEnd(DragEndDetails details) {
-    currentGesture = null;
+    state = state.copyWith(currentGesture: null);
     _triggerOSDTimer();
   }
 
@@ -202,14 +264,13 @@ class PlayerGestureHandler extends ChangeNotifier {
     double screenHeight,
     double bottomPadding,
   ) async {
-    if (getDuration() == Duration.zero || !canSeek()) return;
+    if (getDuration == null || getDuration!() == Duration.zero || canSeek == null || !canSeek!()) return;
 
-    final swipeSettings = await getSettings();
-    if (!swipeSettings.swipeSeekEnabled) return;
+    final settings = await getSettings!();
+    if (!settings.swipeSeekEnabled) return;
 
-    if (isTv || isDesktop) return;
+    if ((isTv ?? false) || (isDesktop ?? false)) return;
 
-    // Ignore touches near left/right edges (Android system back gesture).
     final x = details.globalPosition.dx;
     if (x < _edgeExclusionHorizontal ||
         x > screenWidth - _edgeExclusionHorizontal) {
@@ -218,53 +279,51 @@ class PlayerGestureHandler extends ChangeNotifier {
 
     if (isControlsVisible) {
       if (details.globalPosition.dy > (screenHeight - 100 - bottomPadding)) {
-        return; // Avoid conflict with seek bar
+        return; 
       }
     }
 
-    swipeSeekValue = getPosition();
-    notifyListeners();
+    state = state.copyWith(swipeSeekValue: getPosition?.call());
   }
 
   void handleHorizontalDragUpdate(DragUpdateDetails details) {
-    if (swipeSeekValue == null) return;
+    if (state.swipeSeekValue == null) return;
 
     final delta = details.primaryDelta ?? 0;
-    final newMs = (swipeSeekValue!.inMilliseconds + (delta * 200)).toInt();
-    final clamped = newMs.clamp(0, getDuration().inMilliseconds);
+    final newMs = (state.swipeSeekValue!.inMilliseconds + (delta * 200)).toInt();
+    final clamped = newMs.clamp(0, getDuration?.call().inMilliseconds ?? 0);
 
-    swipeSeekValue = Duration(milliseconds: clamped);
-    notifyListeners();
+    state = state.copyWith(swipeSeekValue: Duration(milliseconds: clamped));
   }
 
   void handleHorizontalDragEnd(DragEndDetails details) {
-    if (swipeSeekValue == null) return;
-    final target = swipeSeekValue!;
-    swipeSeekValue = null;
-    notifyListeners();
-    unawaited(onSeekTo(target));
+    if (state.swipeSeekValue == null) return;
+    final target = state.swipeSeekValue!;
+    state = state.copyWith(swipeSeekValue: null);
+    unawaited(onSeekTo?.call(target) ?? Future.value());
   }
 
   Future<void> handleDoubleTap(Offset tapPosition, double screenWidth) async {
-    if (getDuration() == Duration.zero) return;
+    if (getDuration?.call() == Duration.zero || getSettings == null) return;
 
-    final settings = await getSettings();
+    final settings = await getSettings!();
     if (!settings.doubleTapEnabled) return;
 
     final isLeft = tapPosition.dx < screenWidth / 2;
     final seconds = settings.seekDuration;
 
-    onDoubleTapAnimationStart(isLeft, tapPosition, seconds);
+    onDoubleTapAnimationStart?.call(isLeft, tapPosition, seconds);
 
     if (isLeft) {
-      unawaited(onSeekRelative(Duration(seconds: -seconds)));
+      unawaited(onSeekRelative?.call(Duration(seconds: -seconds)) ?? Future.value());
     } else {
-      unawaited(onSeekRelative(Duration(seconds: seconds)));
+      unawaited(onSeekRelative?.call(Duration(seconds: seconds)) ?? Future.value());
     }
   }
 
   Future<void> toggleMute() async {
-    final value = await toggleMuteLevel();
+    final value = await toggleMuteLevel?.call();
+    if (value == null) return;
     if (value <= 0) {
       showToast("Mute", Icons.volume_off);
     } else {
@@ -273,22 +332,22 @@ class PlayerGestureHandler extends ChangeNotifier {
   }
 
   Future<void> changeVolume(double step) async {
-    final value = await changeVolumeLevel(step);
+    final value = await onVolumeChange?.call(step);
+    if (value == null) return;
     _showVolumeOsd(value);
   }
 
   void _showVolumeOsd(double value) {
     _boostLevel = supportsVolumeBoost && value > 1.0 ? value : 1.0;
-    showOSD = true;
-    osdIcon = _getIconForValue(PlayerGesture.volume, value);
-    if (supportsVolumeBoost && _boostLevel > 1.0) {
-      osdValue = _boostLevel;
-      osdLabel = "Volume ${(_boostLevel * 100).toInt()}%";
-    } else {
-      osdValue = value;
-      osdLabel = "Volume ${(value * 100).toInt()}%";
-    }
-    notifyListeners();
+    final double effectiveValue = (supportsVolumeBoost && _boostLevel > 1.0) ? _boostLevel : value;
+    final String label = "Volume ${(effectiveValue * 100).toInt()}%";
+    
+    state = state.copyWith(
+      showOSD: true,
+      osdIcon: _getIconForValue(PlayerGesture.volume, value),
+      osdValue: effectiveValue,
+      osdLabel: label,
+    );
     _triggerOSDTimer();
   }
 

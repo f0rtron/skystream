@@ -318,7 +318,7 @@ class JSStaticValue {
 extension JSStaticValueArray on List<JSStaticValue> {
   Pointer<JSObjectRef.JSStaticValue> createArray() {
     return JSObjectRef.JSStaticValuePointer.allocateArray(
-        this.map((e) => e.toStruct()).toList());
+        map((e) => e.toStruct()).toList());
   }
 }
 
@@ -362,7 +362,7 @@ class JSStaticFunction {
 extension JSStaticFunctionArray on List<JSStaticFunction> {
   Pointer<JSObjectRef.JSStaticFunction> createArray() {
     return JSObjectRef.JSStaticFunctionPointer.allocateArray(
-        this.map((e) => e.toStruct()).toList());
+        map((e) => e.toStruct()).toList());
   }
 }
 
@@ -457,11 +457,11 @@ class JSClassDefinition {
   });
 
   Pointer<JSObjectRef.JSClassDefinition> create() {
-    Pointer<JSObjectRef.JSStaticValue> staticValues =
+    final Pointer<JSObjectRef.JSStaticValue> staticValues =
         this.staticValues == null || this.staticValues!.isEmpty
             ? nullptr
             : this.staticValues!.createArray();
-    Pointer<JSObjectRef.JSStaticFunction> staticFunctions =
+    final Pointer<JSObjectRef.JSStaticFunction> staticFunctions =
         this.staticFunctions == null || this.staticFunctions!.isEmpty
             ? nullptr
             : this.staticFunctions!.createArray();
@@ -507,7 +507,7 @@ class JSObject {
     this.context,
     JSClass jsClass, {
     Pointer? data,
-  }) : this.pointer = JSObjectRef.jSObjectMake(
+  }) : pointer = JSObjectRef.jSObjectMake(
             context.pointer, jsClass.pointer, data ?? nullptr);
 
   /// Convenience method for creating a JavaScript function with a given callback as its implementation.
@@ -518,7 +518,7 @@ class JSObject {
       String name,
       Pointer<NativeFunction<JSObjectRef.JSObjectCallAsFunctionCallback>>?
           callAsFunction)
-      : this.pointer = JSObjectRef.jSObjectMakeFunctionWithCallback(
+      : pointer = JSObjectRef.jSObjectMakeFunctionWithCallback(
             context.pointer,
             JSString.fromString(name).pointer,
             callAsFunction ?? nullptr);
@@ -532,7 +532,7 @@ class JSObject {
       JSClass jsClass,
       Pointer<NativeFunction<JSObjectRef.JSObjectCallAsConstructorCallback>>?
           callAsConstructor)
-      : this.pointer = JSObjectRef.jSObjectMakeConstructor(
+      : pointer = JSObjectRef.jSObjectMakeConstructor(
             context.pointer, jsClass.pointer, callAsConstructor ?? nullptr);
 
   /// Creates a JavaScript Array object.
@@ -544,7 +544,7 @@ class JSObject {
     this.context,
     JSValuePointer arguments, {
     JSValuePointer? exception,
-  }) : this.pointer = JSObjectRef.jSObjectMakeArray(
+  }) : pointer = JSObjectRef.jSObjectMakeArray(
             context.pointer,
             arguments.count,
             arguments.pointer,
@@ -557,7 +557,7 @@ class JSObject {
     this.context,
     JSValuePointer arguments, {
     JSValuePointer? exception,
-  }) : this.pointer = JSObjectRef.jSObjectMakeDate(
+  }) : pointer = JSObjectRef.jSObjectMakeDate(
             context.pointer,
             arguments.count,
             arguments.pointer,
@@ -570,7 +570,7 @@ class JSObject {
     this.context,
     JSValuePointer arguments, {
     JSValuePointer? exception,
-  }) : this.pointer = JSObjectRef.jSObjectMakeError(
+  }) : pointer = JSObjectRef.jSObjectMakeError(
             context.pointer,
             arguments.count,
             arguments.pointer,
@@ -583,7 +583,7 @@ class JSObject {
     this.context,
     JSValuePointer arguments, {
     JSValuePointer? exception,
-  }) : this.pointer = JSObjectRef.jSObjectMakeRegExp(
+  }) : pointer = JSObjectRef.jSObjectMakeRegExp(
             context.pointer,
             arguments.count,
             arguments.pointer,
@@ -598,7 +598,7 @@ class JSObject {
     JSObjectPointer resolve,
     JSObjectPointer reject, {
     JSValuePointer? exception,
-  }) : this.pointer = JSObjectRef.jSObjectMakeDeferredPromise(
+  }) : pointer = JSObjectRef.jSObjectMakeDeferredPromise(
             context.pointer,
             resolve.pointer,
             reject.pointer,
@@ -620,7 +620,7 @@ class JSObject {
     String sourceURL, {
     JSValuePointer? exception,
     int startingLineNumber = 0,
-  }) : this.pointer = JSObjectRef.jSObjectMakeFunction(
+  }) : pointer = JSObjectRef.jSObjectMakeFunction(
             context.pointer,
             JSString.fromString(name).pointer,
             parameterNames.count,
@@ -639,7 +639,7 @@ class JSObject {
     JSTypedArrayType arrayType,
     int length, {
     JSValuePointer? exception,
-  }) : this.pointer = JSTypedArray.jSObjectMakeTypedArray(
+  }) : pointer = JSTypedArray.jSObjectMakeTypedArray(
             context.pointer,
             JSValue.jSTypedArrayTypeToCEnum(arrayType),
             length,
@@ -661,7 +661,7 @@ class JSObject {
         bytesDeallocator,
     Pointer deallocatorContext, {
     JSValuePointer? exception,
-  }) : this.pointer = JSTypedArray.jSObjectMakeTypedArrayWithBytesNoCopy(
+  }) : pointer = JSTypedArray.jSObjectMakeTypedArrayWithBytesNoCopy(
             context.pointer,
             JSValue.jSTypedArrayTypeToCEnum(arrayType),
             bytes.pointer,
@@ -679,7 +679,7 @@ class JSObject {
     JSTypedArrayType arrayType,
     JSObject buffer, {
     JSValuePointer? exception,
-  }) : this.pointer = JSTypedArray.jSObjectMakeTypedArrayWithArrayBuffer(
+  }) : pointer = JSTypedArray.jSObjectMakeTypedArrayWithArrayBuffer(
             context.pointer,
             JSValue.jSTypedArrayTypeToCEnum(arrayType),
             buffer.pointer,
@@ -698,7 +698,7 @@ class JSObject {
     int byteOffset,
     int length, {
     JSValuePointer? exception,
-  }) : this.pointer =
+  }) : pointer =
             JSTypedArray.jSObjectMakeTypedArrayWithArrayBufferAndOffset(
                 context.pointer,
                 JSValue.jSTypedArrayTypeToCEnum(arrayType),
@@ -720,7 +720,7 @@ class JSObject {
         bytesDeallocator,
     Pointer deallocatorContext, {
     JSValuePointer? exception,
-  }) : this.pointer = JSTypedArray.jSObjectMakeArrayBufferWithBytesNoCopy(
+  }) : pointer = JSTypedArray.jSObjectMakeArrayBufferWithBytesNoCopy(
             context.pointer,
             bytes.pointer,
             bytes.length,
@@ -1032,17 +1032,17 @@ class JSObjectPointer {
   final int count;
 
   JSObjectPointer([Pointer? value])
-      : this.count = 1,
-        this.pointer = malloc.call<Pointer>(1) {
+      : count = 1,
+        pointer = malloc.call<Pointer>(1) {
     pointer.value = value ?? nullptr;
   }
 
   /// JSObjectRef array
   JSObjectPointer.array(List<JSObject> array)
-      : this.count = array.length,
-        this.pointer = malloc.call<Pointer>(array.length) {
+      : count = array.length,
+        pointer = malloc.call<Pointer>(array.length) {
     for (int i = 0; i < array.length; i++) {
-      this.pointer[i] = array[i].pointer;
+      pointer[i] = array[i].pointer;
     }
   }
 

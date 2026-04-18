@@ -1,6 +1,6 @@
 import 'dart:io';
-
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -8,10 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/models/github_release.dart';
 import '../services/update_service.dart';
 
-final updateControllerProvider =
-    NotifierProvider<UpdateController, UpdateState>(() {
-      return UpdateController();
-    });
+part 'update_provider.g.dart';
 
 abstract class UpdateState {}
 
@@ -39,7 +36,8 @@ class UpdateError extends UpdateState {
   UpdateError(this.message);
 }
 
-class UpdateController extends Notifier<UpdateState> {
+@Riverpod(keepAlive: true)
+class UpdateController extends _$UpdateController {
   late final UpdateService _service;
 
   @override
@@ -49,15 +47,23 @@ class UpdateController extends Notifier<UpdateState> {
   }
 
   Future<void> checkForUpdates() async {
+    if (kDebugMode) debugPrint('[UpdateController] Starting update check...');
     state = UpdateChecking();
     try {
       final release = await _service.checkForUpdate();
+      // Removed ref.mounted guard to prevent silent exits; keepAlive ensures state safety.
+
       if (release != null) {
+        if (kDebugMode)
+          debugPrint('[UpdateController] Update AVAILABLE: ${release.tagName}');
         state = UpdateAvailable(release);
       } else {
+        if (kDebugMode)
+          debugPrint('[UpdateController] No update found (status: Initial)');
         state = UpdateInitial();
       }
     } catch (e) {
+      if (kDebugMode) debugPrint('[UpdateController] Update check FAILED: $e');
       state = UpdateError(e.toString());
     }
   }
@@ -70,6 +76,8 @@ class UpdateController extends Notifier<UpdateState> {
         Platform.isMacOS ||
         Platform.isLinux) {
       final asset = await _service.findPlatformAsset(release);
+      // Removed ref.mounted guard
+
       final url = asset?.browserDownloadUrl ?? release.htmlUrl;
 
       if (await canLaunchUrl(Uri.parse(url))) {
@@ -82,8 +90,13 @@ class UpdateController extends Notifier<UpdateState> {
     state = UpdateDownloading(0.0);
     try {
       final file = await _service.downloadUpdateAsset(release, (progress) {
-        state = UpdateDownloading(progress);
+        // Safe check for progress update
+        try {
+          if (ref.mounted) state = UpdateDownloading(progress);
+        } catch (_) {}
       });
+
+      // Removed ref.mounted guard
 
       if (file != null) {
         state = UpdateDownloaded(file);

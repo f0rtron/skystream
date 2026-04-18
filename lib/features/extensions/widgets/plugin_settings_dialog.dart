@@ -28,7 +28,7 @@ class _PluginSettingsDialogState extends ConsumerState<PluginSettingsDialog> {
     final storage = ref.read(extensionRepositoryProvider);
     final schema = widget.plugin.settingsSchema ?? [];
 
-    for (var item in schema) {
+    for (final item in schema) {
       if (item is Map<String, dynamic>) {
         final id = item['id'];
         final defaultValue = item['default'];

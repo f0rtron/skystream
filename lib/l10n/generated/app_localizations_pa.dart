@@ -1213,4 +1213,13 @@ class AppLocalizationsPa extends AppLocalizations {
 
   @override
   String get openLink => 'Open link';
+
+  @override
+  String get diagnostics => 'Diagnostics';
+
+  @override
+  String get viewLogs => 'View Logs';
+
+  @override
+  String get viewLogsSubtitle => 'View application activity & errors';
 }

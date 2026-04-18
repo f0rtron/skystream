@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+part 'doh_service.g.dart';
 
 /// DNS over HTTPS provider options.
 enum DohProvider {
@@ -41,7 +43,8 @@ class DohSettings {
   }
 }
 
-class DohSettingsNotifier extends AsyncNotifier<DohSettings> {
+@riverpod
+class DohSettingsNotifier extends _$DohSettingsNotifier {
   static const _kEnabledKey = 'doh_enabled';
   static const _kProviderKey = 'doh_provider';
   static const _kCustomUrlKey = 'doh_custom_url';
@@ -100,11 +103,6 @@ class DohSettingsNotifier extends AsyncNotifier<DohSettings> {
 
   void clearCache() => DohService.instance.clearCache();
 }
-
-final dohSettingsProvider =
-    AsyncNotifierProvider<DohSettingsNotifier, DohSettings>(
-      DohSettingsNotifier.new,
-    );
 
 /// A DNS-over-HTTPS resolver that queries Cloudflare or Google for DNS records.
 ///
@@ -196,7 +194,7 @@ class DohService {
     }
 
     try {
-      final response = await _dio.get(
+      final response = await _dio.get<dynamic>(
         _endpoint,
         queryParameters: {
           'name': domain,

@@ -54,7 +54,7 @@ class _ViewAllScreenState extends ConsumerState<ViewAllScreen> {
   }
 
   void _checkInitialFill() {
-    if (!mounted) return;
+    if (!context.mounted) return;
     if (_scrollController.hasClients &&
         _scrollController.position.maxScrollExtent <= 0) {
       final state = ref.read(viewAllControllerProvider(widget.category));
@@ -63,7 +63,7 @@ class _ViewAllScreenState extends ConsumerState<ViewAllScreen> {
             .read(viewAllControllerProvider(widget.category).notifier)
             .fetchNextPage()
             .then((_) {
-              if (mounted) {
+              if (context.mounted) {
                 WidgetsBinding.instance.addPostFrameCallback(
                   (_) => _checkInitialFill(),
                 );
@@ -165,15 +165,12 @@ class _ViewAllScreenState extends ConsumerState<ViewAllScreen> {
               title: itemTitle,
               heroTag: uniqueTag,
               onTap: () {
-                context.push(
-                  '/tmdb-details',
-                  extra: TmdbDetailsRouteExtra(
-                    movieId: item.id,
-                    mediaType: item.tmdbMediaType,
-                    heroTag: uniqueTag,
-                    placeholderPoster: imageUrl,
-                  ),
-                );
+                TmdbDetailsRoute(
+                  movieId: item.id,
+                  mediaType: item.tmdbMediaType,
+                  heroTag: uniqueTag,
+                  placeholderPoster: imageUrl,
+                ).push(context);
               },
             );
           },

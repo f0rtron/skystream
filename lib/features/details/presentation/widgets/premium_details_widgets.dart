@@ -446,7 +446,7 @@ class TrailersSection extends StatelessWidget {
 
 class RecommendationsCarousel extends StatelessWidget {
   final List<MultimediaItem> items;
-  final Function(MultimediaItem) onItemTap;
+  final void Function(MultimediaItem) onItemTap;
 
   const RecommendationsCarousel({
     super.key,

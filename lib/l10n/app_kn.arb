@@ -387,5 +387,8 @@
   },
   "openSubtitles": "OpenSubtitles",
   "subDl": "SubDL",
-  "subSource": "SubSource"
+  "subSource": "SubSource",
+  "diagnostics": "Diagnostics",
+  "viewLogs": "View Logs",
+  "viewLogsSubtitle": "View application activity & errors"
 }

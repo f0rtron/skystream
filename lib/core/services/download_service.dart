@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:collection/collection.dart';
@@ -16,9 +16,12 @@ import '../router/app_router.dart';
 import '../storage/storage_service.dart';
 import '../network/dio_client_provider.dart';
 
-final downloadServiceProvider = Provider<DownloadService>((ref) {
+part 'download_service.g.dart';
+
+@Riverpod(keepAlive: true)
+DownloadService downloadService(Ref ref) {
   return DownloadService(ref);
-});
+}
 
 class DownloadProgressData {
   final String taskId;
@@ -80,14 +83,8 @@ class DownloadProgressData {
   }
 }
 
-final downloadProgressProvider =
-    NotifierProvider<
-      DownloadProgressNotifier,
-      Map<String, DownloadProgressData>
-    >(DownloadProgressNotifier.new);
-
-class DownloadProgressNotifier
-    extends Notifier<Map<String, DownloadProgressData>> {
+@Riverpod(keepAlive: true)
+class DownloadProgressNotifier extends _$DownloadProgressNotifier {
   @override
   Map<String, DownloadProgressData> build() => {};
 
@@ -100,12 +97,8 @@ class DownloadProgressNotifier
   }
 }
 
-final activeDownloadsProvider =
-    NotifierProvider<ActiveDownloadsNotifier, Set<String>>(
-      ActiveDownloadsNotifier.new,
-    );
-
-class ActiveDownloadsNotifier extends Notifier<Set<String>> {
+@Riverpod(keepAlive: true)
+class ActiveDownloadsNotifier extends _$ActiveDownloadsNotifier {
   @override
   Set<String> build() => {};
 
@@ -118,16 +111,23 @@ class DownloadService {
   final Dio _dio;
   final Set<String> _cancellingUrls = {};
   final _updatesController = StreamController<TaskUpdate>.broadcast();
+  StreamSubscription<TaskUpdate>? _updatesSubscription;
+  bool _isInitialized = false;
 
   DownloadService(this._ref) : _dio = _ref.read(dioClientProvider);
 
   Stream<TaskUpdate> get updates => _updatesController.stream;
 
   void dispose() {
+    _updatesSubscription?.cancel();
     _updatesController.close();
   }
 
   Future<void> init() async {
+    if (_isInitialized) {
+      if (kDebugMode) debugPrint('[DownloadService] Already initialized.');
+      return;
+    }
     // 1. Configure the downloader (chainable API)
     await FileDownloader()
         .configure(
@@ -180,7 +180,8 @@ class DownloadService {
     }
 
     // 4. Listen to updates and process (Reactive Pattern)
-    FileDownloader().updates.listen((update) {
+    await _updatesSubscription?.cancel();
+    _updatesSubscription = FileDownloader().updates.listen((update) {
       _updatesController.add(update);
       final trackingUrl = update.task.metaData.isNotEmpty
           ? update.task.metaData
@@ -287,10 +288,11 @@ class DownloadService {
       }
     }
 
-    // iOS Background Sync
     if (Platform.isIOS) {
       await FileDownloader().resumeFromBackground();
     }
+
+    _isInitialized = true;
   }
 
   /// Process tapping on a notification
@@ -369,7 +371,7 @@ class DownloadService {
 
       try {
         final response = await _dio
-            .head(
+            .head<dynamic>(
               url,
               options: Options(headers: headers, followRedirects: true),
             )
@@ -388,7 +390,7 @@ class DownloadService {
       if (size == null) {
         try {
           final getResponse = await _dio
-              .get(
+              .get<dynamic>(
                 url,
                 options: Options(
                   headers: {...?headers, 'Range': 'bytes=0-0'},

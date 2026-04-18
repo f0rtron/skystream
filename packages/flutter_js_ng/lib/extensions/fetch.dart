@@ -4,7 +4,7 @@ import './xhr.dart';
 
 var _fetchDebug = false;
 
-setFetchDebug(bool value) => _fetchDebug = value;
+bool setFetchDebug(bool value) => _fetchDebug = value;
 
 extension JavascriptRuntimeFetchExtension on JavascriptRuntime {
   Future<JavascriptRuntime> enableFetch() async {

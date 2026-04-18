@@ -46,13 +46,15 @@ class LocalProxyService {
     try {
       _server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       _serverPort = _server!.port;
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint("LocalProxyService: Started on port $_serverPort");
+      }
 
       _server!.listen(_handleRequest);
     } catch (e) {
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint("LocalProxyService: Failed to start server: $e");
+      }
     }
   }
 
@@ -130,10 +132,11 @@ class LocalProxyService {
         request.response.statusCode = HttpStatus.internalServerError;
         request.response.close();
       } catch (e) {
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint(
             'LocalProxyService._handleRequest: error response failed: $e',
           );
+        }
       }
     }
   }
@@ -172,8 +175,9 @@ class LocalProxyService {
         final Map<String, dynamic> map = jsonDecode(decoded);
         map.forEach((key, value) => stickyHeaders[key] = value.toString());
       } catch (e) {
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint("[PROXY] Failed to parse sticky headers: $e");
+        }
       }
     }
 
@@ -203,8 +207,8 @@ class LocalProxyService {
       request.headers.forEach((name, values) {
         final lowerName = name.toLowerCase();
         if (lowerName == 'cookie') {
-          for (var v in values) {
-            for (var pair in v.split(';')) {
+          for (final v in values) {
+            for (final pair in v.split(';')) {
               final parts = pair.split('=');
               if (parts.length >= 2) {
                 mergedCookies[parts[0].trim()] = parts
@@ -223,7 +227,7 @@ class LocalProxyService {
             lowerName != 'accept-encoding' &&
             lowerName != 'referer' &&
             lowerName != 'user-agent') {
-          for (var value in values) {
+          for (final value in values) {
             req.headers.add(name, value);
           }
         }
@@ -233,7 +237,7 @@ class LocalProxyService {
       stickyHeaders.forEach((name, value) {
         final lowerName = name.toLowerCase();
         if (lowerName == 'cookie') {
-          for (var pair in value.split(';')) {
+          for (final pair in value.split(';')) {
             final parts = pair.split('=');
             if (parts.length >= 2) {
               mergedCookies[parts[0].trim()] = parts
@@ -266,10 +270,11 @@ class LocalProxyService {
         targetUrl,
         options,
       );
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint(
           "[PROXY] Response Status: ${response.statusCode}, Content-Type: ${response.headers.contentType}",
         );
+      }
 
       request.response.statusCode = response.statusCode;
 
@@ -278,7 +283,7 @@ class LocalProxyService {
         final lowerName = name.toLowerCase();
         if (lowerName != 'transfer-encoding' &&
             lowerName != 'access-control-allow-origin') {
-          for (var value in values) {
+          for (final value in values) {
             request.response.headers.add(name, value);
           }
         }
@@ -290,14 +295,16 @@ class LocalProxyService {
         response.headers.contentType?.mimeType,
         targetUrl,
       );
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint("[PROXY] Detected isM3u8: $isResponseM3u8 for $targetUrl");
+      }
 
       // Allow rewriting for 200 (OK) and 206 (Partial) if it's an M3U8
       if (isResponseM3u8 &&
           (response.statusCode == 200 || response.statusCode == 206)) {
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint("[PROXY] Triggering M3U8 rewrite for: $targetUrl");
+        }
         // If rewriting, we must remove content-encoding and content-length
         // because the modified body will have different length/type.
         request.response.headers.removeAll('content-encoding');
@@ -429,7 +436,7 @@ class LocalProxyService {
           if (lowerName != 'host' &&
               lowerName != 'content-length' &&
               lowerName != 'connection') {
-            for (var v in values) {
+            for (final v in values) {
               nextReq.headers.add(name, v);
             }
           }

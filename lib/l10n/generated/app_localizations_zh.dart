@@ -1169,6 +1169,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get openLink => '打开链接';
+
+  @override
+  String get diagnostics => '诊断';
+
+  @override
+  String get viewLogs => '查看日志';
+
+  @override
+  String get viewLogsSubtitle => '查看应用程序活动和错误';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -2336,4 +2345,13 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get openLink => '打开链接';
+
+  @override
+  String get diagnostics => '诊断';
+
+  @override
+  String get viewLogs => '查看日志';
+
+  @override
+  String get viewLogsSubtitle => '查看应用程序活动和错误';
 }

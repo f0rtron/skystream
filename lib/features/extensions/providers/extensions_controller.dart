@@ -1,65 +1,70 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/extensions/models/extension_plugin.dart';
 import '../../../../core/extensions/models/extension_repository.dart';
 import '../../../../core/extensions/providers.dart';
-import '../../../../core/extensions/services/repository_service.dart';
-import '../../../../core/extensions/services/plugin_storage_service.dart';
 import '../../../core/storage/settings_repository.dart';
 
-// State for the Extensions Screen
-class ExtensionsState {
-  final bool isLoading;
+part 'extensions_controller.g.dart';
+
+// State for the Extensions Screen (Sealed Class Hierarchy)
+sealed class ExtensionsState {
   final List<ExtensionPlugin> installedPlugins;
   final List<ExtensionRepository> repositories;
   final Map<String, List<ExtensionPlugin>> availablePlugins; // Key: Repo URL
-  final Map<String, ExtensionPlugin>
-  availableUpdates; // Key: PackageID, Value: New Online Plugin
-  final String? error;
+  final Map<String, ExtensionPlugin> availableUpdates; // Key: PackageID
 
-  ExtensionsState({
-    this.isLoading = false,
+  const ExtensionsState({
     this.installedPlugins = const [],
     this.repositories = const [],
     this.availablePlugins = const {},
     this.availableUpdates = const {},
-    this.error,
   });
-
-  ExtensionsState copyWith({
-    bool? isLoading,
-    List<ExtensionPlugin>? installedPlugins,
-    List<ExtensionRepository>? repositories,
-    Map<String, List<ExtensionPlugin>>? availablePlugins,
-    Map<String, ExtensionPlugin>? availableUpdates,
-    String? error,
-  }) {
-    return ExtensionsState(
-      isLoading: isLoading ?? this.isLoading,
-      installedPlugins: installedPlugins ?? this.installedPlugins,
-      repositories: repositories ?? this.repositories,
-      availablePlugins: availablePlugins ?? this.availablePlugins,
-      availableUpdates: availableUpdates ?? this.availableUpdates,
-      error: error,
-    );
-  }
 }
 
-class ExtensionsController extends Notifier<ExtensionsState> {
-  late RepositoryService _repositoryService;
-  late PluginStorageService _storageService;
+final class ExtensionsLoading extends ExtensionsState {
+  const ExtensionsLoading({
+    super.installedPlugins,
+    super.repositories,
+    super.availablePlugins,
+    super.availableUpdates,
+  });
+}
+
+final class ExtensionsSuccess extends ExtensionsState {
+  const ExtensionsSuccess({
+    required super.installedPlugins,
+    required super.repositories,
+    required super.availablePlugins,
+    required super.availableUpdates,
+  });
+}
+
+final class ExtensionsError extends ExtensionsState {
+  final String message;
+
+  const ExtensionsError(
+    this.message, {
+    super.installedPlugins,
+    super.repositories,
+    super.availablePlugins,
+    super.availableUpdates,
+  });
+}
+
+@Riverpod(keepAlive: true)
+class ExtensionsController extends _$ExtensionsController {
   bool _initialized = false;
 
   @override
   ExtensionsState build() {
-    _repositoryService = ref.watch(repositoryServiceProvider);
-    _storageService = ref.watch(pluginStorageServiceProvider);
-    return ExtensionsState();
+    return const ExtensionsLoading();
   }
 
   /// Call once (e.g. from Extensions screen or app startup) to load plugins and repos.
@@ -70,10 +75,18 @@ class ExtensionsController extends Notifier<ExtensionsState> {
   }
 
   Future<void> _init() async {
-    state = state.copyWith(isLoading: true);
+    state = ExtensionsLoading(
+      installedPlugins: state.installedPlugins,
+      repositories: state.repositories,
+      availablePlugins: state.availablePlugins,
+      availableUpdates: state.availableUpdates,
+    );
     try {
+      final storageService = ref.read(pluginStorageServiceProvider);
+      final repositoryService = ref.read(repositoryServiceProvider);
+      
       // 1. Load Installed Plugins
-      final plugins = await _storageService.listInstalledPlugins();
+      final plugins = await storageService.listInstalledPlugins();
       if (ref.read(settingsRepositoryProvider).getDevLoadAssets()) {
         final assetPlugins = await _loadAssetPlugins();
         plugins.addAll(assetPlugins);
@@ -88,10 +101,10 @@ class ExtensionsController extends Notifier<ExtensionsState> {
 
       for (final url in urls) {
         try {
-          final repo = await _repositoryService.fetchRepository(url);
+          final repo = await repositoryService.fetchRepository(url);
           if (repo != null) {
             repos.add(repo);
-            available[repo.url] = await _repositoryService.getRepoPlugins(repo);
+            available[repo.url] = await repositoryService.getRepoPlugins(repo);
           }
         } catch (e) {
           if (kDebugMode) debugPrint("Failed to load persisted repo $url: $e");
@@ -99,21 +112,33 @@ class ExtensionsController extends Notifier<ExtensionsState> {
       }
 
       // 3. Set Final State Once
-      state = state.copyWith(
+      state = ExtensionsSuccess(
         installedPlugins: plugins,
         repositories: repos,
         availablePlugins: available,
-        isLoading: false,
+        availableUpdates: state.availableUpdates,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = ExtensionsError(
+        e.toString(),
+        installedPlugins: state.installedPlugins,
+        repositories: state.repositories,
+        availablePlugins: state.availablePlugins,
+        availableUpdates: state.availableUpdates,
+      );
     }
   }
 
   Future<void> loadInstalledPlugins() async {
-    state = state.copyWith(isLoading: true);
+    state = ExtensionsLoading(
+      installedPlugins: state.installedPlugins,
+      repositories: state.repositories,
+      availablePlugins: state.availablePlugins,
+      availableUpdates: state.availableUpdates,
+    );
     try {
-      final plugins = await _storageService.listInstalledPlugins();
+      final storageService = ref.read(pluginStorageServiceProvider);
+      final plugins = await storageService.listInstalledPlugins();
 
       // Load Asset Plugins if enabled
       if (ref.read(settingsRepositoryProvider).getDevLoadAssets()) {
@@ -125,13 +150,25 @@ class ExtensionsController extends Notifier<ExtensionsState> {
         }
         plugins.addAll(assetPlugins);
       } else {
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint("ExtensionsController: Asset loading disabled");
+        }
       }
 
-      state = state.copyWith(installedPlugins: plugins, isLoading: false);
+      state = ExtensionsSuccess(
+        installedPlugins: plugins,
+        repositories: state.repositories,
+        availablePlugins: state.availablePlugins,
+        availableUpdates: state.availableUpdates,
+      );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = ExtensionsError(
+        e.toString(),
+        installedPlugins: state.installedPlugins,
+        repositories: state.repositories,
+        availablePlugins: state.availablePlugins,
+        availableUpdates: state.availableUpdates,
+      );
     }
   }
 
@@ -170,15 +207,16 @@ class ExtensionsController extends Notifier<ExtensionsState> {
     try {
       final json = Map<String, dynamic>.from(jsonDecode(content));
 
-      // Ensure Unique Package Name exists
-      if (json['packageName'] == null && json['id'] == null) {
+      // Dart 3 Pattern Matching for manifest extraction
+      final (packageName, id) = (json['packageName'] as String?, json['id'] as String?);
+      
+      if (packageName == null && id == null) {
         json['packageName'] = "local.asset.${jsFilePath.split('/').last}";
       }
 
-      // Apply .debug suffix for asset plugins for identification
+      // Apply .debug suffix for asset plugins
       if (jsFilePath.startsWith('assets/')) {
-        final String currentPkg = (json['packageName'] ?? json['id'])
-            .toString();
+        final currentPkg = (json['packageName'] ?? json['id']).toString();
         if (!currentPkg.endsWith('.debug')) {
           json['packageName'] = "$currentPkg.debug";
         }
@@ -189,8 +227,9 @@ class ExtensionsController extends Notifier<ExtensionsState> {
 
       return ExtensionPlugin.fromJson(json, 'LocalAssets');
     } catch (e) {
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint("Error parsing json manifest for $jsFilePath: $e");
+      }
       return null;
     }
   }
@@ -216,14 +255,24 @@ class ExtensionsController extends Notifier<ExtensionsState> {
 
     int installedCount = 0;
     if (updates.isNotEmpty) {
-      state = state.copyWith(availableUpdates: updates);
+      state = ExtensionsSuccess(
+        installedPlugins: state.installedPlugins,
+        repositories: state.repositories,
+        availablePlugins: state.availablePlugins,
+        availableUpdates: updates,
+      );
 
       // Auto-update immediately
       for (final plugin in updates.values) {
         await installPlugin(plugin);
         installedCount++;
       }
-      state = state.copyWith(availableUpdates: {});
+      state = ExtensionsSuccess(
+        installedPlugins: state.installedPlugins,
+        repositories: state.repositories,
+        availablePlugins: state.availablePlugins,
+        availableUpdates: const {},
+      );
     }
     return installedCount;
   }
@@ -232,15 +281,22 @@ class ExtensionsController extends Notifier<ExtensionsState> {
     // Cycle Detection
     visitedUrls ??= {};
     if (visitedUrls.contains(url)) {
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint("Recursion detected: skipping repeated repo $url");
+      }
       return;
     }
     visitedUrls.add(url);
 
-    state = state.copyWith(isLoading: true);
+    state = ExtensionsLoading(
+      installedPlugins: state.installedPlugins,
+      repositories: state.repositories,
+      availablePlugins: state.availablePlugins,
+      availableUpdates: state.availableUpdates,
+    );
     try {
-      final repo = await _repositoryService.fetchRepository(url);
+      final repositoryService = ref.read(repositoryServiceProvider);
+      final repo = await repositoryService.fetchRepository(url);
       if (repo != null) {
         // Handle Recursive Repositories (Megarepo)
         if (repo.includedRepos.isNotEmpty) {
@@ -256,7 +312,12 @@ class ExtensionsController extends Notifier<ExtensionsState> {
           // If the repo is PURELY a container (no plugin of its own),
           // do NOT add it to the list or persist it.
           if (repo.pluginLists.isEmpty) {
-            state = state.copyWith(isLoading: false);
+            state = ExtensionsSuccess(
+              installedPlugins: state.installedPlugins,
+              repositories: state.repositories,
+              availablePlugins: state.availablePlugins,
+              availableUpdates: state.availableUpdates,
+            );
             return;
           }
         }
@@ -274,31 +335,45 @@ class ExtensionsController extends Notifier<ExtensionsState> {
           }
         }
 
-        final plugins = await _repositoryService.getRepoPlugins(repo);
+        final plugins = await repositoryService.getRepoPlugins(repo);
         final currentAvailable = Map<String, List<ExtensionPlugin>>.from(
           state.availablePlugins,
         );
         currentAvailable[repo.url] = plugins;
 
-        state = state.copyWith(
+        state = ExtensionsSuccess(
           repositories: currentRepos,
           availablePlugins: currentAvailable,
-          isLoading: false,
+          installedPlugins: state.installedPlugins,
+          availableUpdates: state.availableUpdates,
         );
       } else {
-        // ... (Keep existing error logic, or simplify?)
-        // Simplify: don't error out the whole state for one bad sub-repo
         if (kDebugMode) debugPrint("Failed to parse repository at $url");
         if (visitedUrls.length == 1) {
-          // Only show error if it's the root call
-          state = state.copyWith(
-            isLoading: false,
-            error: "Failed to parse repository",
+          state = ExtensionsError(
+            "Failed to parse repository",
+            installedPlugins: state.installedPlugins,
+            repositories: state.repositories,
+            availablePlugins: state.availablePlugins,
+            availableUpdates: state.availableUpdates,
+          );
+        } else {
+          state = ExtensionsSuccess(
+            installedPlugins: state.installedPlugins,
+            repositories: state.repositories,
+            availablePlugins: state.availablePlugins,
+            availableUpdates: state.availableUpdates,
           );
         }
       }
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = ExtensionsError(
+        e.toString(),
+        installedPlugins: state.installedPlugins,
+        repositories: state.repositories,
+        availablePlugins: state.availablePlugins,
+        availableUpdates: state.availableUpdates,
+      );
     }
   }
 
@@ -321,9 +396,11 @@ class ExtensionsController extends Notifier<ExtensionsState> {
       currentAvailable.remove(url);
 
       // Update State with Repo Removed
-      state = state.copyWith(
+      state = ExtensionsSuccess(
+        installedPlugins: state.installedPlugins,
         repositories: currentRepos,
         availablePlugins: currentAvailable,
+        availableUpdates: state.availableUpdates,
       );
 
       // Remove persistence
@@ -362,19 +439,31 @@ class ExtensionsController extends Notifier<ExtensionsState> {
         }
       }
 
+      final storageService = ref.read(pluginStorageServiceProvider);
       for (final plugin in pluginsToDelete) {
-        await _storageService.deletePlugin(plugin);
+        await storageService.deletePlugin(plugin);
       }
 
-      // Final State Update to remove deleted plugin from 'installed' list
+      // Final State Update
       final newInstalled = state.installedPlugins
           .where(
             (p) => !pluginsToDelete.any((d) => d.packageName == p.packageName),
           )
           .toList();
-      state = state.copyWith(installedPlugins: newInstalled);
+      state = ExtensionsSuccess(
+        installedPlugins: newInstalled,
+        repositories: state.repositories,
+        availablePlugins: state.availablePlugins,
+        availableUpdates: state.availableUpdates,
+      );
     } catch (e) {
-      state = state.copyWith(error: "Failed to remove repository: $e");
+      state = ExtensionsError(
+        "Failed to remove repository: $e",
+        installedPlugins: state.installedPlugins,
+        repositories: state.repositories,
+        availablePlugins: state.availablePlugins,
+        availableUpdates: state.availableUpdates,
+      );
     }
   }
 
@@ -383,25 +472,38 @@ class ExtensionsController extends Notifier<ExtensionsState> {
   }
 
   Future<void> installPlugins(List<ExtensionPlugin> plugins) async {
-    state = state.copyWith(isLoading: true);
+    state = ExtensionsLoading(
+      installedPlugins: state.installedPlugins,
+      repositories: state.repositories,
+      availablePlugins: state.availablePlugins,
+      availableUpdates: state.availableUpdates,
+    );
     try {
+      final repositoryService = ref.read(repositoryServiceProvider);
+      final storageService = ref.read(pluginStorageServiceProvider);
+      
       for (final plugin in plugins) {
         File? savedFile;
 
         // Standard HTTP Download
-        savedFile = await _repositoryService.downloadPlugin(plugin.sourceUrl);
+        savedFile = await repositoryService.downloadPlugin(plugin.sourceUrl);
 
         if (savedFile != null) {
-          await _storageService.installPlugin(
+          await storageService.installPlugin(
             savedFile.path,
             plugin.repositoryId,
           );
 
-          // Clear this plugin from availableUpdates so the green Update button disappears
+          // Clear this plugin from availableUpdates
           final newUpdates = Map<String, ExtensionPlugin>.from(
             state.availableUpdates,
           )..remove(plugin.packageName);
-          state = state.copyWith(availableUpdates: newUpdates);
+          state = ExtensionsSuccess(
+            installedPlugins: state.installedPlugins,
+            repositories: state.repositories,
+            availablePlugins: state.availablePlugins,
+            availableUpdates: newUpdates,
+          );
 
           if (await savedFile.exists()) {
             await savedFile.delete();
@@ -410,7 +512,13 @@ class ExtensionsController extends Notifier<ExtensionsState> {
       }
       await loadInstalledPlugins();
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = ExtensionsError(
+        e.toString(),
+        installedPlugins: state.installedPlugins,
+        repositories: state.repositories,
+        availablePlugins: state.availablePlugins,
+        availableUpdates: state.availableUpdates,
+      );
     }
   }
 
@@ -419,12 +527,8 @@ class ExtensionsController extends Notifier<ExtensionsState> {
   }
 
   Future<void> uninstallPlugin(ExtensionPlugin plugin) async {
-    await _storageService.deletePlugin(plugin);
+    final storageService = ref.read(pluginStorageServiceProvider);
+    await storageService.deletePlugin(plugin);
     await loadInstalledPlugins();
   }
 }
-
-final extensionsControllerProvider =
-    NotifierProvider<ExtensionsController, ExtensionsState>(
-      ExtensionsController.new,
-    );

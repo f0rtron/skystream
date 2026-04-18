@@ -580,5 +580,8 @@
   "getApiKeyFromProfile": "Get your API Key from SubSource Profile",
   "qualityNotGuaranteed": "Quality is not guaranteed. Sources are sorted by preference, but playback depends on what the provider actually offers.",
   "keepSourcesOriginalOrder": "Keep sources in original order",
-  "openLink": "Open link"
+  "openLink": "Open link",
+  "diagnostics": "Diagnostics",
+  "viewLogs": "View Logs",
+  "viewLogsSubtitle": "View application activity & errors"
 }

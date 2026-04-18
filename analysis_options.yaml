@@ -10,6 +10,10 @@
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
   plugins:
     - custom_lint
   exclude:
@@ -29,12 +33,16 @@ linter:
     unnecessary_string_interpolations: true
     # Architecture & Lifecycle Strictness
     use_build_context_synchronously: true
+    unawaited_futures: true
+    avoid_void_async: true
+    prefer_final_in_for_each: true
     # discarded_futures: true  # 147 info-level sites; fix with unawaited() or await incrementally
 #
-#custom_lint:
-#  rules:
-#    riverpod_avoid_global_provider: true
-#    riverpod_avoid_read_inside_build: true
-#    riverpod_avoid_watch_outside_build: true
-#    riverpod_notifier_parameters: true
-#    riverpod_async_notifier_error_handling: true
+
+custom_lint:
+  rules:
+    - riverpod_avoid_global_provider
+    - riverpod_avoid_read_inside_build
+    - riverpod_avoid_watch_outside_build
+    - riverpod_notifier_parameters
+    - riverpod_async_notifier_error_handling

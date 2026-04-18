@@ -120,7 +120,7 @@ class _NextEpisodeOverlayState extends State<NextEpisodeOverlay>
                       Expanded(
                         child: Text(
                           l10n.nextUp,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Colors.white70,
                             letterSpacing: 1.2,
                             fontSize: 12,
@@ -173,7 +173,7 @@ class _NextEpisodeOverlayState extends State<NextEpisodeOverlay>
                           const SizedBox(width: 8),
                           Text(
                             l10n.playNow,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
                             ),

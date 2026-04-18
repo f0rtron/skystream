@@ -1,35 +1,34 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/storage/history_repository.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../settings/presentation/general_settings_provider.dart';
 
 export '../../../../core/storage/history_repository.dart' show HistoryItem;
 
-final watchHistoryProvider =
-    NotifierProvider<WatchHistoryNotifier, List<HistoryItem>>(() {
-      return WatchHistoryNotifier();
-    });
+part 'history_provider.g.dart';
 
-class WatchHistoryNotifier extends Notifier<List<HistoryItem>> {
-  late HistoryRepository _repository;
-
+@Riverpod(keepAlive: true)
+class WatchHistory extends _$WatchHistory {
   @override
   List<HistoryItem> build() {
-    _repository = ref.watch(historyRepositoryProvider);
-    return _repository.getWatchHistory();
+    final repository = ref.watch(historyRepositoryProvider);
+    return repository.getWatchHistory();
   }
 
   void refresh() {
-    state = _repository.getWatchHistory();
+    final repository = ref.read(historyRepositoryProvider);
+    state = repository.getWatchHistory();
   }
 
   Future<void> clearAllHistory() async {
-    await _repository.clearAllHistory();
+    final repository = ref.read(historyRepositoryProvider);
+    await repository.clearAllHistory();
     refresh();
   }
 
   Future<void> removeFromHistory(String url) async {
-    await _repository.removeFromHistory(url);
+    final repository = ref.read(historyRepositoryProvider);
+    await repository.removeFromHistory(url);
     refresh();
   }
 
@@ -51,7 +50,8 @@ class WatchHistoryNotifier extends Notifier<List<HistoryItem>> {
     final finalPosition = isLivestream ? 0 : position;
     final finalDuration = isLivestream ? 0 : duration;
 
-    await _repository.saveProgress(
+    final repository = ref.read(historyRepositoryProvider);
+    await repository.saveProgress(
       item,
       finalPosition,
       finalDuration,

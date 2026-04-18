@@ -24,8 +24,8 @@ Pointer<JSValueConst> bridgeCallbackGlobalHandler(
   Pointer<Utf8NullTerminated> channelName,
   Pointer<Utf8NullTerminated> message,
 ) {
-  String channelNameStr = Utf8NullTerminated.fromUtf8(channelName);
-  String messageStr = Utf8NullTerminated.fromUtf8(message);
+  final String channelNameStr = Utf8NullTerminated.fromUtf8(channelName);
+  final String messageStr = Utf8NullTerminated.fromUtf8(message);
 
   if (mapJsBridge.containsKey(channelNameStr)) {
     String? result = 'NO RESULT YET';
@@ -39,7 +39,7 @@ Pointer<JSValueConst> bridgeCallbackGlobalHandler(
       print('EXCEPTION ------ $e');
     }
     if (result == null) {
-      Pointer<JSValueConst> nullValue = calloc();
+      final Pointer<JSValueConst> nullValue = calloc();
       QuickJsRuntime._jsGetNullValue(ctx, nullValue);
       return nullValue;
     } else {
@@ -104,56 +104,57 @@ class QuickJsRuntime extends JavascriptRuntime {
       .asFunction();
 
   // NATIVE BRIDGE DECLARATIONS
-  static JSEvalWrapper _jsEvalWrapper = qjsDynamicLibrary
+  static final JSEvalWrapper _jsEvalWrapper = qjsDynamicLibrary
       .lookupFunction<JSEvalWrapperNative, JSEvalWrapper>('JSEvalWrapper');
 
-  static JS_NewRuntimeDartBridge _jsNewRuntimeDartBridge = qjsDynamicLibrary
+  static final JS_NewRuntimeDartBridge _jsNewRuntimeDartBridge = qjsDynamicLibrary
       .lookup<NativeFunction<JS_NewRuntimeDartBridge>>(
         'JS_NewRuntimeDartBridge',
       )
       .asFunction();
-  static JS_NewContextFn _jsNewContext = qjsDynamicLibrary
+  static final JS_NewContextFn _jsNewContext = qjsDynamicLibrary
       .lookup<NativeFunction<JS_NewContextFn>>('JS_NewContextDartBridge')
       .asFunction();
 
-  static JS_GetNullValue _jsGetNullValue = qjsDynamicLibrary
+  static final JS_GetNullValue _jsGetNullValue = qjsDynamicLibrary
       .lookup<NativeFunction<JS_GetNullValue>>('JS_GetNullValue')
       .asFunction();
 
-  static JSExecutePendingJob _jsExecutePendingJob = qjsDynamicLibrary
+  static final JSExecutePendingJob _jsExecutePendingJob = qjsDynamicLibrary
       .lookupFunction<JSExecutePendingJobNative, JSExecutePendingJob>(
     'JS_ExecutePendingJob',
   );
 
-  static JSCallFunction1Arg _callJsFunction1Arg = qjsDynamicLibrary
+  static final JSCallFunction1Arg _callJsFunction1Arg = qjsDynamicLibrary
       .lookupFunction<JSCallFunction1ArgNative, JSCallFunction1Arg>(
           'callJsFunction1Arg');
 
-  static JSGetTypeTag _jsGetTypeTag = qjsDynamicLibrary
+  static final JSGetTypeTag _jsGetTypeTag = qjsDynamicLibrary
       .lookupFunction<JSGetTypeTagNative, JSGetTypeTag>('getTypeTag');
 
-  static JSIsArray _jsIsArray = qjsDynamicLibrary
+  static final JSIsArray _jsIsArray = qjsDynamicLibrary
       .lookupFunction<JSIsArrayNative, JSIsArray>('JS_IsArrayDartWrapper');
 
-  static JSJSONStringify _jSJSONStringify =
+  static final JSJSONStringify _jSJSONStringify =
       qjsDynamicLibrary.lookupFunction<JSJSONStringifyNative, JSJSONStringify>(
           'JS_JSONStringifyDartWrapper');
   // END NATIVE BRIDGE DECLARATIONS
 
+  @override
   JsEvalResult callFunction(
     Pointer function,
     Pointer argument,
   ) {
-    Pointer result = calloc<JSValueConst>();
-    Pointer<Pointer<Utf8NullTerminated>> stringResult =
+    final Pointer result = calloc<JSValueConst>();
+    final Pointer<Pointer<Utf8NullTerminated>> stringResult =
         calloc<Pointer<Utf8NullTerminated>>();
-    int operationResult = _callJsFunction1Arg(
+    final int operationResult = _callJsFunction1Arg(
         _context,
         function as Pointer<JSValueConst>,
         argument as Pointer<JSValueConst>,
         result as Pointer<JSValueConst>,
         stringResult);
-    String resultStr = Utf8NullTerminated.fromUtf8(stringResult.value);
+    final String resultStr = Utf8NullTerminated.fromUtf8(stringResult.value);
     return JsEvalResult(
       resultStr,
       result,
@@ -168,7 +169,7 @@ class QuickJsRuntime extends JavascriptRuntime {
   }
 
   static Type getTypeForJsValue(Pointer<JSValueConst> jsValue) {
-    int value = _jsGetTypeTag(jsValue);
+    final int value = _jsGetTypeTag(jsValue);
 
     switch (value) {
       case JS_TAG_BOOL:
@@ -188,6 +189,7 @@ class QuickJsRuntime extends JavascriptRuntime {
     }
   }
 
+  @override
   JsEvalResult evaluate(String js, {String? sourceUrl}) {
     return jsEval(_context, js);
   }
@@ -197,10 +199,10 @@ class QuickJsRuntime extends JavascriptRuntime {
     String js, {
     String fileName = 'nofile.js',
   }) {
-    Pointer<JSValueConst>? result = calloc<JSValueConst>();
-    Pointer<Pointer<Utf8NullTerminated>> stringResult =
+    final Pointer<JSValueConst> result = calloc<JSValueConst>();
+    final Pointer<Pointer<Utf8NullTerminated>> stringResult =
         calloc<Pointer<Utf8NullTerminated>>();
-    Pointer<Int32> errors = calloc<Int32>();
+    final Pointer<Int32> errors = calloc<Int32>();
     _jsEvalWrapper(ctx, Utf8NullTerminated.toUtf8(js), js.length,
         Utf8NullTerminated.toUtf8(fileName), 0, errors, result, stringResult);
 
@@ -215,11 +217,11 @@ class QuickJsRuntime extends JavascriptRuntime {
 
   static T? convertToValue<T>(
       Pointer<JSContext> context, JsEvalResult evalResult) {
-    Type type = getTypeForJsValue(evalResult.rawResult);
+    final Type type = getTypeForJsValue(evalResult.rawResult);
 
     if (_jsIsArray(context, evalResult.rawResult) == 1) {
-      Pointer<JSValueConst>? stringifiedValue = calloc();
-      Pointer<Pointer<Utf8NullTerminated>> stringResultPointer = calloc();
+      final Pointer<JSValueConst> stringifiedValue = calloc();
+      final Pointer<Pointer<Utf8NullTerminated>> stringResultPointer = calloc();
       _jSJSONStringify(
         context,
         evalResult.rawResult,
@@ -240,8 +242,8 @@ class QuickJsRuntime extends JavascriptRuntime {
       case Null:
         return null;
       case Object:
-        Pointer<JSValueConst>? stringifiedValue = calloc<JSValueConst>();
-        Pointer<Pointer<Utf8NullTerminated>> stringResultPointer = calloc();
+        final Pointer<JSValueConst> stringifiedValue = calloc<JSValueConst>();
+        final Pointer<Pointer<Utf8NullTerminated>> stringResultPointer = calloc();
 
         _jSJSONStringify(
           context,
@@ -263,7 +265,7 @@ class QuickJsRuntime extends JavascriptRuntime {
 
   @override
   int executePendingJob() {
-    Pointer<JSContext>? newContext = calloc<JSContext>();
+    final Pointer<JSContext> newContext = calloc<JSContext>();
     return _jsExecutePendingJob(_runtime, newContext);
   }
 
@@ -283,8 +285,8 @@ class QuickJsRuntime extends JavascriptRuntime {
 
   @override
   String jsonStringify(JsEvalResult jsValue) {
-    Pointer<JSValueConst>? stringifiedValue = calloc();
-    Pointer<Pointer<Utf8NullTerminated>> stringResultPointer = calloc();
+    final Pointer<JSValueConst> stringifiedValue = calloc();
+    final Pointer<Pointer<Utf8NullTerminated>> stringResultPointer = calloc();
     _jSJSONStringify(
       _context,
       jsValue.rawResult,

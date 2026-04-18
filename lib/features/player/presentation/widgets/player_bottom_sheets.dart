@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../../core/models/torrent_status.dart';
 import '../../../../core/utils/layout_constants.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../../settings/presentation/player_settings_provider.dart';
 import '../player_controller.dart';
 import 'player_utils.dart';
@@ -17,12 +18,12 @@ class PlayerBottomSheets {
     required BuildContext context,
     required List<StreamResult>? streams,
     required StreamResult? currentStream,
-    required Function(StreamResult) onStreamSelected,
+    required void Function(StreamResult) onStreamSelected,
   }) {
     if (streams == null || streams.isEmpty) return;
     final theme = Theme.of(context);
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor:
@@ -99,7 +100,7 @@ class PlayerBottomSheets {
   static void showContentSelection({
     required BuildContext context,
     required TorrentStatus? torrentStatus,
-    required Function(int) onTorrentFileSelected,
+    required void Function(int) onTorrentFileSelected,
   }) {
     if (torrentStatus == null) return;
     final files = torrentStatus.data['file_stats'] as List<dynamic>?;
@@ -107,7 +108,7 @@ class PlayerBottomSheets {
 
     final theme = Theme.of(context);
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor:
           theme.bottomSheetTheme.modalBackgroundColor ??
@@ -205,7 +206,7 @@ class PlayerBottomSheets {
     final snapshot = controller.getTrackSelectionSnapshot();
     final theme = Theme.of(context);
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor:
           theme.bottomSheetTheme.modalBackgroundColor ??
@@ -351,7 +352,7 @@ class PlayerBottomSheets {
     required BuildContext context,
     required double currentSpeed,
     required double maxSpeed,
-    required Function(double) onSpeedSelected,
+    required void Function(double) onSpeedSelected,
   }) {
     final theme = Theme.of(context);
     final speeds = [
@@ -368,7 +369,7 @@ class PlayerBottomSheets {
       3.0,
     ].where((speed) => speed <= maxSpeed + 0.001).toList();
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor:
@@ -444,7 +445,7 @@ class PlayerBottomSheets {
 
   static void _showSubtitleOptions(BuildContext context) {
     final theme = Theme.of(context);
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor:
@@ -564,7 +565,7 @@ class PlayerBottomSheets {
 
   static void _showSubtitleSync(BuildContext context) {
     final theme = Theme.of(context);
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor:
@@ -693,7 +694,7 @@ class PlayerBottomSheets {
 
   static void _showSubtitleStyles(BuildContext context) {
     final theme = Theme.of(context);
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor:
@@ -1166,7 +1167,7 @@ class PlayerBottomSheets {
   static Widget _colorCircle(
     int colorValue,
     int selectedColor,
-    Function(int) onSelected,
+    void Function(int) onSelected,
   ) {
     final isSelected = colorValue == selectedColor;
     return GestureDetector(
@@ -1195,7 +1196,7 @@ class PlayerBottomSheets {
 
     final scrollController = ScrollController();
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor:
@@ -1549,15 +1550,10 @@ class PlayerBottomSheets {
                               context: context,
                               sub: sub,
                               onTap: () async {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      AppLocalizations.of(
-                                        context,
-                                      )!.downloadingApplyingSubtitle,
-                                    ),
-                                  ),
-                                );
+                                ref.read(notificationServiceProvider).showInfo(
+                                      AppLocalizations.of(context)!
+                                          .downloadingApplyingSubtitle,
+                                    );
 
                                 final path = await ref
                                     .read(subtitleSearchProvider.notifier)
@@ -1570,15 +1566,10 @@ class PlayerBottomSheets {
                                   if (context.mounted) Navigator.pop(ctx);
                                 } else {
                                   if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          AppLocalizations.of(
-                                            context,
-                                          )!.failedToDownloadSubtitle,
-                                        ),
-                                      ),
-                                    );
+                                    ref.read(notificationServiceProvider).showError(
+                                          AppLocalizations.of(context)!
+                                              .failedToDownloadSubtitle,
+                                        );
                                   }
                                 }
                               },

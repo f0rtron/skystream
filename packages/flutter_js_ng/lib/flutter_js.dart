@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_js/javascript_runtime.dart';
-import 'package:flutter_js/javascriptcore/jscore_runtime.dart';
+import './javascript_runtime.dart';
+import './javascriptcore/jscore_runtime.dart';
 
 import './extensions/fetch.dart';
 import './extensions/handle_promises.dart';
@@ -31,7 +32,7 @@ JavascriptRuntime getJavascriptRuntime({
 }) {
   JavascriptRuntime runtime;
   if ((Platform.isAndroid && !forceJavascriptCoreOnAndroid)) {
-    int stackSize = extraArgs?['stackSize'] ?? 1024 * 1024;
+    final int stackSize = extraArgs?['stackSize'] ?? 1024 * 1024;
     runtime = QuickJsRuntime2(stackSize: stackSize);
     // FlutterJs engine = FlutterJs();
     // runtime = QuickJsService(engine);
@@ -98,7 +99,7 @@ class FlutterJs {
 
   int? get id => _engineId;
 
-  Map<String, FlutterJsChannelCallbak> _channels = {};
+  final Map<String, FlutterJsChannelCallbak> _channels = {};
 
   FlutterJs() {
     _engineCount += 1;
@@ -107,11 +108,11 @@ class FlutterJs {
     _engineMap[_engineId] = this;
   }
 
-  dispose() {
+  void dispose() {
     FlutterJs.close(_engineId);
   }
 
-  addChannel(String name, FlutterJsChannelCallbak fn,
+  void addChannel(String name, FlutterJsChannelCallbak fn,
       {String? dartChannelAddress}) {
     _channels[name] = fn;
     _methodChannel.invokeMethod(
@@ -135,7 +136,7 @@ class FlutterJs {
   bool isReady() => _ready;
 
   // ignore: non_constant_identifier_names
-  static bool DEBUG = false;
+  static bool debug = false;
 
   Future<String> eval(String code) {
     return evaluate(code, _engineId);
@@ -148,7 +149,7 @@ class FlutterJs {
   }
 
   static Future<int?> initEngine(int? engineId) async {
-    Map<dynamic, dynamic> mapResult = await (_methodChannel.invokeMethod(
+    final Map<dynamic, dynamic> mapResult = await (_methodChannel.invokeMethod(
         "initEngine", engineId) as Future<Map<dynamic, dynamic>>);
     _httpPort = mapResult['httpPort'] as int?;
     _httpPassword = mapResult['httpPassword'] as String?;
@@ -162,15 +163,15 @@ class FlutterJs {
 
   static Future<String> evaluate(String command, int? id,
       {String convertTo = ""}) async {
-    var arguments = {
+    final arguments = {
       "engineId": id,
       "command": command,
       "convertTo": convertTo
     };
     final rs = await _methodChannel.invokeMethod("evaluate", arguments);
     final String? jsResult = rs is Map || rs is List ? json.encode(rs) : rs;
-    if (DEBUG) {
-      print("${DateTime.now().toIso8601String()} - JS RESULT : $jsResult");
+    if (debug) {
+      debugPrint("${DateTime.now().toIso8601String()} - JS RESULT : $jsResult");
     }
     return jsResult ?? "null";
   }

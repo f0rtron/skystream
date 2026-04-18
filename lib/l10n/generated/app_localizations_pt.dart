@@ -1200,6 +1200,15 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get openLink => 'Abrir link';
+
+  @override
+  String get diagnostics => 'Diagnóstico';
+
+  @override
+  String get viewLogs => 'Ver registos';
+
+  @override
+  String get viewLogsSubtitle => 'Ver atividade e erros da aplicação';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -2398,4 +2407,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get openLink => 'Abrir link';
+
+  @override
+  String get diagnostics => 'Diagnóstico';
+
+  @override
+  String get viewLogs => 'Ver registos';
+
+  @override
+  String get viewLogsSubtitle => 'Ver atividade e erros da aplicação';
 }

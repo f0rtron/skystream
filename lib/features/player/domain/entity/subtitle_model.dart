@@ -21,13 +21,13 @@ class OnlineSubtitle {
 
   factory OnlineSubtitle.fromJson(Map<String, dynamic> json) {
     return OnlineSubtitle(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      language: json['language'] ?? 'English',
-      source: json['source'] ?? 'Unknown',
-      downloadUrl: json['downloadUrl'] ?? '',
-      isHearingImpaired: json['isHearingImpaired'] ?? false,
-      metadata: json['metadata'],
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      language: json['language'] as String? ?? 'English',
+      source: json['source'] as String? ?? 'Unknown',
+      downloadUrl: json['downloadUrl'] as String? ?? '',
+      isHearingImpaired: json['isHearingImpaired'] as bool? ?? false,
+      metadata: json['metadata'] as Map<String, dynamic>?,
     );
   }
 

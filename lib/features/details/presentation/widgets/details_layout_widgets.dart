@@ -791,14 +791,14 @@ class _LanguageButtonState extends State<_LanguageButton> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
             color: widget.isSelected
-                ? Theme.of(context).colorScheme.primary.withAlpha(40)
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 40/255)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: _isFocused
                   ? Colors.white
                   : (widget.isSelected
-                        ? Theme.of(context).colorScheme.primary.withAlpha(80)
+                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 80/255)
                         : Colors.transparent),
               width: _isFocused ? 2 : 1,
             ),

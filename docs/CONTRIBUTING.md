@@ -37,7 +37,14 @@ To build SkyStream from source, you need the following installed on your machine
     flutter gen-l10n
     ```
 
-4.  **Run the app**:
+4.  **Generate Code**:
+    SkyStream uses Riverpod and other code generators. Since generated files are not tracked in Git, you must run this command after cloning or pulling changes:
+    ```bash
+    dart run build_runner build --delete-conflicting-outputs
+    ```
+    *Tip: Use `dart run build_runner watch` to automatically regenerate code when you save changes.*
+
+5.  **Run the app**:
     Ensure you have an emulator running or a physical device connected.
     ```bash
     flutter run

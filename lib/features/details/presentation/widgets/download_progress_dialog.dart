@@ -184,7 +184,7 @@ class DownloadProgressDialog extends ConsumerWidget {
   }
 
   static void show(BuildContext context, String title, String trackingUrl) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) =>
           DownloadProgressDialog(title: title, trackingUrl: trackingUrl),

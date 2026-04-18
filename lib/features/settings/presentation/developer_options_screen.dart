@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:virtual_mouse/virtual_mouse.dart';
+import 'dart:async';
 
 import '../../../shared/widgets/custom_widgets.dart';
 import '../../extensions/providers/extensions_controller.dart';
@@ -12,6 +12,7 @@ import '../../../core/providers/device_info_provider.dart';
 import '../../../core/router/app_router.dart';
 import 'widgets/settings_widgets.dart';
 import 'package:skystream/l10n/generated/app_localizations.dart';
+import '../../../core/services/notification_service.dart';
 
 import 'package:flutter/foundation.dart';
 
@@ -81,6 +82,18 @@ class _DeveloperOptionsScreenState
                 ),
             ],
           ),
+          SettingsGroup(
+            title: l10n.diagnostics,
+            children: [
+              SettingsTile(
+                icon: Icons.bug_report_rounded,
+                title: l10n.viewLogs,
+                subtitle: l10n.viewLogsSubtitle,
+                isLast: true,
+                onTap: () => unawaited(const AppLogsRoute().push<void>(context)),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -105,9 +118,9 @@ class _DeveloperOptionsScreenState
 
   Future<void> _toggleAssetLoading(BuildContext context, bool newValue) async {
     if (!kDebugMode) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.debugOnlyFeature)),
-      );
+      ref
+          .read(notificationServiceProvider)
+          .showError(AppLocalizations.of(context)!.debugOnlyFeature);
       return;
     }
 
@@ -127,15 +140,14 @@ class _DeveloperOptionsScreenState
   }
 
   Future<void> _pickLocalVideo(BuildContext context) async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.video);
+    final result = await FilePicker.pickFiles(type: FileType.video);
 
     if (result != null && result.files.single.path != null && context.mounted) {
       final path = result.files.single.path!;
       final name = result.files.single.name;
 
-      context.push(
-        '/player',
-        extra: PlayerRouteExtra(
+      PlayerRoute(
+        $extra: PlayerRouteExtra(
           item: MultimediaItem(
             title: name,
             url: path,
@@ -145,14 +157,14 @@ class _DeveloperOptionsScreenState
           ),
           videoUrl: path,
         ),
-      );
+      ).push<void>(context);
     }
   }
 
   void _showStreamUrlDialog(BuildContext context, bool isTv) {
     final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         surfaceTintColor: Colors.transparent,
@@ -189,14 +201,14 @@ class _DeveloperOptionsScreenState
                     title = uri.pathSegments.last;
                   }
                 } catch (e) {
-                  if (kDebugMode)
+                  if (kDebugMode) {
                     debugPrint('DeveloperOptionsScreen: URI parse error: $e');
+                  }
                 }
 
                 Navigator.pop(context);
-                context.push(
-                  '/player',
-                  extra: PlayerRouteExtra(
+                PlayerRoute(
+                  $extra: PlayerRouteExtra(
                     item: MultimediaItem(
                       title: title,
                       url: url, // Unique URL for history
@@ -206,7 +218,7 @@ class _DeveloperOptionsScreenState
                     ),
                     videoUrl: url,
                   ),
-                );
+                ).push<void>(context);
               }
             },
             child: Text(l10n.play),
@@ -217,15 +229,14 @@ class _DeveloperOptionsScreenState
   }
 
   Future<void> _pickTorrentFile(BuildContext context) async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.any);
+    final result = await FilePicker.pickFiles(type: FileType.any);
 
     if (result != null && result.files.single.path != null && context.mounted) {
       final path = result.files.single.path!;
       final name = result.files.single.name;
 
-      context.push(
-        '/player',
-        extra: PlayerRouteExtra(
+      PlayerRoute(
+        $extra: PlayerRouteExtra(
           item: MultimediaItem(
             title: name,
             url: path,
@@ -235,7 +246,7 @@ class _DeveloperOptionsScreenState
           ),
           videoUrl: path,
         ),
-      );
+      ).push<void>(context);
     }
   }
 }

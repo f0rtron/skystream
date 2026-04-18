@@ -1,10 +1,13 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/entity/multimedia_item.dart';
 import 'storage_service.dart';
 
-final libraryRepositoryProvider = Provider<LibraryRepository>((ref) {
+part 'library_repository.g.dart';
+
+@Riverpod(keepAlive: true)
+LibraryRepository libraryRepository(Ref ref) {
   return LibraryRepository(ref.watch(storageServiceProvider));
-});
+}
 
 class LibraryRepository {
   final StorageService _storageService;

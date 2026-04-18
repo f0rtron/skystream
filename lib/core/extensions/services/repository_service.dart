@@ -22,7 +22,7 @@ class RepositoryService {
     // Shortcode (Alphanumeric) -> cutt.ly
     if (RegExp(r'^[a-zA-Z0-9!_-]+$').hasMatch(fixedUrl)) {
       try {
-        final response = await _dio.get(
+        final response = await _dio.get<dynamic>(
           "https://cutt.ly/sky-$fixedUrl",
           options: Options(
             followRedirects: false,
@@ -68,10 +68,10 @@ class RepositoryService {
       // Handle raw github urls -> jsdelivr if needed
       final normalizedUrl = _normalizeUrl(resolvedUrl);
 
-      final response = await _dio.get(normalizedUrl);
+      final response = await _dio.request<String>(normalizedUrl);
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data is String
-            ? _jsonDecodeSafe(response.data)
+            ? _jsonDecodeSafe(response.data!)
             : response.data as Map<String, dynamic>;
 
         if (data != null) {
@@ -80,8 +80,8 @@ class RepositoryService {
           final hasId =
               data.containsKey('id') || data.containsKey('packageName');
           // Extract lists safely to check content
-          final plugins = (data['pluginLists'] as List?) ?? [];
-          final repos = (data['repos'] as List?) ?? [];
+          final plugins = (data['pluginLists'] as List?) ?? <dynamic>[];
+          final repos = (data['repos'] as List?) ?? <dynamic>[];
 
           final hasPlugins = plugins.isNotEmpty;
           final hasRepos = repos.isNotEmpty;
@@ -102,7 +102,9 @@ class RepositoryService {
         }
       }
     } on DioException catch (e) {
-      if (kDebugMode) debugPrint('Failed to fetch repository $url: $e');
+      if (kDebugMode) {
+        debugPrint('Failed to fetch repository $url: $e');
+      }
     } catch (e) {
       // Rethrow validation exceptions or others
       rethrow;
@@ -112,7 +114,7 @@ class RepositoryService {
 
   /// Fetch all plugin listed in a Repository
   Future<List<ExtensionPlugin>> getRepoPlugins(ExtensionRepository repo) async {
-    final List<ExtensionPlugin> allPlugins = [];
+    final List<ExtensionPlugin> allPlugins = <ExtensionPlugin>[];
 
     // Add plugins directly embedded in the repository manifest (Enterprise V2)
     allPlugins.addAll(repo.plugins);
@@ -120,7 +122,7 @@ class RepositoryService {
     for (final pluginListUrl in repo.pluginLists) {
       try {
         final normalizedUrl = _normalizeUrl(pluginListUrl);
-        final response = await _dio.get(normalizedUrl);
+        final response = await _dio.get<dynamic>(normalizedUrl);
 
         if (response.statusCode == 200 && response.data != null) {
           final List<dynamic>? list = response.data is String
@@ -135,8 +137,9 @@ class RepositoryService {
           }
         }
       } catch (e) {
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint('Failed to fetch plugin list $pluginListUrl: $e');
+        }
       }
     }
 
@@ -158,7 +161,9 @@ class RepositoryService {
         return tempFile;
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('Failed to download plugin $url: $e');
+      if (kDebugMode) {
+        debugPrint('Failed to download plugin $url: $e');
+      }
     }
     return null;
   }

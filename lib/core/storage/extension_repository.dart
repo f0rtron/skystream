@@ -1,9 +1,12 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'storage_service.dart';
 
-final extensionRepositoryProvider = Provider<ExtensionRepository>((ref) {
+part 'extension_repository.g.dart';
+
+@Riverpod(keepAlive: true)
+ExtensionRepository extensionRepository(Ref ref) {
   return ExtensionRepository(ref.watch(storageServiceProvider));
-});
+}
 
 class ExtensionRepository {
   final StorageService _storageService;

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../shared/widgets/custom_widgets.dart';
-import '../../../../core/providers/device_info_provider.dart';
 import '../../../../core/services/external_player_service.dart';
 import '../../../../core/network/doh_service.dart';
 import '../../../../core/storage/settings_repository.dart';
@@ -64,14 +63,14 @@ void showDefaultHomeScreenDialog(
   String current,
 ) {
   final l10n = AppLocalizations.of(context)!;
-  final options = [
+  final options = <Map<String, String>>[
     {'label': l10n.home, 'route': '/home'},
     {'label': l10n.discover, 'route': '/discover'},
     {'label': l10n.search, 'route': '/search'},
     {'label': l10n.library, 'route': '/library'},
   ];
 
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
       surfaceTintColor: Colors.transparent,
@@ -81,7 +80,7 @@ void showDefaultHomeScreenDialog(
         onChanged: (val) {
           if (val == null) return;
           ref.read(generalSettingsProvider.notifier).setDefaultHomeScreen(val);
-          Navigator.pop(context);
+          Navigator.pop<void>(context);
         },
         child: SingleChildScrollView(
           child: Column(
@@ -160,7 +159,7 @@ void showGestureDialog(
   PlayerGesture current,
 ) {
   final l10n = AppLocalizations.of(context)!;
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
       surfaceTintColor: Colors.transparent,
@@ -174,13 +173,13 @@ void showGestureDialog(
           } else {
             ref.read(playerSettingsProvider.notifier).setRightGesture(val);
           }
-          Navigator.pop(context);
+          Navigator.pop<void>(context);
         },
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: PlayerGesture.values.map((g) {
-              String label = getGestureLabel(g, l10n);
+              final String label = getGestureLabel(g, l10n);
               return RadioListTile<PlayerGesture>(title: Text(label), value: g);
             }).toList(),
           ),
@@ -193,9 +192,9 @@ void showGestureDialog(
 /// Shows a dialog to pick the seek duration.
 void showDurationDialog(BuildContext context, WidgetRef ref, int current) {
   final l10n = AppLocalizations.of(context)!;
-  final options = [5, 10, 15, 20, 30, 60, 120];
+  final options = <int>[5, 10, 15, 20, 30, 60, 120];
 
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
       surfaceTintColor: Colors.transparent,
@@ -205,7 +204,7 @@ void showDurationDialog(BuildContext context, WidgetRef ref, int current) {
         onChanged: (val) {
           if (val == null) return;
           ref.read(playerSettingsProvider.notifier).setSeekDuration(val);
-          Navigator.pop(context);
+          Navigator.pop<void>(context);
         },
         child: SingleChildScrollView(
           child: Column(
@@ -226,12 +225,12 @@ void showDurationDialog(BuildContext context, WidgetRef ref, int current) {
 /// Shows a dialog to pick the default resize mode.
 void showResizeDialog(BuildContext context, WidgetRef ref, String current) {
   final l10n = AppLocalizations.of(context)!;
-  final options = [
+  final options = <Map<String, String>>[
     {'label': l10n.fit, 'value': 'Fit'},
     {'label': l10n.zoom, 'value': 'Zoom'},
     {'label': l10n.stretch, 'value': 'Stretch'},
   ];
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
       surfaceTintColor: Colors.transparent,
@@ -241,7 +240,7 @@ void showResizeDialog(BuildContext context, WidgetRef ref, String current) {
         onChanged: (val) {
           if (val == null) return;
           ref.read(playerSettingsProvider.notifier).setDefaultResizeMode(val);
-          Navigator.pop(ctx);
+          Navigator.pop<void>(ctx);
         },
         child: SingleChildScrollView(
           child: Column(
@@ -267,7 +266,7 @@ void showReadaheadDialog(BuildContext context, WidgetRef ref, int current) {
   // 1 to 20 minutes in 1-minute steps
   final options = List.generate(20, (i) => (1 + i) * 60);
 
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
       surfaceTintColor: Colors.transparent,
@@ -277,7 +276,7 @@ void showReadaheadDialog(BuildContext context, WidgetRef ref, int current) {
         onChanged: (val) {
           if (val == null) return;
           ref.read(playerSettingsProvider.notifier).setReadaheadSeconds(val);
-          Navigator.pop(context);
+          Navigator.pop<void>(context);
         },
         child: SingleChildScrollView(
           child: Column(
@@ -304,38 +303,39 @@ void showSubtitleDialog(
   final l10n = AppLocalizations.of(context)!;
   double size = settings.subtitleSize;
   bool showBackground = settings.subtitleBackgroundColor != 0;
-  final isTv = ref.read(deviceProfileProvider).asData?.value.isTv ?? false;
 
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (context, setState) {
         return AlertDialog(
           surfaceTintColor: Colors.transparent,
           title: Text(l10n.subtitleSettings),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(l10n.size(size.toInt())),
-              CustomSlider(
-                value: size,
-                min: 10,
-                max: 80,
-                divisions: 70,
-                step: 1.0,
-                onChanged: (v) => setState(() => size = v),
-              ),
-              const SizedBox(height: 8),
-              SwitchListTile(
-                title: Text(l10n.background),
-                value: showBackground,
-                onChanged: (v) => setState(() => showBackground = v),
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(l10n.size(size.toInt())),
+                CustomSlider(
+                  value: size,
+                  min: 10,
+                  max: 80,
+                  divisions: 70,
+                  step: 1.0,
+                  onChanged: (v) => setState(() => size = v),
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  title: Text(l10n.background),
+                  value: showBackground,
+                  onChanged: (v) => setState(() => showBackground = v),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: () => Navigator.pop<void>(ctx),
               child: Text(
                 l10n.cancel,
                 style: TextStyle(
@@ -350,7 +350,7 @@ void showSubtitleDialog(
                 ref
                     .read(playerSettingsProvider.notifier)
                     .setSubtitleSettings(size, settings.subtitleColor, bg);
-                Navigator.pop(ctx);
+                Navigator.pop<void>(ctx);
               },
               child: Text(l10n.save),
             ),
@@ -371,7 +371,7 @@ void showDefaultPlayerDialog(
   final platformPlayers = ExternalPlayerService.instance
       .getPlayersForPlatform();
 
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
       surfaceTintColor: Colors.transparent,
@@ -381,7 +381,7 @@ void showDefaultPlayerDialog(
           groupValue: currentPlayerId,
           onChanged: (val) {
             ref.read(playerSettingsProvider.notifier).setPreferredPlayer(val);
-            Navigator.pop(context);
+            Navigator.pop<void>(context);
           },
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -406,7 +406,7 @@ void showDefaultPlayerDialog(
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop<void>(context),
           child: Text(
             l10n.cancel,
             style: TextStyle(
@@ -428,7 +428,7 @@ void showDohProviderDialog(BuildContext context, WidgetRef ref) {
     text: initialSettings?.customUrl ?? '',
   );
 
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (context, setState) {
@@ -449,7 +449,7 @@ void showDohProviderDialog(BuildContext context, WidgetRef ref) {
                 if (val != DohProvider.custom) {
                   ref.read(dohSettingsProvider.notifier).setProvider(val);
                   ref.read(dohSettingsProvider.notifier).clearCache();
-                  Navigator.pop(ctx);
+                  Navigator.pop<void>(ctx);
                 }
               },
               child: Column(
@@ -501,13 +501,13 @@ void showDohProviderDialog(BuildContext context, WidgetRef ref) {
                         horizontal: 16.0,
                         vertical: 8.0,
                       ),
-                      child: TextField(
+                      child: CustomTextField(
                         controller: controller,
                         autofocus: true,
                         decoration: InputDecoration(
                           labelText: l10n.customDohUrlLabel,
                           hintText: 'https://...',
-                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.link_rounded, size: 20),
                         ),
                         keyboardType: TextInputType.url,
                       ),
@@ -518,7 +518,7 @@ void showDohProviderDialog(BuildContext context, WidgetRef ref) {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: () => Navigator.pop<void>(ctx),
               child: Text(
                 l10n.cancel,
                 style: TextStyle(
@@ -536,7 +536,7 @@ void showDohProviderDialog(BuildContext context, WidgetRef ref) {
                         .setProvider(DohProvider.custom);
                     ref.read(dohSettingsProvider.notifier).setCustomUrl(url);
                     ref.read(dohSettingsProvider.notifier).clearCache();
-                    Navigator.pop(ctx);
+                    Navigator.pop<void>(ctx);
                   }
                 },
                 child: Text(l10n.save),
@@ -555,7 +555,7 @@ void showThemeDialog(
   ThemeMode currentTheme,
 ) {
   final l10n = AppLocalizations.of(context)!;
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
       surfaceTintColor: Colors.transparent,
@@ -564,8 +564,8 @@ void showThemeDialog(
         groupValue: currentTheme,
         onChanged: (val) {
           if (val == null) return;
-          ref.read(themeModeProvider.notifier).setThemeMode(val);
-          Navigator.pop(context);
+          ref.read(appThemeModeProvider.notifier).setThemeMode(val);
+          Navigator.pop<void>(context);
         },
         child: SingleChildScrollView(
           child: Column(
@@ -580,7 +580,7 @@ void showThemeDialog(
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop<void>(context),
           child: Text(
             l10n.cancel,
             style: TextStyle(
@@ -597,7 +597,7 @@ void showThemeDialog(
 void showResetDataDialog(BuildContext context, WidgetRef ref) {
   final l10n = AppLocalizations.of(context)!;
   final callerContext = context;
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       surfaceTintColor: Colors.transparent,
@@ -605,17 +605,17 @@ void showResetDataDialog(BuildContext context, WidgetRef ref) {
       content: Text(l10n.resetDataDialogContent),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(dialogContext),
+          onPressed: () => Navigator.pop<void>(dialogContext),
           child: Text(
             l10n.cancel,
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: Theme.of(dialogContext).colorScheme.onSurfaceVariant,
             ),
           ),
         ),
         TextButton(
           onPressed: () async {
-            Navigator.pop(dialogContext);
+            Navigator.pop<void>(dialogContext);
 
             // Clear Preferences ONLY
             await ref.read(settingsRepositoryProvider).clearPreferences();
@@ -626,7 +626,7 @@ void showResetDataDialog(BuildContext context, WidgetRef ref) {
             }
           },
           style: TextButton.styleFrom(
-            foregroundColor: Theme.of(context).colorScheme.tertiary,
+            foregroundColor: Theme.of(dialogContext).colorScheme.tertiary,
           ),
           child: Text(l10n.resetDataKeepExtensions),
         ),
@@ -639,7 +639,7 @@ void showResetDataDialog(BuildContext context, WidgetRef ref) {
 void showFactoryResetDialog(BuildContext context, WidgetRef ref) {
   final l10n = AppLocalizations.of(context)!;
   final callerContext = context;
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       surfaceTintColor: Colors.transparent,
@@ -647,17 +647,17 @@ void showFactoryResetDialog(BuildContext context, WidgetRef ref) {
       content: Text(l10n.factoryResetDialogContent),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(dialogContext),
+          onPressed: () => Navigator.pop<void>(dialogContext),
           child: Text(
             l10n.cancel,
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: Theme.of(dialogContext).colorScheme.onSurfaceVariant,
             ),
           ),
         ),
         TextButton(
           onPressed: () async {
-            Navigator.pop(dialogContext);
+            Navigator.pop<void>(dialogContext);
             // Deep Clean (Extensions, Prefs, Hive)
             await ref.read(settingsRepositoryProvider).deleteAllData();
 
@@ -667,7 +667,7 @@ void showFactoryResetDialog(BuildContext context, WidgetRef ref) {
             }
           },
           style: TextButton.styleFrom(
-            foregroundColor: Theme.of(context).colorScheme.error,
+            foregroundColor: Theme.of(dialogContext).colorScheme.error,
           ),
           child: Text(l10n.factoryReset),
         ),
@@ -684,7 +684,7 @@ void showLanguageDialog(
 ) {
   final l10n = AppLocalizations.of(context)!;
 
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
       surfaceTintColor: Colors.transparent,
@@ -711,7 +711,7 @@ void showLanguageDialog(
             onChanged: (val) {
               if (val == null) return;
               ref.read(localeProvider.notifier).setLocale(val);
-              Navigator.pop(context);
+              Navigator.pop<void>(context);
             },
             child: SingleChildScrollView(
               child: Column(
@@ -737,99 +737,116 @@ void showDeveloperDialog(BuildContext context) {
   final l10n = AppLocalizations.of(context)!;
   final colorScheme = Theme.of(context).colorScheme;
 
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
       surfaceTintColor: Colors.transparent,
       contentPadding: const EdgeInsets.all(24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Profile Picture
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: colorScheme.primary, width: 2),
-            ),
-            child: const CircleAvatar(
-              radius: 48,
-              backgroundImage: NetworkImage('https://github.com/akashdh11.png'),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Name
-          Text(
-            'Akash Hiremath',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 4),
-          // Short Tagline
-          Text(
-            'Mobile App Developer',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Social Links
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _SocialButton(
-                svgUrl:
-                    'https://raw.githubusercontent.com/simple-icons/simple-icons/11.10.0/icons/github.svg',
-                color: const Color(
-                  0xFF909692,
-                ), // GitHub Official Black/Dark Grey
-                onTap: () => launchUrl(
-                  Uri.parse('https://github.com/akashdh11'),
-                  mode: LaunchMode.externalApplication,
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Profile Picture
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: colorScheme.primary.withValues(alpha: 0.2),
+                  width: 4,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: Image.network(
+                  'https://avatars.githubusercontent.com/u/74624467?v=4',
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(child: CircularProgressIndicator());
+                  },
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.person_rounded, size: 50),
                 ),
               ),
-              const SizedBox(width: 12),
-              _SocialButton(
-                svgUrl:
-                    'https://raw.githubusercontent.com/simple-icons/simple-icons/11.10.0/icons/linkedin.svg',
-                color: const Color(0xFF2d65bc), // LinkedIn Official Blue
-                onTap: () => launchUrl(
-                  Uri.parse('https://www.linkedin.com/in/akashdh11'),
-                  mode: LaunchMode.externalApplication,
-                ),
+            ),
+            const SizedBox(height: 20),
+            // Name and Title
+            Text(
+              'Akash',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
               ),
-              const SizedBox(width: 12),
-              _SocialButton(
-                svgUrl:
-                    'https://raw.githubusercontent.com/simple-icons/simple-icons/11.10.0/icons/discord.svg',
-                color: const Color(0xFF5865F2), // Discord Blurple
-                onTap: () => launchUrl(
-                  Uri.parse('https://discord.gg/73XGA8Mxn9'),
-                  mode: LaunchMode.externalApplication,
-                ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Fullstack & Flutter Developer',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
               ),
-              const SizedBox(width: 12),
-              _SocialButton(
-                svgUrl:
-                    'https://raw.githubusercontent.com/simple-icons/simple-icons/11.10.0/icons/telegram.svg',
-                color: const Color(0xFF5baae3), // Telegram Official Blue
-                onTap: () => launchUrl(
-                  Uri.parse('https://t.me/+Ez5Vsv2pUUFjZmNl'),
-                  mode: LaunchMode.externalApplication,
+            ),
+            const SizedBox(height: 24),
+            // Social Links
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _SocialButton(
+                  svgUrl:
+                      'https://raw.githubusercontent.com/simple-icons/simple-icons/11.10.0/icons/github.svg',
+                  color: const Color(
+                    0xFF909692,
+                  ), // GitHub Official Black/Dark Grey
+                  onTap: () => launchUrl(
+                    Uri.parse('https://github.com/akashdh11'),
+                    mode: LaunchMode.externalApplication,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                _SocialButton(
+                  svgUrl:
+                      'https://raw.githubusercontent.com/simple-icons/simple-icons/11.10.0/icons/linkedin.svg',
+                  color: const Color(0xFF2d65bc), // LinkedIn Official Blue
+                  onTap: () => launchUrl(
+                    Uri.parse('https://www.linkedin.com/in/akashdh11'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                ),
+                _SocialButton(
+                  svgUrl:
+                      'https://raw.githubusercontent.com/simple-icons/simple-icons/11.10.0/icons/discord.svg',
+                  color: const Color(0xFF5865F2), // Discord Blurple
+                  onTap: () => launchUrl(
+                    Uri.parse('https://discord.gg/73XGA8Mxn9'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                ),
+                _SocialButton(
+                  svgUrl:
+                      'https://raw.githubusercontent.com/simple-icons/simple-icons/11.10.0/icons/telegram.svg',
+                  color: const Color(0xFF5baae3), // Telegram Official Blue
+                  onTap: () => launchUrl(
+                    Uri.parse('https://t.me/+Ez5Vsv2pUUFjZmNl'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop<void>(context),
           child: Text(l10n.close),
         ),
       ],
@@ -852,7 +869,7 @@ class _SocialButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Material(
-      color: color.withOpacity(0.15),
+      color: color.withValues(alpha: 0.15),
       shape: const CircleBorder(),
       child: IconButton(
         icon: SvgPicture.network(
@@ -865,7 +882,7 @@ class _SocialButton extends StatelessWidget {
             height: 24,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: color.withOpacity(0.5),
+              color: color.withValues(alpha: 0.5),
             ),
           ),
         ),
@@ -886,7 +903,7 @@ void showQualityDialog(
 }) {
   final l10n = AppLocalizations.of(context)!;
   const options = QualityPreference.values;
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
       surfaceTintColor: Colors.transparent,
@@ -901,7 +918,7 @@ void showQualityDialog(
               onChanged: (val) {
                 if (val == null) return;
                 onChanged(val);
-                Navigator.pop(ctx);
+                Navigator.pop<void>(ctx);
               },
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -959,7 +976,7 @@ void showOpenSubtitlesAuthDialog(
   final userController = TextEditingController(text: settings.osUsername);
   final passController = TextEditingController(text: settings.osPassword);
 
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (ctx) {
       bool isVerifying = false;
@@ -976,110 +993,140 @@ void showOpenSubtitlesAuthDialog(
               Text(l10n.openSubtitles),
             ],
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.openSubtitlesAuthSubtitle,
-                style: const TextStyle(fontSize: 13, color: Colors.white70),
-              ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                controller: userController,
-                decoration: InputDecoration(
-                  labelText: l10n.username,
-                  prefixIcon: const Icon(Icons.person_outline, size: 20),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              CustomTextField(
-                controller: passController,
-                obscureText: isObscure,
-                decoration: InputDecoration(
-                  labelText: l10n.password,
-                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      isObscure ? Icons.visibility_off : Icons.visibility,
-                      size: 20,
-                    ),
-                    onPressed: () => setState(() => isObscure = !isObscure),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.openSubtitlesAuthSubtitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextButton.icon(
-                onPressed: () => launchUrl(
-                  Uri.parse('https://www.opensubtitles.com/en/users/sign_up'),
-                  mode: LaunchMode.externalApplication,
+                const SizedBox(height: 16),
+                CustomTextField(
+                  controller: userController,
+                  decoration: InputDecoration(
+                    labelText: l10n.username,
+                    prefixIcon: const Icon(Icons.person_outline, size: 20),
+                  ),
                 ),
-                icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                label: Text(l10n.noAccountRegister),
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  textStyle: const TextStyle(fontSize: 12),
+                const SizedBox(height: 12),
+                CustomTextField(
+                  controller: passController,
+                  obscureText: isObscure,
+                  decoration: InputDecoration(
+                    labelText: l10n.password,
+                    prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        isObscure ? Icons.visibility_off : Icons.visibility,
+                        size: 20,
+                      ),
+                      onPressed: () => setState(() => isObscure = !isObscure),
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          actions: [
-            Row(
-              children: [
-                if (verifyResult != null)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: Text(
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: () => launchUrl(
+                    Uri.parse('https://www.opensubtitles.com/en/users/sign_up'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                  label: Text(l10n.noAccountRegister),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    textStyle: const TextStyle(fontSize: 12),
+                  ),
+                ),
+                if (verifyResult != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        verifyResult!
+                            ? Icons.check_circle_outline_rounded
+                            : Icons.error_outline_rounded,
+                        color: verifyResult! ? Colors.green : Colors.red,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
                         verifyResult!
                             ? l10n.connectedSuccessfully
                             : l10n.connectionFailed,
                         style: TextStyle(
                           color: verifyResult! ? Colors.green : Colors.red,
-                          fontSize: 11,
+                          fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: isVerifying
+                        ? null
+                        : () async {
+                            setState(() {
+                              isVerifying = true;
+                              verifyResult = null;
+                            });
+                            final ok = await ref
+                                .read(playerSettingsProvider.notifier)
+                                .verifyOpenSubtitles(
+                                  userController.text.trim(),
+                                  passController.text.trim(),
+                                );
+                            if (ctx.mounted) {
+                              setState(() {
+                                isVerifying = false;
+                                verifyResult = ok;
+                              });
+                            }
+                          },
+                    icon: isVerifying
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(
+                            Icons.check_circle_outline_rounded,
+                            size: 18,
+                          ),
+                    label: Text(l10n.testConnection),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
-                const Spacer(),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
                 TextButton(
-                  onPressed: isVerifying ? null : () => Navigator.pop(ctx),
+                  onPressed: isVerifying
+                      ? null
+                      : () => Navigator.pop<void>(ctx),
                   child: Text(
                     l10n.cancel,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                TextButton(
-                  onPressed: isVerifying
-                      ? null
-                      : () async {
-                          setState(() => isVerifying = true);
-                          final ok = await ref
-                              .read(playerSettingsProvider.notifier)
-                              .verifyOpenSubtitles(
-                                userController.text.trim(),
-                                passController.text.trim(),
-                              );
-                          if (ctx.mounted) {
-                            setState(() {
-                              isVerifying = false;
-                              verifyResult = ok;
-                            });
-                          }
-                        },
-                  child: isVerifying
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(l10n.testConnection),
                 ),
                 const SizedBox(width: 8),
                 CustomButton(
@@ -1093,7 +1140,7 @@ void showOpenSubtitlesAuthDialog(
                                 userController.text.trim(),
                                 passController.text.trim(),
                               );
-                          Navigator.pop(ctx);
+                          Navigator.pop<void>(ctx);
                         },
                   child: Text(l10n.save),
                 ),
@@ -1118,7 +1165,7 @@ void showSubDlAuthDialog(
   final emailController = TextEditingController(text: settings.subdlEmail);
   final passController = TextEditingController(text: settings.subdlPassword);
 
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (ctx) {
       bool isFetching = false;
@@ -1137,163 +1184,219 @@ void showSubDlAuthDialog(
               Text('SubDL API Key'),
             ],
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.subDlAuthSubtitle,
-                style: const TextStyle(fontSize: 13, color: Colors.white70),
-              ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                controller: apiKeyController,
-                decoration: InputDecoration(
-                  labelText: l10n.apiKey,
-                  prefixIcon: const Icon(Icons.key_rounded, size: 20),
-                  border: const OutlineInputBorder(),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.subDlAuthSubtitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              const Row(
-                children: [
-                  Expanded(child: Divider()),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      'OR FETCH VIA ACCOUNT',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white38,
+                const SizedBox(height: 16),
+                CustomTextField(
+                  controller: apiKeyController,
+                  decoration: InputDecoration(
+                    labelText: l10n.apiKey,
+                    prefixIcon: const Icon(Icons.key_rounded, size: 20),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        'OR FETCH VIA ACCOUNT',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ),
+                    Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                CustomTextField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    labelText: l10n.email,
+                    prefixIcon: const Icon(Icons.email_outlined, size: 20),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                CustomTextField(
+                  controller: passController,
+                  obscureText: isObscure,
+                  decoration: InputDecoration(
+                    labelText: l10n.password,
+                    prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        isObscure ? Icons.visibility_off : Icons.visibility,
+                        size: 20,
+                      ),
+                      onPressed: () => setState(() => isObscure = !isObscure),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: (isFetching || isVerifyingKey)
+                        ? null
+                        : () async {
+                            setState(() {
+                              isFetching = true;
+                              fetchError = null;
+                              verifyKeyResult = null;
+                            });
+                            final result = await ref
+                                .read(playerSettingsProvider.notifier)
+                                .verifySubDl(
+                                  emailController.text.trim(),
+                                  passController.text.trim(),
+                                );
+                            if (ctx.mounted) {
+                              setState(() {
+                                isFetching = false;
+                                if (result.key != null) {
+                                  apiKeyController.text = result.key!;
+                                } else {
+                                  fetchError = result.error;
+                                }
+                              });
+                            }
+                          },
+                    icon: isFetching
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.download_rounded, size: 18),
+                    label: Text(l10n.fetchMyApiKey),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      backgroundColor: theme.colorScheme.primary.withValues(
+                        alpha: 0.8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: l10n.email,
-                  prefixIcon: const Icon(Icons.email_outlined, size: 20),
-                  border: const OutlineInputBorder(),
                 ),
-              ),
-              const SizedBox(height: 12),
-              CustomTextField(
-                controller: passController,
-                obscureText: isObscure,
-                decoration: InputDecoration(
-                  labelText: l10n.password,
-                  prefixIcon: const Icon(Icons.lock_outline, size: 20),
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      isObscure ? Icons.visibility_off : Icons.visibility,
-                      size: 20,
-                    ),
-                    onPressed: () => setState(() => isObscure = !isObscure),
+                const SizedBox(height: 12),
+                TextButton.icon(
+                  onPressed: () => launchUrl(
+                    Uri.parse('https://subdl.com/panel/api'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                  label: Text(l10n.noAccountRegister),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    textStyle: const TextStyle(fontSize: 12),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: (isFetching || isVerifyingKey)
-                      ? null
-                      : () async {
-                          setState(() {
-                            isFetching = true;
-                            fetchError = null;
-                            verifyKeyResult = null;
-                          });
-                          final result = await ref
-                              .read(playerSettingsProvider.notifier)
-                              .verifySubDl(
-                                emailController.text.trim(),
-                                passController.text.trim(),
-                              );
-                          if (ctx.mounted) {
-                            setState(() {
-                              isFetching = false;
-                              if (result.key != null) {
-                                apiKeyController.text = result.key!;
-                              } else {
-                                fetchError = result.error;
-                              }
-                            });
-                          }
-                        },
-                  icon: isFetching
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                if (fetchError != null || verifyKeyResult != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        fetchError != null || verifyKeyResult == false
+                            ? Icons.error_outline_rounded
+                            : Icons.check_circle_outline_rounded,
+                        color: fetchError != null || verifyKeyResult == false
+                            ? Colors.red
+                            : Colors.green,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          fetchError ??
+                              (verifyKeyResult!
+                                  ? l10n.keyVerified
+                                  : l10n.invalidApiKey),
+                          style: TextStyle(
+                            color: fetchError != null ||
+                                    verifyKeyResult == false
+                                ? Colors.red
+                                : Colors.green,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
                           ),
-                        )
-                      : const Icon(Icons.download_rounded, size: 18),
-                  label: Text(l10n.fetchMyApiKey),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    backgroundColor: theme.colorScheme.primary.withValues(
-                      alpha: 0.8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: (isFetching || isVerifyingKey)
+                        ? null
+                        : () async {
+                            setState(() {
+                              isVerifyingKey = true;
+                              verifyKeyResult = null;
+                              fetchError = null;
+                            });
+                            final ok = await ref
+                                .read(playerSettingsProvider.notifier)
+                                .verifySubDlKey(apiKeyController.text.trim());
+                            if (ctx.mounted) {
+                              setState(() {
+                                isVerifyingKey = false;
+                                verifyKeyResult = ok;
+                              });
+                            }
+                          },
+                    icon: isVerifyingKey
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(
+                            Icons.check_circle_outline_rounded,
+                            size: 18,
+                          ),
+                    label: Text(l10n.testConnection),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextButton.icon(
-                onPressed: () => launchUrl(
-                  Uri.parse('https://subdl.com/panel/api'),
-                  mode: LaunchMode.externalApplication,
-                ),
-                icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                label: Text(l10n.noAccountRegister),
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  textStyle: const TextStyle(fontSize: 12),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
           actions: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (fetchError != null || verifyKeyResult != null)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: Text(
-                        fetchError ??
-                            (verifyKeyResult!
-                                ? l10n.keyVerified
-                                : l10n.invalidApiKey),
-                        style: TextStyle(
-                          color:
-                              (fetchError != null || verifyKeyResult == false)
-                              ? Colors.redAccent
-                              : Colors.green,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                const Spacer(),
                 TextButton(
                   onPressed: (isFetching || isVerifyingKey)
                       ? null
-                      : () => Navigator.pop(ctx),
+                      : () => Navigator.pop<void>(ctx),
                   child: Text(
                     l10n.cancel,
                     style: TextStyle(
@@ -1301,35 +1404,6 @@ void showSubDlAuthDialog(
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                TextButton(
-                  onPressed: (isFetching || isVerifyingKey)
-                      ? null
-                      : () async {
-                          setState(() {
-                            isVerifyingKey = true;
-                            verifyKeyResult = null;
-                            fetchError = null;
-                          });
-                          final ok = await ref
-                              .read(playerSettingsProvider.notifier)
-                              .verifySubDlKey(apiKeyController.text.trim());
-                          if (ctx.mounted) {
-                            setState(() {
-                              isVerifyingKey = false;
-                              verifyKeyResult = ok;
-                            });
-                          }
-                        },
-                  child: isVerifyingKey
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(l10n.testConnection),
-                ),
-                const SizedBox(width: 8),
                 const SizedBox(width: 8),
                 CustomButton(
                   isPrimary: true,
@@ -1343,7 +1417,7 @@ void showSubDlAuthDialog(
                                 email: emailController.text.trim(),
                                 pass: passController.text.trim(),
                               );
-                          Navigator.pop(ctx);
+                          Navigator.pop<void>(ctx);
                         },
                   child: Text(l10n.save),
                 ),
@@ -1365,7 +1439,7 @@ void showSubSourceAuthDialog(
   final l10n = AppLocalizations.of(context)!;
   final keyController = TextEditingController(text: settings.subsourceApiKey);
 
-  showDialog(
+  showDialog<void>(
     context: context,
     builder: (ctx) {
       bool isVerifying = false;
@@ -1381,89 +1455,120 @@ void showSubSourceAuthDialog(
               Text('SubSource API Key'),
             ],
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.subSourceAuthSubtitle,
-                style: const TextStyle(fontSize: 13, color: Colors.white70),
-              ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                controller: keyController,
-                decoration: InputDecoration(
-                  labelText: l10n.apiKeyOptionalOverride,
-                  prefixIcon: const Icon(Icons.key_rounded, size: 20),
-                  border: const OutlineInputBorder(),
-                  hintText: l10n.enterKeyToOverrideDefault,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextButton.icon(
-                onPressed: () => launchUrl(
-                  Uri.parse('https://subsource.net/dashboard/profile'),
-                  mode: LaunchMode.externalApplication,
-                ),
-                icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                label: Text(l10n.getApiKeyFromProfile),
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  textStyle: const TextStyle(fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            Row(
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (verifyResult != null)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: Text(
+                Text(
+                  l10n.subSourceAuthSubtitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                CustomTextField(
+                  controller: keyController,
+                  decoration: InputDecoration(
+                    labelText: l10n.apiKeyOptionalOverride,
+                    prefixIcon: const Icon(Icons.key_rounded, size: 20),
+                    hintText: l10n.enterKeyToOverrideDefault,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton.icon(
+                  onPressed: () => launchUrl(
+                    Uri.parse('https://subsource.net/dashboard/profile'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                  label: Text(l10n.getApiKeyFromProfile),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    textStyle: const TextStyle(fontSize: 12),
+                  ),
+                ),
+                if (verifyResult != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        verifyResult!
+                            ? Icons.check_circle_outline_rounded
+                            : Icons.error_outline_rounded,
+                        color: verifyResult! ? Colors.green : Colors.red,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
                         verifyResult! ? l10n.keyVerified : l10n.invalidApiKey,
                         style: TextStyle(
                           color: verifyResult! ? Colors.green : Colors.red,
-                          fontSize: 11,
+                          fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: isVerifying
+                        ? null
+                        : () async {
+                            setState(() {
+                              isVerifying = true;
+                              verifyResult = null;
+                            });
+                            final ok = await ref
+                                .read(playerSettingsProvider.notifier)
+                                .verifySubSource(keyController.text.trim());
+                            if (ctx.mounted) {
+                              setState(() {
+                                isVerifying = false;
+                                verifyResult = ok;
+                              });
+                            }
+                          },
+                    icon: isVerifying
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(
+                            Icons.check_circle_outline_rounded,
+                            size: 18,
+                          ),
+                    label: Text(l10n.testConnection),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
-                const Spacer(),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
                 TextButton(
-                  onPressed: isVerifying ? null : () => Navigator.pop(ctx),
+                  onPressed: isVerifying
+                      ? null
+                      : () => Navigator.pop<void>(ctx),
                   child: Text(
                     l10n.cancel,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                TextButton(
-                  onPressed: isVerifying
-                      ? null
-                      : () async {
-                          setState(() => isVerifying = true);
-                          final ok = await ref
-                              .read(playerSettingsProvider.notifier)
-                              .verifySubSource(keyController.text.trim());
-                          if (ctx.mounted) {
-                            setState(() {
-                              isVerifying = false;
-                              verifyResult = ok;
-                            });
-                          }
-                        },
-                  child: isVerifying
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(l10n.testConnection),
                 ),
                 const SizedBox(width: 8),
                 CustomButton(
@@ -1474,7 +1579,7 @@ void showSubSourceAuthDialog(
                           ref
                               .read(playerSettingsProvider.notifier)
                               .setSubSourceApiKey(keyController.text.trim());
-                          Navigator.pop(ctx);
+                          Navigator.pop<void>(ctx);
                         },
                   child: Text(l10n.save),
                 ),

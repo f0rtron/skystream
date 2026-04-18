@@ -580,5 +580,8 @@
   },
   "openSubtitles": "OpenSubtitles",
   "subDl": "SubDL",
-  "subSource": "SubSource"
+  "subSource": "SubSource",
+  "diagnostics": "诊断",
+  "viewLogs": "查看日志",
+  "viewLogsSubtitle": "查看应用程序活动和错误"
 }

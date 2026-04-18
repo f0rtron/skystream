@@ -16,11 +16,11 @@ class Actor {
 
   factory Actor.fromJson(Map<String, dynamic> json) {
     return Actor(
-      name: json['name'] ?? '',
-      image: json['image'],
-      role: json['role'] ?? json['roleString'],
+      name: (json['name'] as String?) ?? '',
+      image: json['image'] as String?,
+      role: (json['role'] as String?) ?? (json['roleString'] as String?),
       voiceActor: json['voiceActor'] != null
-          ? Actor.fromJson(Map<String, dynamic>.from(json['voiceActor']))
+          ? Actor.fromJson(Map<String, dynamic>.from(json['voiceActor'] as Map))
           : null,
     );
   }
@@ -43,9 +43,9 @@ class Trailer {
 
   factory Trailer.fromJson(Map<String, dynamic> json) {
     return Trailer(
-      url: json['url'] ?? json['extractorUrl'] ?? '',
+      url: (json['url'] as String?) ?? (json['extractorUrl'] as String?) ?? '',
       headers: json['headers'] != null
-          ? Map<String, String>.from(json['headers'])
+          ? Map<String, String>.from(json['headers'] as Map)
           : null,
     );
   }
@@ -64,9 +64,9 @@ class NextAiring {
 
   factory NextAiring.fromJson(Map<String, dynamic> json) {
     return NextAiring(
-      episode: json['episode'] ?? 0,
-      unixTime: json['unixTime'] ?? 0,
-      season: json['season'],
+      episode: (json['episode'] as int?) ?? 0,
+      unixTime: (json['unixTime'] as int?) ?? 0,
+      season: json['season'] as int?,
     );
   }
 
@@ -145,72 +145,72 @@ class MultimediaItem {
         !json.containsKey('posterUrl')) {
       return MultimediaItem.fromTmdbJson(json);
     }
-    final title = json['title'] != null ? _unescape.convert(json['title']) : '';
+    final title = json['title'] != null ? _unescape.convert(json['title'] as String) : '';
 
-    final String? typeStr = json['type'] ?? json['contentType'];
+    final String? typeStr = (json['type'] as String?) ?? (json['contentType'] as String?);
     final MultimediaContentType type = MultimediaItem.parseContentType(typeStr);
 
     return MultimediaItem(
       title: title,
-      url: json['url'] ?? '',
-      posterUrl: json['posterUrl'] ?? '',
-      bannerUrl: json['backgroundPosterUrl'] ?? json['bannerUrl'],
-      logoUrl: json['logoUrl'],
+      url: (json['url'] as String?) ?? '',
+      posterUrl: (json['posterUrl'] as String?) ?? '',
+      bannerUrl: (json['backgroundPosterUrl'] as String?) ?? (json['bannerUrl'] as String?),
+      logoUrl: json['logoUrl'] as String?,
       description: json['description'] != null
-          ? _unescape.convert(json['description'])
+          ? _unescape.convert(json['description'] as String)
           : null,
       contentType: type,
       episodes: json['episodes'] != null
           ? (json['episodes'] as List)
                 .map<Episode>(
-                  (e) => Episode.fromJson(Map<String, dynamic>.from(e)),
+                  (e) => Episode.fromJson(Map<String, dynamic>.from(e as Map)),
                 )
                 .toList()
           : null,
       streams: json['streams'] != null
           ? (json['streams'] as List)
                 .map<StreamResult>(
-                  (s) => StreamResult.fromJson(Map<String, dynamic>.from(s)),
+                  (s) => StreamResult.fromJson(Map<String, dynamic>.from(s as Map)),
                 )
                 .toList()
           : null,
-      provider: json['provider'],
+      provider: json['provider'] as String?,
       headers: json['headers'] != null
-          ? Map<String, String>.from(json['headers'])
+          ? Map<String, String>.from(json['headers'] as Map)
           : null,
-      year: json['year'],
+      year: json['year'] as int?,
       score: (json['score'] as num?)?.toDouble(),
-      duration: json['duration'],
+      duration: json['duration'] as int?,
       status: _parseShowStatus(json['status'] ?? json['showStatus']),
-      tags: json['tags'] != null ? List<String>.from(json['tags']) : null,
+      tags: json['tags'] != null ? List<String>.from(json['tags'] as List) : null,
       cast: json['cast'] != null || json['actors'] != null
           ? ((json['cast'] ?? json['actors']) as List)
-                .map<Actor>((a) => Actor.fromJson(Map<String, dynamic>.from(a)))
+                .map<Actor>((a) => Actor.fromJson(Map<String, dynamic>.from(a as Map)))
                 .toList()
           : null,
       trailers: json['trailers'] != null
           ? (json['trailers'] as List)
                 .map<Trailer>(
-                  (t) => Trailer.fromJson(Map<String, dynamic>.from(t)),
+                  (t) => Trailer.fromJson(Map<String, dynamic>.from(t as Map)),
                 )
                 .toList()
           : null,
       recommendations: json['recommendations'] != null
           ? (json['recommendations'] as List)
                 .map<MultimediaItem>(
-                  (r) => MultimediaItem.fromJson(Map<String, dynamic>.from(r)),
+                  (r) => MultimediaItem.fromJson(Map<String, dynamic>.from(r as Map)),
                 )
                 .toList()
           : null,
       syncData: json['syncData'] != null
-          ? Map<String, String>.from(json['syncData'])
+          ? Map<String, String>.from(json['syncData'] as Map)
           : null,
-      playbackPolicy: json['playbackPolicy'] ?? json['vpnStatus'],
-      isAdult: json['isAdult'] ?? false,
+      playbackPolicy: (json['playbackPolicy'] as String?) ?? (json['vpnStatus'] as String?),
+      isAdult: (json['isAdult'] as bool?) ?? false,
       nextAiring: json['nextAiring'] != null
-          ? NextAiring.fromJson(Map<String, dynamic>.from(json['nextAiring']))
+          ? NextAiring.fromJson(Map<String, dynamic>.from(json['nextAiring'] as Map))
           : null,
-      tmdbId: json['tmdbId'],
+      tmdbId: json['tmdbId'] as int?,
     );
   }
 
@@ -236,7 +236,7 @@ class MultimediaItem {
       url: '', // Needs detail resolving
       posterUrl: posterUrl,
       bannerUrl: bannerUrl,
-      description: json['overview'],
+      description: json['overview'] as String?,
       contentType: MultimediaItem.parseContentType(mTypeStr),
       year: year,
       score: (json['vote_average'] as num?)?.toDouble(),
@@ -428,28 +428,28 @@ class Episode {
   });
 
   factory Episode.fromJson(Map<String, dynamic> json) {
-    final name = json['name'] != null ? _unescape.convert(json['name']) : '';
+    final name = json['name'] != null ? _unescape.convert(json['name'] as String) : '';
     return Episode(
       name: name,
-      url: json['url'] ?? '',
-      season: json['season'] ?? 0,
-      episode: json['episode'] ?? 0,
+      url: (json['url'] as String?) ?? '',
+      season: (json['season'] as int?) ?? 0,
+      episode: (json['episode'] as int?) ?? 0,
       description: json['description'] != null
-          ? _unescape.convert(json['description'])
+          ? _unescape.convert(json['description'] as String)
           : null,
-      posterUrl: json['posterUrl'],
+      posterUrl: json['posterUrl'] as String?,
       headers: json['headers'] != null
-          ? Map<String, String>.from(json['headers'])
+          ? Map<String, String>.from(json['headers'] as Map)
           : null,
       rating: (json['rating'] as num?)?.toDouble(),
-      runtime: json['runtime'] ?? json['duration'],
-      airDate: json['airDate'],
+      runtime: (json['runtime'] as int?) ?? (json['duration'] as int?),
+      airDate: json['airDate'] as String?,
       dubStatus: _parseDubStatus(json['dubStatus'], name),
-      playbackPolicy: json['playbackPolicy'] ?? json['vpnStatus'],
+      playbackPolicy: (json['playbackPolicy'] as String?) ?? (json['vpnStatus'] as String?),
       streams: json['streams'] != null
           ? (json['streams'] as List)
                 .map<StreamResult>(
-                  (s) => StreamResult.fromJson(Map<String, dynamic>.from(s)),
+                  (s) => StreamResult.fromJson(Map<String, dynamic>.from(s as Map)),
                 )
                 .toList()
           : null,
@@ -536,19 +536,19 @@ class StreamResult {
 
   factory StreamResult.fromJson(Map<String, dynamic> json) {
     return StreamResult(
-      url: json['url'] ?? '',
-      source: json['source'] ?? 'Unknown',
+      url: (json['url'] as String?) ?? '',
+      source: (json['source'] as String?) ?? 'Unknown',
       headers: json['headers'] != null
-          ? Map<String, String>.from(json['headers'])
+          ? Map<String, String>.from(json['headers'] as Map)
           : null,
       subtitles: json['subtitles'] != null
           ? (json['subtitles'] as List)
-                .map((x) => SubtitleFile.fromJson(Map<String, dynamic>.from(x)))
+                .map((x) => SubtitleFile.fromJson(Map<String, dynamic>.from(x as Map)))
                 .toList()
           : null,
-      drmKid: json['drmKid'],
-      drmKey: json['drmKey'],
-      licenseUrl: json['licenseUrl'],
+      drmKid: json['drmKid'] as String?,
+      drmKey: json['drmKey'] as String?,
+      licenseUrl: json['licenseUrl'] as String?,
     );
   }
 }

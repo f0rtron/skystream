@@ -1,7 +1,9 @@
 import 'dart:async';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../data/tmdb_provider.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
+
+part 'discover_search_controller.g.dart';
 
 class DiscoverSearchState {
   final List<MultimediaItem> suggestions;
@@ -39,7 +41,8 @@ class DiscoverSearchState {
   }
 }
 
-class DiscoverSearchController extends Notifier<DiscoverSearchState> {
+@riverpod
+class DiscoverSearchController extends _$DiscoverSearchController {
   Timer? _debounce;
 
   @override
@@ -147,8 +150,3 @@ class DiscoverSearchController extends Notifier<DiscoverSearchState> {
     state = const DiscoverSearchState();
   }
 }
-
-final discoverSearchControllerProvider =
-    NotifierProvider.autoDispose<DiscoverSearchController, DiscoverSearchState>(
-      DiscoverSearchController.new,
-    );

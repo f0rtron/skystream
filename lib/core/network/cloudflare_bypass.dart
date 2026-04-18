@@ -81,15 +81,17 @@ class CloudflareBypass {
                 !html.contains('Just a moment')) {
               return CfResult(body: html, statusCode: 200, finalUrl: url);
             } else {
-              if (kDebugMode)
+              if (kDebugMode) {
                 debugPrint('$_tag Challenge recurred for $host, disposing');
+              }
               await _disposeHostSession(host);
             }
           } else {
             // Reused session failed (timeout or dead engine).
             // Proactively dispose and FALL THROUGH to Fresh Solve.
-            if (kDebugMode)
+            if (kDebugMode) {
               debugPrint('$_tag Reused WebView failed/timed out, falling back');
+            }
             await _disposeHostSession(host);
           }
         } catch (e) {
@@ -146,8 +148,9 @@ class CloudflareBypass {
         if (title == null ||
             title.isEmpty ||
             title.toLowerCase().contains('cloudflare') ||
-            title.contains('Just a moment'))
+            title.contains('Just a moment')) {
           return;
+        }
 
         if (body != null &&
             body.isNotEmpty &&
@@ -179,11 +182,12 @@ class CloudflareBypass {
         if (p == 100) checkSolved(c, null);
       },
       onReceivedError: (c, r, e) {
-        final isCancel =
-            e.type == -999 ||
+        final isCancel = e.type == WebResourceErrorType.CANCELLED ||
             e.description.contains('-999') ||
             e.description.toLowerCase().contains('cancel');
-        if (isCancel) return;
+        if (isCancel) {
+          return;
+        }
         holder.hostView?.onLoaded(null);
       },
     );
@@ -192,7 +196,7 @@ class CloudflareBypass {
       await headless.run();
       final deadline = DateTime.now().add(_timeout);
       while (!solved && DateTime.now().isBefore(deadline)) {
-        await Future.delayed(_pollInterval);
+        await Future<void>.delayed(_pollInterval);
       }
 
       if (!solved) {
@@ -214,7 +218,7 @@ class CloudflareBypass {
   }
 
   static String _normalizeHost(String host) {
-    var h = host.toLowerCase();
+    final h = host.toLowerCase();
     return h.startsWith('www.') ? h.substring(4) : h;
   }
 
@@ -250,8 +254,9 @@ class _HostWebView {
         try {
           dispose();
         } catch (e) {
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint('${CloudflareBypass._tag} Idle timer dispose error: $e');
+          }
         }
       }
     });
@@ -271,7 +276,7 @@ class _HostWebView {
       final html = await _pending!.future.timeout(CloudflareBypass._navTimeout);
 
       if (html == null && retries > 0) {
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future<void>.delayed(const Duration(milliseconds: 500));
         return navigate(url, retries: retries - 1);
       }
       return html;
@@ -292,8 +297,10 @@ class _HostWebView {
     _disposed = true;
     _idleTimer?.cancel();
     if (_pending != null && !_pending!.isCompleted) {
-      if (kDebugMode)
-        debugPrint('${CloudflareBypass._tag} $host: Cancelling active navigation and disposing');
+      if (kDebugMode) {
+        debugPrint(
+            '${CloudflareBypass._tag} $host: Cancelling active navigation and disposing');
+      }
       _pending!.complete(null);
     }
     try {

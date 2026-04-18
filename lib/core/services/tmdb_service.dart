@@ -15,12 +15,12 @@ class TmdbService {
   }
 
   Future<List<TmdbGenre>> getGenres({String language = 'en-US'}) async {
-    final response = await _dio.get(
+    final response = await _dio.get<Map<String, dynamic>>(
       '/genre/movie/list',
       queryParameters: {'api_key': TmdbConfig.apiKey, 'language': language},
     );
-    if (response.statusCode == 200) {
-      return (response.data['genres'] as List)
+    if (response.statusCode == 200 && response.data != null) {
+      return (response.data!['genres'] as List)
           .map((i) => TmdbGenre.fromJson(i))
           .toList();
     }
@@ -28,12 +28,12 @@ class TmdbService {
   }
 
   Future<List<TmdbGenre>> getTvGenres({String language = 'en-US'}) async {
-    final response = await _dio.get(
+    final response = await _dio.get<Map<String, dynamic>>(
       '/genre/tv/list',
       queryParameters: {'api_key': TmdbConfig.apiKey, 'language': language},
     );
-    if (response.statusCode == 200) {
-      return (response.data['genres'] as List)
+    if (response.statusCode == 200 && response.data != null) {
+      return (response.data!['genres'] as List)
           .map((i) => TmdbGenre.fromJson(i))
           .toList();
     }
@@ -48,7 +48,7 @@ class TmdbService {
     String language = 'en-US',
   }) async {
     final langCode = language.split('-')[0];
-    final response = await _dio.get(
+    final response = await _dio.get<Map<String, dynamic>>(
       '/$mediaType/$id',
       queryParameters: {
         'api_key': TmdbConfig.apiKey,
@@ -334,7 +334,7 @@ class TmdbService {
     // Clean up double spaces
     cleanQuery = cleanQuery.replaceAll(RegExp(r'\s+'), ' ');
 
-    final response = await _dio.get(
+    final response = await _dio.get<Map<String, dynamic>>(
       '/search/multi',
       queryParameters: {
         'api_key': TmdbConfig.apiKey,
@@ -345,9 +345,9 @@ class TmdbService {
       },
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode == 200 && response.data != null) {
       final rawResults = List<Map<String, dynamic>>.from(
-        response.data['results'],
+        response.data!['results'],
       );
 
       final List<Map<String, dynamic>> processedResults = [];
@@ -448,7 +448,7 @@ class TmdbService {
     }
 
     try {
-      final response = await _dio.get(
+      final response = await _dio.get<Map<String, dynamic>>(
         '/search/multi',
         queryParameters: {
           'api_key': TmdbConfig.apiKey,
@@ -458,10 +458,10 @@ class TmdbService {
         },
       );
 
-      if (response.statusCode != 200) return [];
+      if (response.statusCode != 200 || response.data == null) return [];
 
       final results = List<Map<String, dynamic>>.from(
-        response.data['results'] ?? const [],
+        response.data!['results'] ?? const [],
       );
 
       final seen = <String>{};
@@ -526,10 +526,10 @@ class TmdbService {
     }
     if (minRating != null) query['vote_average.gte'] = minRating;
 
-    final response = await _dio.get(path, queryParameters: query);
+    final response = await _dio.get<Map<String, dynamic>>(path, queryParameters: query);
 
-    if (response.statusCode == 200) {
-      return (response.data['results'] as List)
+    if (response.statusCode == 200 && response.data != null) {
+      return (response.data!['results'] as List)
           .map((i) => MultimediaItem.fromTmdbJson(i as Map<String, dynamic>))
           .toList();
     }
@@ -542,7 +542,7 @@ class TmdbService {
     String language = 'en-US',
     int page = 1,
   }) async {
-    final response = await _dio.get(
+    final response = await _dio.get<Map<String, dynamic>>(
       path,
       queryParameters: {
         'api_key': TmdbConfig.apiKey,
@@ -550,8 +550,8 @@ class TmdbService {
         'page': page,
       },
     );
-    if (response.statusCode == 200) {
-      return (response.data['results'] as List)
+    if (response.statusCode == 200 && response.data != null) {
+      return (response.data!['results'] as List)
           .map((i) => MultimediaItem.fromTmdbJson(i as Map<String, dynamic>))
           .toList();
     }
@@ -563,7 +563,7 @@ class TmdbService {
     String language = 'en',
     String mediaType = 'movie',
   }) async {
-    final response = await _dio.get(
+    final response = await _dio.get<Map<String, dynamic>>(
       '/$mediaType/$id/images',
       queryParameters: {
         'api_key': TmdbConfig.apiKey,
@@ -571,8 +571,8 @@ class TmdbService {
       },
     );
 
-    if (response.statusCode == 200) {
-      final data = response.data;
+    final data = response.data;
+    if (response.statusCode == 200 && data != null) {
       final logos = List<Map<String, dynamic>>.from(data['logos'] ?? []);
       return pickBestLogo(logos, language);
     }
@@ -663,7 +663,7 @@ class TmdbService {
     int movieId, {
     String language = 'en-US',
   }) async {
-    final response = await _dio.get(
+    final response = await _dio.get<Map<String, dynamic>>(
       '/movie/$movieId',
       queryParameters: {
         'api_key': TmdbConfig.apiKey,
@@ -681,7 +681,7 @@ class TmdbService {
     int movieId, {
     String language = 'en-US',
   }) async {
-    final response = await _dio.get(
+    final response = await _dio.get<Map<String, dynamic>>(
       '/movie/$movieId',
       queryParameters: {
         'api_key': TmdbConfig.apiKey,
@@ -701,7 +701,7 @@ class TmdbService {
     int movieId, {
     String language = 'en-US',
   }) async {
-    final response = await _dio.get(
+    final response = await _dio.get<Map<String, dynamic>>(
       '/movie/$movieId/credits',
       queryParameters: {'api_key': TmdbConfig.apiKey, 'language': language},
     );
@@ -715,7 +715,7 @@ class TmdbService {
     int tvId, {
     String language = 'en-US',
   }) async {
-    final response = await _dio.get(
+    final response = await _dio.get<Map<String, dynamic>>(
       '/tv/$tvId',
       queryParameters: {
         'api_key': TmdbConfig.apiKey,
@@ -733,7 +733,7 @@ class TmdbService {
     int tvId, {
     String language = 'en-US',
   }) async {
-    final response = await _dio.get(
+    final response = await _dio.get<Map<String, dynamic>>(
       '/tv/$tvId',
       queryParameters: {
         'api_key': TmdbConfig.apiKey,
@@ -753,7 +753,7 @@ class TmdbService {
     int seasonNumber, {
     String language = 'en-US',
   }) async {
-    final response = await _dio.get(
+    final response = await _dio.get<Map<String, dynamic>>(
       '/tv/$tvId/season/$seasonNumber',
       queryParameters: {'api_key': TmdbConfig.apiKey, 'language': language},
     );

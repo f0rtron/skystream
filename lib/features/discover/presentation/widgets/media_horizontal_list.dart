@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
 import 'package:skystream/l10n/generated/app_localizations.dart';
 import '../../../../core/utils/layout_constants.dart';
@@ -104,14 +103,11 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
               if (widget.showViewAll)
                 CardsWrapper(
                   onTap: () {
-                    context.push(
-                      '/view-all',
-                      extra: ViewAllRouteExtra(
-                        title: widget.title,
-                        initialMediaList: widget.mediaList,
-                        category: widget.category,
-                      ),
-                    );
+                    ViewAllRoute($extra: ViewAllRouteExtra(
+                      title: widget.title,
+                      initialMediaList: widget.mediaList,
+                      category: widget.category,
+                    )).push(context);
                   },
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
@@ -194,15 +190,12 @@ class _MediaHorizontalListState extends State<MediaHorizontalList> {
                           if (widget.onTap != null) {
                             widget.onTap!(item);
                           } else {
-                            context.push(
-                              '/tmdb-details',
-                              extra: TmdbDetailsRouteExtra(
-                                movieId: item.id,
-                                mediaType: item.tmdbMediaType,
-                                heroTag: uniqueTag,
-                                placeholderPoster: imageUrl,
-                              ),
-                            );
+                            TmdbDetailsRoute(
+                              movieId: item.id,
+                              mediaType: item.tmdbMediaType,
+                              heroTag: uniqueTag,
+                              placeholderPoster: imageUrl,
+                            ).push(context);
                           }
                         },
                       ),

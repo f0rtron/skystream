@@ -23,7 +23,7 @@ import 'package:http/http.dart' as http;
 // ignore: non_constant_identifier_names
 var _XHR_DEBUG = false;
 
-setXhrDebug(bool value) => _XHR_DEBUG = value;
+bool setXhrDebug(bool value) => _XHR_DEBUG = value;
 
 const HTTP_GET = "get";
 const HTTP_POST = "post";
@@ -42,8 +42,9 @@ String _debugSendNativeCallback() {
       console.log(responseInfo);
       console.log(responseText);
       console.log(error);""";
-  } else
+  } else {
     return "";
+  }
 }
 
 final String xhrJsCode = """
@@ -241,7 +242,7 @@ const XHR_PENDING_CALLS_KEY = "xhrPendingCalls";
 
 http.Client? httpClient;
 
-xhrSetHttpClient(http.Client client) {
+void xhrSetHttpClient(http.Client client) {
   httpClient = client;
 }
 
@@ -250,7 +251,7 @@ extension JavascriptRuntimeXhrExtension on JavascriptRuntime {
     return dartContext[XHR_PENDING_CALLS_KEY];
   }
 
-  bool hasPendingXhrCalls() => getPendingXhrCalls()!.length > 0;
+  bool hasPendingXhrCalls() => getPendingXhrCalls()!.isNotEmpty;
   void clearXhrPendingCalls() {
     dartContext[XHR_PENDING_CALLS_KEY] = [];
   }
@@ -259,19 +260,19 @@ extension JavascriptRuntimeXhrExtension on JavascriptRuntime {
     httpClient = httpClient ?? http.Client();
     dartContext[XHR_PENDING_CALLS_KEY] = [];
 
-    Timer.periodic(Duration(milliseconds: 40), (timer) {
+    Timer.periodic(const Duration(milliseconds: 40), (timer) {
       // exits if there is no pending call to remote
       if (!hasPendingXhrCalls()) return;
 
       // collect the pending calls into a local variable making copies
-      List<dynamic> pendingCalls = List<dynamic>.from(getPendingXhrCalls()!);
+      final List<dynamic> pendingCalls = List<dynamic>.from(getPendingXhrCalls()!);
       // clear the global pending calls list
       clearXhrPendingCalls();
 
       // for each pending call, calls the remote http service
       pendingCalls.forEach((element) async {
-        XhrPendingCall pendingCall = element as XhrPendingCall;
-        HttpMethod eMethod = HttpMethod.values.firstWhere((e) =>
+        final XhrPendingCall pendingCall = element as XhrPendingCall;
+        final HttpMethod eMethod = HttpMethod.values.firstWhere((e) =>
             e.toString().toLowerCase() ==
             ("HttpMethod.${pendingCall.method}".toLowerCase()));
         late http.Response response;
@@ -338,13 +339,13 @@ extension JavascriptRuntimeXhrExtension on JavascriptRuntime {
         final error = xhrResult.error;
         // send back to the javascript environment the
         // response for the http pending callback
-        this.evaluate(
+        evaluate(
           "globalThis.xhrRequests[${pendingCall.idRequest}].callback($responseInfo, `$responseText`, $error);",
         );
       });
     });
 
-    final evalXhrSendNative = this.evaluate("""
+    final evalXhrSendNative = evaluate("""
     var xhrRequests = {};
     var idRequest = -1;
     function XMLHttpRequestExtension_send_native() {
@@ -366,20 +367,20 @@ extension JavascriptRuntimeXhrExtension on JavascriptRuntime {
     }
     """);
 
-    final evalXhrResult = this.evaluate(xhrJsCode);
+    final evalXhrResult = evaluate(xhrJsCode);
     localContext['enableXhr'] = evalXhrResult.rawResult;
     localContext['xhrSendNative'] = evalXhrSendNative.rawResult;
     if (_XHR_DEBUG) print('RESULT evalXhrResult: $evalXhrResult');
 
-    this.onMessage('SendNative', (arguments) {
+    onMessage('SendNative', (arguments) {
       try {
-        String? method = arguments[0];
-        String? url = arguments[1];
-        dynamic headersList = arguments[2];
-        String? body = arguments[3];
-        int? idRequest = arguments[4];
+        final String? method = arguments[0];
+        final String? url = arguments[1];
+        final dynamic headersList = arguments[2];
+        final String? body = arguments[3];
+        final int? idRequest = arguments[4];
 
-        Map<String, String> headers = {};
+        final Map<String, String> headers = {};
         headersList.forEach((header) {
           // final headerMatch = regexpHeader.allMatches(value).first;
           // String? headerName = headerMatch.group(0);
@@ -387,7 +388,7 @@ extension JavascriptRuntimeXhrExtension on JavascriptRuntime {
           // if (headerName != null) {
           //   headers[headerName] = headerValue ?? '';
           // }
-          String headerKey = header[0];
+          final String headerKey = header[0];
           headers[headerKey] = header[1];
         });
         (dartContext[XHR_PENDING_CALLS_KEY] as List<dynamic>).add(

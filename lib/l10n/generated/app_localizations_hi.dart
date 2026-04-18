@@ -1206,4 +1206,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get openLink => 'लिंक खोलें';
+
+  @override
+  String get diagnostics => 'डायग्नोस्टिक्स';
+
+  @override
+  String get viewLogs => 'लॉग देखें';
+
+  @override
+  String get viewLogsSubtitle => 'एप्लिकेशन गतिविधि और त्रुटियां देखें';
 }

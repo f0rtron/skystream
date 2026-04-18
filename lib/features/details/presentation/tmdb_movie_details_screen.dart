@@ -108,8 +108,8 @@ class _TmdbMovieDetailsScreenState
   @override
   Widget build(BuildContext context) {
     final params = MovieDetailsParams(widget.movieId, widget.mediaType);
-    final detailsAsync = ref.watch(movieDetailsProvider(params));
-    final fastDetailsAsync = ref.watch(lightweightMovieDetailsProvider(params));
+    final detailsAsync = ref.watch(tmdbDetailsProvider(params));
+    final fastDetailsAsync = ref.watch(lightweightDetailsProvider(params));
     final deviceProfileAsync = ref.watch(deviceProfileProvider);
 
     // Prioritize full data, but use fast data if full is still loading
@@ -186,7 +186,7 @@ class _TmdbMovieDetailsScreenState
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
-                onPressed: () => ref.invalidate(movieDetailsProvider(params)),
+                onPressed: () => ref.invalidate(tmdbDetailsProvider(params)),
                 icon: const Icon(Icons.refresh),
                 label: Text(l10n.retry),
               ),

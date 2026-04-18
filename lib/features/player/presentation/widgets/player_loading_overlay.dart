@@ -118,8 +118,6 @@ class _LoadingCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final showSourcePanel =
         phase.showsInlineSourcePanel && sourceAttempts.length > 1;
-    const cardPadding = EdgeInsets.symmetric(horizontal: 24, vertical: 24);
-
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 640),
       child: DecoratedBox(
@@ -136,114 +134,120 @@ class _LoadingCard extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: cardPadding,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _PhaseIndicator(phase: phase),
-              const SizedBox(height: 18),
-              if (phase.title.isNotEmpty)
-                Text(
-                  phase.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    height: 1.15,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _PhaseIndicator(phase: phase),
+                const SizedBox(height: 18),
+                if (phase.title.isNotEmpty)
+                  Text(
+                    phase.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      height: 1.15,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              if ((phase.subtitle ?? '').isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  phase.subtitle!,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.78),
-                    fontSize: 14,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              if ((phase.detail ?? '').isNotEmpty) ...[
-                const SizedBox(height: 14),
-                Text(
-                  phase.detail!,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.62),
-                    fontSize: 14,
-                    height: 1.3,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              if (phase.attemptIndex != null && phase.attemptTotal != null) ...[
-                const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    l10n.sourceAttempt(phase.attemptIndex!, phase.attemptTotal!),
+                if ((phase.subtitle ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    phase.subtitle!,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.78),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                if ((phase.detail ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  Text(
+                    phase.detail!,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.62),
+                      fontSize: 14,
+                      height: 1.3,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                if (phase.attemptIndex != null &&
+                    phase.attemptTotal != null) ...[
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      l10n.sourceAttempt(
+                        phase.attemptIndex!,
+                        phase.attemptTotal!,
+                      ),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.78),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
+                ],
+                if (_hasActions) ...[
+                  const SizedBox(height: 18),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 10,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      if (onSkip != null)
+                        _ActionButton(
+                          label: l10n.skip,
+                          icon: Icons.fast_forward_rounded,
+                          onPressed: onSkip,
+                          primary: true,
+                          isTv: isTv,
+                          // First button gets autofocus on TV to seed D-pad navigation.
+                          autofocus: isTv,
+                        ),
+                      if (phase.showGoLive && onGoLive != null)
+                        _ActionButton(
+                          label: l10n.goLive,
+                          icon: Icons.live_tv,
+                          onPressed: onGoLive,
+                          primary: false,
+                          isTv: isTv,
+                          // Autofocus if Skip isn't shown.
+                          autofocus: isTv && onSkip == null,
+                        ),
+                      if (phase.kind == PlaybackUiPhaseKind.error &&
+                          onBack != null)
+                        _ActionButton(
+                          label: l10n.goBack,
+                          icon: Icons.arrow_back_rounded,
+                          onPressed: onBack,
+                          primary: false,
+                          isTv: isTv,
+                          // Autofocus on TV when it's the only action button.
+                          autofocus:
+                              isTv && onSkip == null && !phase.showGoLive,
+                        ),
+                    ],
+                  ),
+                ],
+                if (showSourcePanel) ...[
+                  const SizedBox(height: 18),
+                  _SourceAttemptList(attempts: sourceAttempts),
+                ],
               ],
-              if (_hasActions) ...[
-                const SizedBox(height: 18),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 10,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    if (onSkip != null)
-                      _ActionButton(
-                        label: l10n.skip,
-                        icon: Icons.fast_forward_rounded,
-                        onPressed: onSkip,
-                        primary: true,
-                        isTv: isTv,
-                        // First button gets autofocus on TV to seed D-pad navigation.
-                        autofocus: isTv,
-                      ),
-                    if (phase.showGoLive && onGoLive != null)
-                      _ActionButton(
-                        label: l10n.goLive,
-                        icon: Icons.live_tv,
-                        onPressed: onGoLive,
-                        primary: false,
-                        isTv: isTv,
-                        // Autofocus if Skip isn't shown.
-                        autofocus: isTv && onSkip == null,
-                      ),
-                    if (phase.kind == PlaybackUiPhaseKind.error &&
-                        onBack != null)
-                      _ActionButton(
-                        label: l10n.goBack,
-                        icon: Icons.arrow_back_rounded,
-                        onPressed: onBack,
-                        primary: false,
-                        isTv: isTv,
-                        // Autofocus on TV when it's the only action button.
-                        autofocus:
-                            isTv && onSkip == null && !phase.showGoLive,
-                      ),
-                  ],
-                ),
-              ],
-              if (showSourcePanel) ...[
-                const SizedBox(height: 18),
-                _SourceAttemptList(attempts: sourceAttempts),
-              ],
-            ],
+            ),
           ),
         ),
       ),
@@ -415,7 +419,10 @@ class _SourceAttemptRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (icon, color, statusLabel) = _statusPresentation(context, attempt.status);
+    final (icon, color, statusLabel) = _statusPresentation(
+      context,
+      attempt.status,
+    );
     final highlight = attempt.isCurrent;
 
     return Material(
@@ -471,7 +478,10 @@ class _SourceAttemptRow extends StatelessWidget {
     );
   }
 
-  (Widget?, Color, String) _statusPresentation(BuildContext context, SourceAttemptStatus status) {
+  (Widget?, Color, String) _statusPresentation(
+    BuildContext context,
+    SourceAttemptStatus status,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     switch (status) {
       case SourceAttemptStatus.trying:

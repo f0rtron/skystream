@@ -1,21 +1,26 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'services/plugin_storage_service.dart';
 import 'services/repository_service.dart';
 
 import '../network/dio_client_provider.dart';
 import '../services/torrent_service.dart';
 
+part 'providers.g.dart';
+
 // Repository Service Provider
-final repositoryServiceProvider = Provider<RepositoryService>((ref) {
+@Riverpod(keepAlive: true)
+RepositoryService repositoryService(Ref ref) {
   return RepositoryService(ref.watch(dioClientProvider));
-});
+}
 
 // Plugin Storage Service Provider
-final pluginStorageServiceProvider = Provider<PluginStorageService>((ref) {
+@Riverpod(keepAlive: true)
+PluginStorageService pluginStorageService(Ref ref) {
   return PluginStorageService();
-});
+}
 
 // Torrent Service Provider
-final torrentServiceProvider = Provider<TorrentService>((ref) {
+@Riverpod(keepAlive: true)
+TorrentService torrentService(Ref ref) {
   return TorrentService();
-});
+}

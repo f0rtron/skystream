@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "dev.akash.skystream"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = rootProject.extra["projectCompileSdk"] as Int
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -19,17 +19,13 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "dev.akash.skystream"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = rootProject.extra["projectTargetSdk"] as Int
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

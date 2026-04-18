@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/services/tmdb_service.dart';
 import 'language_provider.dart';
 import 'filter_provider.dart';
@@ -7,18 +7,19 @@ import '../../../core/network/dio_client_provider.dart';
 import '../../../core/domain/entity/multimedia_item.dart';
 import '../../../core/models/tmdb_genre.dart';
 
-final tmdbServiceProvider = Provider<TmdbService>((ref) {
-  return TmdbService(ref.watch(dioClientProvider));
-});
+part 'tmdb_provider.g.dart';
 
-final genresProvider = FutureProvider<List<TmdbGenre>>((ref) async {
+@Riverpod(keepAlive: true)
+TmdbService tmdbService(Ref ref) {
+  return TmdbService(ref.watch(dioClientProvider));
+}
+
+@Riverpod(keepAlive: true)
+Future<List<TmdbGenre>> genres(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final isEnglish = lang == 'en-US';
 
-  // Always fetch movie + TV genres. For non-English languages also fetch
-  // English so we can substitute empty names (TMDB returns "" for genres it
-  // hasn't translated instead of falling back to English).
   final futures = [
     service.getGenres(language: lang),
     service.getTvGenres(language: lang),
@@ -27,7 +28,6 @@ final genresProvider = FutureProvider<List<TmdbGenre>>((ref) async {
   ];
   final results = await Future.wait(futures);
 
-  // Build English fallback map (id → English name).
   final enFallback = <int, String>{};
   if (!isEnglish) {
     for (final g in [...results[2], ...results[3]]) {
@@ -43,15 +43,13 @@ final genresProvider = FutureProvider<List<TmdbGenre>>((ref) async {
       merged.add(g.name.isNotEmpty ? g : g.withName(fallback));
     }
   }
-  // Remove any genres that ended up with no name at all.
   merged.removeWhere((g) => g.name.isEmpty);
   merged.sort((a, b) => a.name.compareTo(b.name));
   return merged;
-});
+}
 
-final trendingMoviesProvider = FutureProvider<List<MultimediaItem>>((
-  ref,
-) async {
+@riverpod
+Future<List<MultimediaItem>> trendingMovies(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -61,9 +59,10 @@ final trendingMoviesProvider = FutureProvider<List<MultimediaItem>>((
     year: filters.selectedYear,
     minRating: filters.minRating,
   );
-});
+}
 
-final popularMoviesProvider = FutureProvider<List<MultimediaItem>>((ref) async {
+@riverpod
+Future<List<MultimediaItem>> popularMovies(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -73,11 +72,10 @@ final popularMoviesProvider = FutureProvider<List<MultimediaItem>>((ref) async {
     year: filters.selectedYear,
     minRating: filters.minRating,
   );
-});
+}
 
-final nowPlayingMoviesProvider = FutureProvider<List<MultimediaItem>>((
-  ref,
-) async {
+@riverpod
+Future<List<MultimediaItem>> nowPlayingMovies(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -87,11 +85,10 @@ final nowPlayingMoviesProvider = FutureProvider<List<MultimediaItem>>((
     year: filters.selectedYear,
     minRating: filters.minRating,
   );
-});
+}
 
-final topRatedMoviesProvider = FutureProvider<List<MultimediaItem>>((
-  ref,
-) async {
+@riverpod
+Future<List<MultimediaItem>> topRatedMovies(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -101,9 +98,10 @@ final topRatedMoviesProvider = FutureProvider<List<MultimediaItem>>((
     year: filters.selectedYear,
     minRating: filters.minRating,
   );
-});
+}
 
-final popularTVProvider = FutureProvider<List<MultimediaItem>>((ref) async {
+@riverpod
+Future<List<MultimediaItem>> popularTV(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -113,9 +111,10 @@ final popularTVProvider = FutureProvider<List<MultimediaItem>>((ref) async {
     year: filters.selectedYear,
     minRating: filters.minRating,
   );
-});
+}
 
-final topRatedTVProvider = FutureProvider<List<MultimediaItem>>((ref) async {
+@riverpod
+Future<List<MultimediaItem>> topRatedTV(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -125,9 +124,10 @@ final topRatedTVProvider = FutureProvider<List<MultimediaItem>>((ref) async {
     year: filters.selectedYear,
     minRating: filters.minRating,
   );
-});
+}
 
-final onTheAirTVProvider = FutureProvider<List<MultimediaItem>>((ref) async {
+@riverpod
+Future<List<MultimediaItem>> onTheAirTV(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -137,9 +137,10 @@ final onTheAirTVProvider = FutureProvider<List<MultimediaItem>>((ref) async {
     year: filters.selectedYear,
     minRating: filters.minRating,
   );
-});
+}
 
-final airingTodayTVProvider = FutureProvider<List<MultimediaItem>>((ref) async {
+@riverpod
+Future<List<MultimediaItem>> airingTodayTV(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -149,11 +150,10 @@ final airingTodayTVProvider = FutureProvider<List<MultimediaItem>>((ref) async {
     year: filters.selectedYear,
     minRating: filters.minRating,
   );
-});
+}
 
-final discoverHeroMovieProvider = FutureProvider<List<MultimediaItem>>((
-  ref,
-) async {
+@riverpod
+Future<List<MultimediaItem>> discoverHeroMovie(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
   final filters = ref.watch(discoverFilterProvider);
@@ -165,8 +165,6 @@ final discoverHeroMovieProvider = FutureProvider<List<MultimediaItem>>((
     minRating: filters.minRating,
   );
 
-  // For regional languages the filtered discover call may return very few
-  // items. Fall back to global trending so the carousel always has content.
   final mediaItems = trending
       .where(
         (m) =>
@@ -195,9 +193,6 @@ final discoverHeroMovieProvider = FutureProvider<List<MultimediaItem>>((
   final enriched = await Future.wait(
     topMovies.map((movie) async {
       try {
-        // Use content-type (not the broken mediaType string getter) to pick
-        // the correct TMDB endpoint. Lightweight call: images only — no
-        // credits, videos, or translations.
         final tmdbType = movie.contentType == MultimediaContentType.series
             ? 'tv'
             : 'movie';
@@ -230,11 +225,10 @@ final discoverHeroMovieProvider = FutureProvider<List<MultimediaItem>>((
           tags: genresStr != null ? [genresStr] : null,
         );
       } catch (_) {
-        // Don't let one failed enrichment break the whole carousel.
         return movie;
       }
     }),
   );
 
   return enriched;
-});
+}

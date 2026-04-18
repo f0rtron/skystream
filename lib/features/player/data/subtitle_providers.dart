@@ -10,8 +10,8 @@ class OpenSubtitlesProvider extends SubtitleProvider {
   static const String _userAgent = "SkyStream v2.1.0";
 
   // Auth state
-  String? _username;
-  String? _password;
+  final String? _username;
+  final String? _password;
   String? _token;
   DateTime? _tokenExpiry;
 
@@ -29,11 +29,12 @@ class OpenSubtitlesProvider extends SubtitleProvider {
 
   Future<void> _loginIfNeeded() async {
     if (_username == null ||
-        _username!.isEmpty ||
+        _username.isEmpty ||
         _password == null ||
         _password!.isEmpty) {
-      if (kDebugMode)
+      if (kDebugMode) {
         print("[OpenSubtitles] Skipping login: Credentials not set.");
+      }
       return;
     }
 
@@ -59,14 +60,15 @@ class OpenSubtitlesProvider extends SubtitleProvider {
       );
 
       if (response.data != null && response.data['token'] != null) {
-        _token = response.data['token'];
+        _token = response.data?['token'] as String?;
         _tokenExpiry = DateTime.now().add(
           const Duration(hours: 23),
         ); // OS tokens last 24h
-        if (kDebugMode)
+        if (kDebugMode) {
           print(
             "[OpenSubtitles] Auth Success. Token: ${_token?.substring(0, 10)}...",
           );
+        }
       }
     } catch (e) {
       if (e is DioException) {
@@ -86,7 +88,7 @@ class OpenSubtitlesProvider extends SubtitleProvider {
   /// Verifies if the credentials are valid by performing a login.
   Future<bool> verifyCredentials() async {
     if (_username == null ||
-        _username!.isEmpty ||
+        _username.isEmpty ||
         _password == null ||
         _password!.isEmpty) {
       return false;
@@ -188,8 +190,9 @@ class OpenSubtitlesProvider extends SubtitleProvider {
         if (response.data == null || response.data['data'] == null) return [];
 
         final List results = response.data['data'];
-        if (kDebugMode)
+        if (kDebugMode) {
           print("[OpenSubtitles] Found ${results.length} results.");
+        }
 
         return results.map((item) {
           final attr = item['attributes'];
@@ -253,12 +256,12 @@ class OpenSubtitlesProvider extends SubtitleProvider {
             final files = attr['files'] as List;
             final file = files.isNotEmpty ? files.first : null;
             return OnlineSubtitle(
-              id: file != null ? file['file_id'].toString() : item['id'],
-              name: attr['release'] ?? query,
-              language: attr['language'] ?? langTag,
-              source: this.name,
+              id: file != null ? file['file_id'].toString() : item['id'].toString(),
+              name: (attr['release'] as String?) ?? query,
+              language: (attr['language'] as String?) ?? langTag,
+              source: name,
               downloadUrl: "",
-              isHearingImpaired: attr['hearing_impaired'] ?? false,
+              isHearingImpaired: (attr['hearing_impaired'] as bool?) ?? false,
               metadata: {'file_id': file != null ? file['file_id'] : null},
             );
           }).toList();
@@ -295,8 +298,8 @@ class OpenSubtitlesProvider extends SubtitleProvider {
         options: Options(headers: headers),
       );
 
-      if (response.data != null && response.data['link'] != null) {
-        return response.data['link'];
+      if (response.data != null && response.data?['link'] != null) {
+        return response.data?['link'] as String?;
       }
     } catch (e) {
       if (kDebugMode) print("OpenSubtitles download failed: $e");
@@ -388,10 +391,10 @@ class SubDLProvider extends SubtitleProvider {
       return data.map((item) {
         return OnlineSubtitle(
           id: item['id'].toString(),
-          name: item['release_name'] ?? item['fileName'] ?? query,
-          language: item['language'] ?? langCode,
+          name: (item['release_name'] as String?) ?? (item['fileName'] as String?) ?? query,
+          language: (item['language'] as String?) ?? langCode,
           source: name,
-          downloadUrl: item['url'] ?? "",
+          downloadUrl: (item['url'] as String?) ?? "",
           isHearingImpaired: item['hi'] == 1,
           metadata: {'url': item['url']},
         );
@@ -406,7 +409,7 @@ class SubDLProvider extends SubtitleProvider {
 
   @override
   Future<String?> getDownloadUrl(OnlineSubtitle subtitle) async {
-    return subtitle.metadata?['url'];
+    return subtitle.metadata?['url'] as String?;
   }
 
   /// Verifies if the API key is valid by performing a dummy search.
@@ -423,9 +426,9 @@ class SubDLProvider extends SubtitleProvider {
           options: Options(headers: SubtitleProvider.commonHeaders),
         );
         final bool isValid =
-            response.data != null && response.data['status'] == true;
+            response.data != null && response.data?['status'] == true;
         if (kDebugMode && !isValid) {
-          print(
+          debugPrint(
             "[SubDL] Key Verification Failed: ${response.statusCode} - ${response.data}",
           );
         }
@@ -461,25 +464,26 @@ class SubDLProvider extends SubtitleProvider {
       if (kDebugMode) print("[SubDL] Logging in for: $email");
 
       // 1. Post to login
-      final loginResponse = await _dio.post(
+      final loginResponse = await _dio.post<Map<String, dynamic>>(
         "$authUrl/login",
         data: {'email': email, 'password': password},
       );
 
-      if (kDebugMode)
+      if (kDebugMode) {
         print("[SubDL] Login Status: ${loginResponse.statusCode}");
+      }
 
-      if (loginResponse.data == null || loginResponse.data['token'] == null) {
+      if (loginResponse.data == null || loginResponse.data?['token'] == null) {
         final errorMsg =
             loginResponse.data?['error'] ?? "Login failed. Check credentials.";
         if (kDebugMode) print("[SubDL] Auth failed: $errorMsg");
         return (key: null as String?, error: errorMsg as String?);
       }
 
-      final String jwtToken = loginResponse.data['token'];
+      final String jwtToken = loginResponse.data?['token'] as String;
 
       // 2. Fetch API Key
-      final apiResponse = await _dio.get(
+      final apiResponse = await _dio.get<Map<String, dynamic>>(
         "$authUrl/user/userApi",
         options: Options(
           headers: {
@@ -489,14 +493,15 @@ class SubDLProvider extends SubtitleProvider {
         ),
       );
 
-      if (apiResponse.data != null && apiResponse.data['api_key'] != null) {
-        _apiKey = apiResponse.data['api_key'];
+      if (apiResponse.data != null && apiResponse.data?['api_key'] != null) {
+        _apiKey = apiResponse.data?['api_key'] as String?;
         _email = email;
         _password = password;
-        if (kDebugMode)
+        if (kDebugMode) {
           print(
             "[SubDL] Login Success: API Key fetched: ${_apiKey!.substring(0, 5)}...",
           );
+        }
         return (key: _apiKey, error: null);
       }
     } catch (e) {
@@ -601,7 +606,7 @@ class SubSourceProvider extends SubtitleProvider {
         searchParams['q'] = query;
       }
 
-      final searchResponse = await _dio.get(
+      final searchResponse = await _dio.get<Map<String, dynamic>>(
         "$baseUrlV1/movies/search",
         queryParameters: searchParams,
         cancelToken: cancelToken,
@@ -610,9 +615,10 @@ class SubSourceProvider extends SubtitleProvider {
         ),
       );
 
-      if (searchResponse.data == null || searchResponse.data['data'] == null)
+      if (searchResponse.data == null || searchResponse.data?['data'] == null) {
         return [];
-      final List movies = searchResponse.data['data'];
+      }
+      final List<dynamic> movies = searchResponse.data?['data'] as List? ?? [];
       if (movies.isEmpty) return [];
 
       final movie = movies.first;
@@ -623,7 +629,7 @@ class SubSourceProvider extends SubtitleProvider {
         subParams['language'] = _getLanguageFull(language);
       }
 
-      final subsResponse = await _dio.get(
+      final subsResponse = await _dio.get<Map<String, dynamic>>(
         "$baseUrlV1/subtitles",
         queryParameters: subParams,
         cancelToken: cancelToken,
@@ -632,8 +638,8 @@ class SubSourceProvider extends SubtitleProvider {
         ),
       );
 
-      final data = subsResponse.data['data'];
-      final List subs = (data is Map && data['results'] != null)
+      final data = subsResponse.data?['data'];
+      final List<dynamic> subs = (data is Map && data['results'] != null)
           ? data['results']
           : (data is List ? data : []);
 
@@ -656,7 +662,9 @@ class SubSourceProvider extends SubtitleProvider {
         );
       }).toList();
 
-      if (kDebugMode) print("[SubSource V1] Found ${results.length} results.");
+      if (kDebugMode) {
+        debugPrint("[SubSource V1] Found ${results.length} results.");
+      }
       return results;
     } catch (e) {
       if (e is! DioException || e.type != DioExceptionType.cancel) {
@@ -678,10 +686,11 @@ class SubSourceProvider extends SubtitleProvider {
     // Improved over CloudStream: Allow fallback to title search if IMDb is null
     final String searchStr = imdbId ?? query;
     if (searchStr.isEmpty) {
-      if (kDebugMode)
+      if (kDebugMode) {
         print(
           "[SubSource Keyless] Skipping search: Query or IMDb ID required.",
         );
+      }
       return [];
     }
 
@@ -697,7 +706,7 @@ class SubSourceProvider extends SubtitleProvider {
       final String queryLang = _getLanguageFull(language ?? "en");
 
       // 1. Search for movie internal linkName
-      final searchResponse = await _dio.post(
+      final searchResponse = await _dio.post<Map<String, dynamic>>(
         "$baseUrlKeyless/searchMovie",
         data: {'query': imdbOrTitle},
         cancelToken: cancelToken,
@@ -712,12 +721,13 @@ class SubSourceProvider extends SubtitleProvider {
         ),
       );
 
-      if (searchResponse.data == null || searchResponse.data['success'] != true)
+      if (searchResponse.data == null || searchResponse.data?['success'] != true) {
         return [];
-      final List found = searchResponse.data['found'] ?? [];
+      }
+      final List<dynamic> found = searchResponse.data?['found'] as List? ?? [];
       if (found.isEmpty) return [];
 
-      final String linkName = found.first['linkName'] ?? "";
+      final String linkName = (found.first['linkName'] as String?) ?? "";
       if (linkName.isEmpty) return [];
 
       // 2. Get movie subtitles
@@ -729,16 +739,17 @@ class SubSourceProvider extends SubtitleProvider {
         postData['season'] = "season-$season";
       }
 
-      final movieResponse = await _dio.post(
+      final movieResponse = await _dio.post<Map<String, dynamic>>(
         "$baseUrlKeyless/getMovie",
         data: postData,
         cancelToken: cancelToken,
         options: Options(headers: SubtitleProvider.commonHeaders),
       );
 
-      if (movieResponse.data == null || movieResponse.data['success'] != true)
+      if (movieResponse.data == null || movieResponse.data?['success'] != true) {
         return [];
-      final List subs = movieResponse.data['subs'] ?? [];
+      }
+      final List<dynamic> subs = movieResponse.data?['subs'] as List? ?? [];
 
       // API doesn't filter by episode/lang, so we filter manually like CloudStream
       final filteredSubs = subs.where((s) {
@@ -747,7 +758,7 @@ class SubSourceProvider extends SubtitleProvider {
 
         final matchesLang = lang == queryLang.toLowerCase();
         if (episode != null && episode > 0) {
-          final epTag = "E" + episode.toString().padLeft(2, '0');
+          final epTag = "E${episode.toString().padLeft(2, '0')}";
           return matchesLang && release.contains(epTag);
         }
         return matchesLang;
@@ -757,8 +768,8 @@ class SubSourceProvider extends SubtitleProvider {
         final subId = s['subId'] ?? s['id'];
         return OnlineSubtitle(
           id: subId.toString(),
-          name: s['releaseName'] ?? s['file_name'] ?? query,
-          language: s['lang'] ?? "Unknown",
+          name: (s['releaseName'] as String?) ?? (s['file_name'] as String?) ?? query,
+          language: (s['lang'] as String?) ?? "Unknown",
           source: name,
           downloadUrl: "", // Requires getDownloadUrl for keyless
           isHearingImpaired: s['hi'] == 1,
@@ -771,8 +782,9 @@ class SubSourceProvider extends SubtitleProvider {
         );
       }).toList();
 
-      if (kDebugMode)
+      if (kDebugMode) {
         print("[SubSource Keyless] Found ${results.length} results.");
+      }
       return results;
     } catch (e) {
       if (e is! DioException || e.type != DioExceptionType.cancel) {
@@ -797,14 +809,14 @@ class SubSourceProvider extends SubtitleProvider {
     if (id == null || movie == null || lang == null) return null;
 
     try {
-      final response = await _dio.post(
+      final response = await _dio.post<Map<String, dynamic>>(
         "$baseUrlKeyless/getSub",
         data: {'movie': movie, 'lang': lang, 'id': id},
         options: Options(headers: SubtitleProvider.commonHeaders),
       );
 
-      if (response.data != null && response.data['sub'] != null) {
-        final String? token = response.data['sub']['downloadToken'];
+      if (response.data != null && response.data?['sub'] != null) {
+        final String? token = response.data?['sub']?['downloadToken'] as String?;
         if (token != null) {
           return "$baseUrlKeyless/downloadSub/$token";
         }
@@ -871,7 +883,7 @@ class SubSourceProvider extends SubtitleProvider {
         print("[SubSource V1] Verifying User Key: $maskedKey");
       }
       try {
-        final response = await _dio.get(
+        final response = await _dio.get<Map<String, dynamic>>(
           "$baseUrlV1/movies/search",
           queryParameters: {'searchType': 'text', 'q': 'Inception'},
           options: Options(
@@ -898,10 +910,11 @@ class SubSourceProvider extends SubtitleProvider {
       }
     } else {
       // Keyless verification: Just a connectivity check to searchMovie
-      if (kDebugMode)
+      if (kDebugMode) {
         print(
           "[SubSource Keyless] Verifying Connectivity (Mode: CloudStream-style)...",
         );
+      }
       try {
         final response = await _dio.post(
           "$baseUrlKeyless/searchMovie",

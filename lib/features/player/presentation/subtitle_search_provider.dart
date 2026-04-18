@@ -1,16 +1,18 @@
 import 'dart:io';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:archive/archive.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:flutter/foundation.dart';
 
 import '../../../core/network/dio_client_provider.dart';
 import '../data/subtitle_providers.dart';
 import '../domain/entity/subtitle_model.dart';
 import '../../settings/presentation/player_settings_provider.dart';
+
+part 'subtitle_search_provider.g.dart';
 
 const Map<String, String> subtitleLanguages = {
   'English': 'en',
@@ -54,13 +56,14 @@ const Map<String, String> subtitleLanguages = {
   'Chinese': 'zh',
 };
 
-class SubtitleSearchNotifier extends Notifier<AsyncValue<List<OnlineSubtitle>?>> {
+@riverpod
+class SubtitleSearch extends _$SubtitleSearch {
   late List<SubtitleProvider> _providers;
   CancelToken? _cancelToken;
   int _activeSearchId = 0;
 
   @override
-  AsyncValue<List<OnlineSubtitle>?> build() {
+  FutureOr<List<OnlineSubtitle>?> build() {
     ref.onDispose(() {
       _cancelToken?.cancel();
     });
@@ -73,7 +76,7 @@ class SubtitleSearchNotifier extends Notifier<AsyncValue<List<OnlineSubtitle>?>>
     });
 
     _initializeProviders();
-    return const AsyncData(null);
+    return null;
   }
 
   void _initializeProviders() {
@@ -132,7 +135,7 @@ class SubtitleSearchNotifier extends Notifier<AsyncValue<List<OnlineSubtitle>?>>
           allResults.addAll(results);
           state = AsyncData(List.from(allResults));
         }
-      }).catchError((e) {
+      }).catchError((Object e) {
         if (e is DioException && e.type == DioExceptionType.cancel) return;
         if (kDebugMode) print("${provider.name} search failed: $e");
       }).whenComplete(() {
@@ -163,7 +166,7 @@ class SubtitleSearchNotifier extends Notifier<AsyncValue<List<OnlineSubtitle>?>>
       final tempDir = await getTemporaryDirectory();
       final savePath = p.join(tempDir.path, "temp_sub_${DateTime.now().millisecondsSinceEpoch}");
       
-      final response = await dio.get(
+      final response = await dio.get<List<int>>(
         url,
         options: Options(
           responseType: ResponseType.bytes,
@@ -171,7 +174,7 @@ class SubtitleSearchNotifier extends Notifier<AsyncValue<List<OnlineSubtitle>?>>
         ),
       );
 
-      final List<int> bytes = response.data;
+      final List<int> bytes = response.data!;
       
       if (bytes.length > 4 && bytes[0] == 0x50 && bytes[1] == 0x4B) {
         final archive = ZipDecoder().decodeBytes(bytes);
@@ -194,17 +197,10 @@ class SubtitleSearchNotifier extends Notifier<AsyncValue<List<OnlineSubtitle>?>>
   }
 }
 
-final subtitleSearchProvider = NotifierProvider.autoDispose<SubtitleSearchNotifier, AsyncValue<List<OnlineSubtitle>?>>(
-  SubtitleSearchNotifier.new,
-);
-
-class SubtitleLanguageNotifier extends Notifier<String> {
+@riverpod
+class SubtitleLanguage extends _$SubtitleLanguage {
   @override
   String build() => 'en';
 
   void set(String lang) => state = lang;
 }
-
-final subtitleLanguageProvider = NotifierProvider<SubtitleLanguageNotifier, String>(
-  SubtitleLanguageNotifier.new,
-);

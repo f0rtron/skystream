@@ -580,5 +580,8 @@
   },
   "openSubtitles": "OpenSubtitles",
   "subDl": "SubDL",
-  "subSource": "SubSource"
+  "subSource": "SubSource",
+  "diagnostics": "Diagnóstico",
+  "viewLogs": "Ver registos",
+  "viewLogsSubtitle": "Ver atividade e erros da aplicação"
 }

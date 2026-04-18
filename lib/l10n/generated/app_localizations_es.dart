@@ -1220,4 +1220,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get openLink => 'Abrir enlace';
+
+  @override
+  String get diagnostics => 'Diagnósticos';
+
+  @override
+  String get viewLogs => 'Ver registros';
+
+  @override
+  String get viewLogsSubtitle => 'Ver actividad y errores de la aplicación';
 }

@@ -10,7 +10,6 @@ class AppTheme {
   static const Color primaryVariant = Color(0xFF2962FF); // Blue Accent Darker
   static const Color secondary = Color(0xFF10B981); // Emerald
   static const Color error = Color(0xFFEF4444);
-  static const Color onBackground = Color(0xFFF9FAFB);
   static const Color onSurface = Color(0xFFE5E7EB);
   static const Color textSecondary = Color(0xFF9CA3AF);
 
@@ -77,6 +76,16 @@ class AppTheme {
               fontWeight: FontWeight.bold,
               color: const Color(0xFFF9FAFB),
             ),
+            displayMedium: GoogleFonts.outfit(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFFF9FAFB),
+            ),
+            displaySmall: GoogleFonts.outfit(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFFF9FAFB),
+            ),
             headlineMedium: GoogleFonts.outfit(
               fontSize: 24,
               fontWeight: FontWeight.w600,
@@ -84,6 +93,11 @@ class AppTheme {
             ),
             titleLarge: GoogleFonts.outfit(
               fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFFF9FAFB),
+            ),
+            titleMedium: GoogleFonts.outfit(
+              fontSize: 16,
               fontWeight: FontWeight.w600,
               color: const Color(0xFFF9FAFB),
             ),
@@ -95,6 +109,16 @@ class AppTheme {
               fontSize: 14,
               color: const Color(0xFF9CA3AF),
             ),
+            bodySmall: GoogleFonts.outfit(
+              fontSize: 12,
+              color: const Color(0xFF6B7280),
+            ),
+            labelLarge: GoogleFonts.outfit(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.1,
+              color: const Color(0xFFF9FAFB),
+            ),
           ),
 
       // AppBar
@@ -103,38 +127,49 @@ class AppTheme {
         elevation: 0,
         centerTitle: false,
         scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
       ),
 
       // Bottom Navigation
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: const Color(0xFF18181F), // Keep BottomNav premium
+        backgroundColor: const Color(0xFF000000), // Pure Black matches background
         selectedItemColor: colorScheme.primary,
         unselectedItemColor: colorScheme.onSurfaceVariant,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
         showSelectedLabels: false,
         showUnselectedLabels: false,
+        landscapeLayout: BottomNavigationBarLandscapeLayout.spread,
       ),
 
       // Input Decoration
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF22222E), // Highlight
+        fillColor: const Color(0xFF18181F), // Slightly lighter grey for fields
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
+          horizontal: 20,
+          vertical: 16,
         ),
       ),
 
       dividerColor: const Color(0xFF22222E),
+      dividerTheme: const DividerThemeData(
+        thickness: 1,
+        space: 1,
+        color: Color(0xFF22222E),
+      ),
     );
   }
 

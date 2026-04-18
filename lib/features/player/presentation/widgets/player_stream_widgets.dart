@@ -271,9 +271,9 @@ class _PlayerProgressBarState extends ConsumerState<PlayerProgressBar> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.red.withAlpha(50),
+              color: Colors.red.withValues(alpha: 50/255),
               borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: Colors.red.withAlpha(120), width: 1),
+              border: Border.all(color: Colors.red.withValues(alpha: 120/255), width: 1),
             ),
             child: const Text(
               "🔴  LIVE",

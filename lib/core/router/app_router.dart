@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:skystream/features/home/presentation/home_screen.dart';
 import 'package:skystream/features/search/presentation/search_screen.dart';
@@ -15,16 +15,145 @@ import '../../features/player/presentation/player_screen.dart';
 import '../domain/entity/multimedia_item.dart';
 import 'package:skystream/shared/widgets/app_scaffold.dart';
 import '../../core/storage/settings_repository.dart';
-import 'package:skystream/l10n/generated/app_localizations.dart';
+import 'package:talker_flutter/talker_flutter.dart';
+import 'package:flutter/foundation.dart';
+import '../logger/app_logger.dart';
 
-/// Typed extra for /details. Use when pushing: context.push('/details', extra: DetailsRouteExtra(...)).
+part 'app_router.g.dart';
+
+// --- Route Data Classes ---
+
+@TypedStatefulShellRoute<AppShellRouteData>(
+  branches: [
+    TypedStatefulShellBranch<HomeBranchData>(
+      routes: [
+        TypedGoRoute<HomeRoute>(path: '/home'),
+      ],
+    ),
+    TypedStatefulShellBranch<SearchBranchData>(
+      routes: [
+        TypedGoRoute<SearchRoute>(path: '/search'),
+      ],
+    ),
+    TypedStatefulShellBranch<DiscoverBranchData>(
+      routes: [
+        TypedGoRoute<DiscoverRoute>(path: '/discover'),
+      ],
+    ),
+    TypedStatefulShellBranch<LibraryBranchData>(
+      routes: [
+        TypedGoRoute<LibraryRoute>(path: '/library'),
+      ],
+    ),
+    TypedStatefulShellBranch<SettingsBranchData>(
+      routes: [
+        TypedGoRoute<SettingsRoute>(
+          path: '/settings',
+          routes: [
+            TypedGoRoute<ExtensionsRoute>(path: 'extensions'),
+            TypedGoRoute<DeveloperOptionsRoute>(
+              path: 'developer',
+              routes: [
+                TypedGoRoute<AppLogsRoute>(path: 'logs'),
+              ],
+            ),
+          ],
+        ),
+      ],
+    ),
+  ],
+)
+class AppShellRouteData extends StatefulShellRouteData {
+  const AppShellRouteData();
+
+  @override
+  Widget builder(
+    BuildContext context,
+    GoRouterState state,
+    StatefulNavigationShell navigationShell,
+  ) {
+    return AppScaffold(navigationShell: navigationShell);
+  }
+}
+
+class HomeBranchData extends StatefulShellBranchData {
+  const HomeBranchData();
+}
+
+class HomeRoute extends GoRouteData with $HomeRoute {
+  const HomeRoute();
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const HomeScreen();
+}
+
+class SearchBranchData extends StatefulShellBranchData {
+  const SearchBranchData();
+}
+
+class SearchRoute extends GoRouteData with $SearchRoute {
+  const SearchRoute();
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const SearchScreen();
+}
+
+class DiscoverBranchData extends StatefulShellBranchData {
+  const DiscoverBranchData();
+}
+
+class DiscoverRoute extends GoRouteData with $DiscoverRoute {
+  const DiscoverRoute();
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const DiscoverScreen();
+}
+
+class LibraryBranchData extends StatefulShellBranchData {
+  const LibraryBranchData();
+}
+
+class LibraryRoute extends GoRouteData with $LibraryRoute {
+  const LibraryRoute();
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const LibraryScreen();
+}
+
+class SettingsBranchData extends StatefulShellBranchData {
+  const SettingsBranchData();
+}
+
+class SettingsRoute extends GoRouteData with $SettingsRoute {
+  const SettingsRoute();
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const SettingsScreen();
+}
+
+// --- Sub-routes of Settings ---
+
+class ExtensionsRoute extends GoRouteData with $ExtensionsRoute {
+  const ExtensionsRoute();
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const ExtensionsScreen();
+}
+
+class DeveloperOptionsRoute extends GoRouteData with $DeveloperOptionsRoute {
+  const DeveloperOptionsRoute();
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const DeveloperOptionsScreen();
+}
+
+class AppLogsRoute extends GoRouteData with $AppLogsRoute {
+  const AppLogsRoute();
+  @override
+  Widget build(BuildContext context, GoRouterState state) => TalkerScreen(talker: talker);
+}
+
+// --- Typed Extras ---
+
 class DetailsRouteExtra {
   const DetailsRouteExtra({required this.item, this.autoPlay = false});
   final MultimediaItem item;
   final bool autoPlay;
 }
 
-/// Typed extra for /player. Use when pushing: context.push('/player', extra: PlayerRouteExtra(...)).
 class PlayerRouteExtra {
   const PlayerRouteExtra({
     required this.item,
@@ -36,21 +165,6 @@ class PlayerRouteExtra {
   final Episode? episode;
 }
 
-/// Typed extra for /tmdb-details.
-class TmdbDetailsRouteExtra {
-  const TmdbDetailsRouteExtra({
-    required this.movieId,
-    this.mediaType = 'movie',
-    this.heroTag,
-    this.placeholderPoster,
-  });
-  final int movieId;
-  final String mediaType;
-  final String? heroTag;
-  final String? placeholderPoster;
-}
-
-/// Typed extra for /view-all.
 class ViewAllRouteExtra {
   const ViewAllRouteExtra({
     required this.title,
@@ -62,149 +176,87 @@ class ViewAllRouteExtra {
   final ViewAllCategory category;
 }
 
-final rootNavigatorKey = GlobalKey<NavigatorState>();
-final shellNavigatorKey = GlobalKey<NavigatorState>();
+// --- Full Screen Routes ---
 
-final appRouterProvider = Provider<GoRouter>((ref) {
-  ref.keepAlive();
+@TypedGoRoute<DetailsRoute>(path: '/details')
+class DetailsRoute extends GoRouteData with $DetailsRoute {
+  const DetailsRoute({required this.$extra});
+  final DetailsRouteExtra $extra;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return DetailsScreen(item: $extra.item, autoPlay: $extra.autoPlay);
+  }
+}
+
+@TypedGoRoute<TmdbDetailsRoute>(path: '/tmdb-details')
+class TmdbDetailsRoute extends GoRouteData with $TmdbDetailsRoute {
+  const TmdbDetailsRoute({
+    required this.movieId,
+    this.mediaType = 'movie',
+    this.heroTag,
+    this.placeholderPoster,
+  });
+  final int movieId;
+  final String mediaType;
+  final String? heroTag;
+  final String? placeholderPoster;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return TmdbMovieDetailsScreen(
+      movieId: movieId,
+      mediaType: mediaType,
+      heroTag: heroTag,
+      placeholderPoster: placeholderPoster,
+    );
+  }
+}
+
+@TypedGoRoute<ViewAllRoute>(path: '/view-all')
+class ViewAllRoute extends GoRouteData with $ViewAllRoute {
+  const ViewAllRoute({required this.$extra});
+  final ViewAllRouteExtra $extra;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return ViewAllScreen(
+      title: $extra.title,
+      initialMediaList: $extra.initialMediaList,
+      category: $extra.category,
+    );
+  }
+}
+
+@TypedGoRoute<PlayerRoute>(path: '/player')
+class PlayerRoute extends GoRouteData with $PlayerRoute {
+  const PlayerRoute({required this.$extra});
+  final PlayerRouteExtra $extra;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return PlayerScreen(
+      item: $extra.item,
+      videoUrl: $extra.videoUrl,
+      episode: $extra.episode,
+    );
+  }
+}
+
+// --- GoRouter Definition ---
+
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
+@Riverpod(keepAlive: true)
+GoRouter appRouter(Ref ref) {
   final initial = ref.read(settingsRepositoryProvider).getDefaultHomeScreen();
 
   return GoRouter(
     initialLocation: initial,
     navigatorKey: rootNavigatorKey,
-    routes: [
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) {
-          return AppScaffold(navigationShell: navigationShell);
-        },
-        branches: [
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/home',
-                builder: (context, state) => const HomeScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/search',
-                builder: (context, state) => const SearchScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/discover',
-                builder: (context, state) => const DiscoverScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/library',
-                builder: (context, state) => const LibraryScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/settings',
-                builder: (context, state) => const SettingsScreen(),
-                routes: [
-                  GoRoute(
-                    path: 'extensions',
-                    parentNavigatorKey: rootNavigatorKey,
-                    builder: (context, state) => const ExtensionsScreen(),
-                  ),
-                  GoRoute(
-                    path: 'developer',
-                    parentNavigatorKey: rootNavigatorKey,
-                    builder: (context, state) => const DeveloperOptionsScreen(),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-      GoRoute(
-        path: '/details',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) {
-          final extra = state.extra;
-          if (extra is! DetailsRouteExtra) {
-            return Scaffold(
-              body: Center(
-                child: Text(AppLocalizations.of(context)!.invalidNavigation),
-              ),
-            );
-          }
-          return DetailsScreen(item: extra.item, autoPlay: extra.autoPlay);
-        },
-      ),
-      GoRoute(
-        path: '/tmdb-details',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) {
-          final extra = state.extra;
-          if (extra is! TmdbDetailsRouteExtra) {
-            return Scaffold(
-              body: Center(
-                child: Text(AppLocalizations.of(context)!.invalidNavigation),
-              ),
-            );
-          }
-          return TmdbMovieDetailsScreen(
-            movieId: extra.movieId,
-            mediaType: extra.mediaType,
-            heroTag: extra.heroTag,
-            placeholderPoster: extra.placeholderPoster,
-          );
-        },
-      ),
-      GoRoute(
-        path: '/view-all',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) {
-          final extra = state.extra;
-          if (extra is! ViewAllRouteExtra) {
-            return Scaffold(
-              body: Center(
-                child: Text(AppLocalizations.of(context)!.invalidNavigation),
-              ),
-            );
-          }
-          return ViewAllScreen(
-            title: extra.title,
-            initialMediaList: extra.initialMediaList,
-            category: extra.category,
-          );
-        },
-      ),
-      GoRoute(
-        path: '/player',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) {
-          final extra = state.extra;
-          if (extra is! PlayerRouteExtra) {
-            return Scaffold(
-              body: Center(
-                child: Text(AppLocalizations.of(context)!.invalidNavigation),
-              ),
-            );
-          }
-          return PlayerScreen(
-            item: extra.item,
-            videoUrl: extra.videoUrl,
-            episode: extra.episode,
-          );
-        },
-      ),
-    ],
+    debugLogDiagnostics: kDebugMode,
+    routes: $appRoutes,
   );
-});
+}
+
+// End of Routes

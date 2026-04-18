@@ -1,70 +1,65 @@
 import 'dart:io';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/domain/entity/multimedia_item.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/extensions/extension_manager.dart';
 import '../../../../core/storage/storage_service.dart';
 import '../../../../core/extensions/base_provider.dart';
 
-final homeDataProvider =
-    AsyncNotifierProvider<HomeDataNotifier, Map<String, List<MultimediaItem>>>(
-      HomeDataNotifier.new,
-      // Disable Riverpod 3's built-in exponential-backoff retry.
-      // Home data errors should be surfaced immediately; the user retries manually.
-      retry: (_, _) => null,
-    );
+import './home_state.dart';
 
-/// Uses AsyncNotifierProvider so [_keepAliveLink] is stored as an instance
-/// variable. A local variable in a FutureProvider body becomes GC-eligible
-/// after the body throws, which closes the KeepAliveLink and triggers
-/// auto-dispose — causing an infinite retry loop in Riverpod 3.
-class HomeDataNotifier
-    extends AsyncNotifier<Map<String, List<MultimediaItem>>> {
-  // ignore: unused_field — held to prevent GC from releasing the KeepAliveLink
-  Object? _keepAliveLink;
+part 'home_provider.g.dart';
 
+@riverpod
+class HomeData extends _$HomeData {
   @override
-  Future<Map<String, List<MultimediaItem>>> build() async {
-    // Store on the instance so it survives even when build() throws.
-    // A local variable in a FutureProvider body becomes GC-eligible after
-    // the body throws, which closes the link and triggers auto-dispose.
-    _keepAliveLink = ref.keepAlive();
-
-    final activeProvider = ref.watch(activeProviderStateProvider);
-
+  HomeState build() {
+    final activeProvider = ref.watch(activeProviderProvider);
     if (activeProvider == null) {
-      throw Exception(
-        'No provider selected. Please select a provider in settings.',
-      );
+      return const HomeNoProvider();
+    }
+    
+    // Start initial fetch
+    Future.microtask(() => fetch());
+    return const HomeLoading();
+  }
+
+  Future<void> fetch() async {
+    state = const HomeLoading();
+
+    final activeProvider = ref.read(activeProviderProvider);
+    if (activeProvider == null) {
+      state = const HomeNoProvider();
+      return;
     }
 
     // Fast connectivity check
     try {
-      final result = await InternetAddress.lookup(
-        'dns.google',
-      ).timeout(const Duration(seconds: 2));
+      final result = await InternetAddress.lookup('dns.google').timeout(
+        const Duration(seconds: 2),
+      );
       if (result.isEmpty || result[0].rawAddress.isEmpty) {
-        throw Exception('No internet connection');
+        state = const HomeOffline();
+        return;
       }
     } catch (_) {
-      throw Exception('No internet connection');
+      state = const HomeOffline();
+      return;
     }
 
-    final items = await activeProvider.getHome();
-    if (items.isEmpty) {
-      throw Exception('No data returned from provider.');
+    try {
+      final items = await activeProvider.getHome();
+      if (items.isEmpty) {
+        state = const HomeSuccess({});
+      } else {
+        state = HomeSuccess(items);
+      }
+    } catch (e) {
+      state = HomeError(e.toString());
     }
-
-    return items;
   }
 }
 
-final homeFilterProvider = NotifierProvider<HomeFilterNotifier, ProviderType?>(
-  () {
-    return HomeFilterNotifier();
-  },
-);
-
-class HomeFilterNotifier extends Notifier<ProviderType?> {
+@riverpod
+class HomeFilter extends _$HomeFilter {
   @override
   ProviderType? build() {
     final storage = ref.read(storageServiceProvider);

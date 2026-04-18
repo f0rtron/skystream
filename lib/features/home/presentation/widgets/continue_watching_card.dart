@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
@@ -6,13 +7,13 @@ import '../../../../core/domain/entity/multimedia_item.dart';
 
 import 'package:skystream/shared/widgets/focusable_item.dart';
 import 'package:skystream/shared/widgets/thumbnail_error_placeholder.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:skystream/core/router/app_router.dart';
 import 'package:skystream/core/utils/image_fallbacks.dart';
 import '../../../../core/extensions/extension_manager.dart';
 import '../../../../shared/widgets/loading_dialog.dart';
 import 'package:skystream/l10n/generated/app_localizations.dart';
+import 'package:skystream/core/services/notification_service.dart';
 
 class ContinueWatchingCard extends ConsumerWidget {
   final HistoryItem historyItem;
@@ -107,14 +108,14 @@ class ContinueWatchingCard extends ConsumerWidget {
         if (item.contentType == MultimediaContentType.livestream) {
           bool dialogDismissed = false;
           bool canceled = false;
-          LoadingDialog.show(
+          unawaited(LoadingDialog.show(
             context,
             message: AppLocalizations.of(context)!.refreshingLiveStream,
             onCancel: () {
               canceled = true;
               dialogDismissed = true;
             },
-          );
+          ));
           final refreshedItem = await _resolveFreshLiveItem(ref, item);
           if (!context.mounted || canceled) return;
 
@@ -126,21 +127,15 @@ class ContinueWatchingCard extends ConsumerWidget {
           final liveItem = refreshedItem ?? item;
           if (!context.mounted || canceled) return;
 
-          context.push(
-            '/player',
-            extra: PlayerRouteExtra(item: liveItem, videoUrl: liveItem.url),
-          );
-          ref.read(watchHistoryProvider.notifier).removeFromHistory(item.url);
+          unawaited(PlayerRoute($extra: PlayerRouteExtra(item: liveItem, videoUrl: liveItem.url)).push<void>(context));
+          unawaited(ref.read(watchHistoryProvider.notifier).removeFromHistory(item.url));
           return;
         }
 
-        context.push(
-          '/details',
-          extra: DetailsRouteExtra(item: item, autoPlay: true),
-        );
+        unawaited(DetailsRoute($extra: DetailsRouteExtra(item: item, autoPlay: true)).push<void>(context));
       },
       onLongPress: () {
-        showModalBottomSheet(
+        showModalBottomSheet<void>(
           context: context,
           builder: (context) => Container(
             padding: const EdgeInsets.all(16),
@@ -155,10 +150,7 @@ class ContinueWatchingCard extends ConsumerWidget {
                   title: Text(AppLocalizations.of(context)!.viewDetails),
                   onTap: () {
                     Navigator.pop(context);
-                    context.push(
-                      '/details',
-                      extra: DetailsRouteExtra(item: item),
-                    );
+                    unawaited(DetailsRoute($extra: DetailsRouteExtra(item: item)).push<void>(context));
                   },
                 ),
                 ListTile(
@@ -177,12 +169,10 @@ class ContinueWatchingCard extends ConsumerWidget {
                         .read(watchHistoryProvider.notifier)
                         .removeFromHistory(item.url);
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(AppLocalizations.of(context)!
-                            .removedFromHistory(item.title)),
-                      ),
-                    );
+                    ref.read(notificationServiceProvider).showSuccess(
+                          AppLocalizations.of(context)!
+                              .removedFromHistory(item.title),
+                        );
                   },
                 ),
                 ListTile(
@@ -406,12 +396,10 @@ class ContinueWatchingCard extends ConsumerWidget {
                   ref
                       .read(watchHistoryProvider.notifier)
                       .removeFromHistory(item.url);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(AppLocalizations.of(context)!
-                          .removedFromHistory(item.title)),
-                    ),
-                  );
+                  ref.read(notificationServiceProvider).showSuccess(
+                        AppLocalizations.of(context)!
+                            .removedFromHistory(item.title),
+                      );
                 },
                 child: const Padding(
                   padding: EdgeInsets.all(4),

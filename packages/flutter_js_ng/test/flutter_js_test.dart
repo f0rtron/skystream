@@ -37,16 +37,16 @@ void main() {
     jsRt.evaluate('''
     async function asyncTest(del = 30) {
       try {
-        console.log(`Starting \$\{del\}...`);
+        console.log(`Starting \${del}...`);
         while (del > 0) {
           console.log(del);
           await delay(1000);
           del--;
         }
-        console.log(`Done \$\{del\}`);
-        return `Done \$\{del\}`;
+        console.log(`Done \${del}`);
+        return `Done \${del}`;
       } catch (e) {
-        console.log(`Error in asyncTest: \$\{e\}`);
+        console.log(`Error in asyncTest: \${e}`);
         return "Error";
       }
     }
@@ -56,7 +56,7 @@ void main() {
     jsRt.enableXhr();
     final promise = await jsRt.evaluateAsync('asyncTest(2)');
     jsRt.executePendingJob();
-    JsEvalResult asyncResult = await jsRt.handlePromise(promise);
+    final JsEvalResult asyncResult = await jsRt.handlePromise(promise);
     print('${asyncResult.stringResult}, ${asyncResult.stringResult}');
     jsRt.dispose();
   });

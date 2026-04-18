@@ -11,6 +11,7 @@ import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:video_view/video_view.dart' as vv;
 import '../../../../l10n/generated/app_localizations.dart';
 import '../player_controller.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../../core/models/torrent_status.dart';
 import '../components/torrent_info_widget.dart';
@@ -39,10 +40,10 @@ class SkyStreamPlayerControls extends ConsumerStatefulWidget {
 
   final List<SubtitleFile>? externalSubtitles;
   final TorrentStatus? torrentStatus;
-  final Function(StreamResult)? onStreamSelected;
-  final Function(int)? onTorrentFileSelected;
-  final Function(BoxFit)? onResize;
-  final Function(bool)? onVisibilityChanged;
+  final void Function(StreamResult)? onStreamSelected;
+  final void Function(int)? onTorrentFileSelected;
+  final void Function(BoxFit)? onResize;
+  final void Function(bool)? onVisibilityChanged;
 
   const SkyStreamPlayerControls({
     super.key,
@@ -98,10 +99,9 @@ class SkyStreamPlayerControlsState
   late Duration _position;
   late Duration _duration;
 
-  final List<StreamSubscription> _subscriptions = [];
+  final List<StreamSubscription<dynamic>> _subscriptions = [];
 
   late final PlayerPlatformService _platformService;
-  late final PlayerGestureHandler _gestureHandler;
   Offset? _tapPosition;
   Duration _animDuration = const Duration(milliseconds: 300);
   bool _isFullscreen = false;
@@ -115,15 +115,16 @@ class SkyStreamPlayerControlsState
     _isIpad = Platform.isIOS && (deviceProfile?.isTablet ?? false);
 
     _platformService = PlayerPlatformService();
-    _gestureHandler = PlayerGestureHandler(
+    ref.read(playerGestureHandlerProvider.notifier).init(
       getSettings: () async => await ref.read(playerSettingsProvider.future),
       isTv: _isTv,
       isDesktop: Platform.isMacOS || Platform.isWindows || Platform.isLinux,
       getDuration: () => _duration,
       getPosition: () => _position,
       canSeek: () => ref.read(playerControllerProvider).canSeek,
-      getMaxVolumeLevel: () =>
-          ref.read(playerControllerProvider).supportsVolumeBoost ? 2.0 : 1.0,
+      getMaxVolumeLevel:
+          () =>
+              ref.read(playerControllerProvider).supportsVolumeBoost ? 2.0 : 1.0,
       onInteraction: () {
         if (!_isVisible) {
           setState(() => _isVisible = true);
@@ -147,18 +148,16 @@ class SkyStreamPlayerControlsState
           ref.read(playerControllerProvider.notifier).getVolumeLevel(),
       setVolumeLevel: (value) =>
           ref.read(playerControllerProvider.notifier).setVolumeLevel(value),
-      changeVolumeLevel: (step) =>
+      onVolumeChange: (step) =>
           ref.read(playerControllerProvider.notifier).changeVolume(step),
       toggleMuteLevel: () =>
           ref.read(playerControllerProvider.notifier).toggleMute(),
       onDoubleTapAnimationStart: (isLeft, tapPos, seconds) {
-        if (mounted) {
-          setState(() {
-            _isSeekingLeft = isLeft;
-            _tapPosition = tapPos;
-          });
-          _seekAnimController.forward(from: 0.0);
-        }
+        setState(() {
+          _tapPosition = tapPos;
+          _isSeekingLeft = isLeft;
+        });
+        _seekAnimController.forward(from: 0.0);
       },
     );
 
@@ -166,7 +165,9 @@ class SkyStreamPlayerControlsState
     try {
       FlutterVolumeController.updateShowSystemUI(false);
     } catch (e) {
-      if (kDebugMode) debugPrint("VolumeUI Error: $e");
+      if (kDebugMode) {
+        debugPrint("VolumeUI Error: $e");
+      }
     }
     _isPlaying = widget.player.state.playing;
     _position = widget.player.state.position;
@@ -271,13 +272,7 @@ class SkyStreamPlayerControlsState
           .read(playerControllerProvider.notifier)
           .consumeRevertMessage();
       if (msg != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            duration: const Duration(seconds: 5),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        ref.read(notificationServiceProvider).showInfo(msg);
       }
     });
   }
@@ -301,14 +296,15 @@ class SkyStreamPlayerControlsState
     _backFocusNode.dispose();
     _hideTimer?.cancel();
     _seekAnimController.dispose();
-    _gestureHandler.dispose();
     for (final s in _subscriptions) {
       s.cancel();
     }
     try {
       ScreenBrightness().resetApplicationScreenBrightness();
     } catch (e) {
-      if (kDebugMode) debugPrint('Failed to reset brightness: $e');
+      if (kDebugMode) {
+        debugPrint('Failed to reset brightness: $e');
+      }
     }
     try {
       FlutterVolumeController.updateShowSystemUI(true);
@@ -367,7 +363,7 @@ class SkyStreamPlayerControlsState
     }
   }
 
-  void _handleDoubleTap() async {
+  Future<void> _handleDoubleTap() async {
     // Desktop Double Tap -> Toggle Fullscreen
     try {
       if (context.isDesktop &&
@@ -383,7 +379,7 @@ class SkyStreamPlayerControlsState
 
     if (widget.isLoading || _duration == Duration.zero) return;
     if (_tapPosition != null) {
-      _gestureHandler.handleDoubleTap(
+      ref.read(playerGestureHandlerProvider.notifier).handleDoubleTap(
         _tapPosition!,
         MediaQuery.sizeOf(context).width,
       );
@@ -530,11 +526,11 @@ class SkyStreamPlayerControlsState
 
   // Keyboard shortcut handlers
   void toggleMute() {
-    _gestureHandler.toggleMute();
+    ref.read(playerGestureHandlerProvider.notifier).toggleMute();
   }
 
   Future<void> changeVolume(double step) async {
-    await _gestureHandler.changeVolume(step);
+    await ref.read(playerGestureHandlerProvider.notifier).changeVolume(step);
   }
 
   void triggerSeek(bool isLeft) {
@@ -563,28 +559,28 @@ class SkyStreamPlayerControlsState
       final labels = [l10n.fit, l10n.zoom, l10n.stretch];
 
       widget.onResize?.call(modes[_resizeMode]);
-      _gestureHandler.showToast(labels[_resizeMode], Icons.aspect_ratio);
+      ref.read(playerGestureHandlerProvider.notifier).showToast(labels[_resizeMode], Icons.aspect_ratio);
     });
   }
 
   Future<void> _handleDragStart(DragStartDetails details) async {
     final size = MediaQuery.sizeOf(context);
-    await _gestureHandler.handleDragStart(details, size.width, size.height);
+    await ref.read(playerGestureHandlerProvider.notifier).handleDragStart(details, size.width, size.height);
   }
 
   void _handleDragUpdate(DragUpdateDetails details) {
-    _gestureHandler.handleDragUpdate(details);
+    ref.read(playerGestureHandlerProvider.notifier).handleDragUpdate(details);
   }
 
   void _handleDragEnd(DragEndDetails details) {
-    _gestureHandler.handleDragEnd(details);
+    ref.read(playerGestureHandlerProvider.notifier).handleDragEnd(details);
   }
 
   // Horizontal Seek
-  void _handleHorizontalDragStart(DragStartDetails details) async {
+  Future<void> _handleHorizontalDragStart(DragStartDetails details) async {
     final size = MediaQuery.sizeOf(context);
     final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
-    await _gestureHandler.handleHorizontalDragStart(
+    await ref.read(playerGestureHandlerProvider.notifier).handleHorizontalDragStart(
       details,
       _isVisible,
       size.width,
@@ -594,11 +590,11 @@ class SkyStreamPlayerControlsState
   }
 
   void _handleHorizontalDragUpdate(DragUpdateDetails details) {
-    _gestureHandler.handleHorizontalDragUpdate(details);
+    ref.read(playerGestureHandlerProvider.notifier).handleHorizontalDragUpdate(details);
   }
 
   void _handleHorizontalDragEnd(DragEndDetails details) {
-    _gestureHandler.handleHorizontalDragEnd(details);
+    ref.read(playerGestureHandlerProvider.notifier).handleHorizontalDragEnd(details);
   }
 
   String _formatDuration(Duration duration) {
@@ -771,8 +767,9 @@ class SkyStreamPlayerControlsState
         onDoubleTap: _handleDoubleTap,
         child: GestureDetector(
           onTap: () {
-            if (_gestureHandler.showOSD) {
-              _gestureHandler.dismissOSD();
+            final gestureState = ref.read(playerGestureHandlerProvider);
+            if (gestureState.showOSD) {
+              ref.read(playerGestureHandlerProvider.notifier).dismissOSD();
             }
             if (_isLocked) {
               setState(() => _isVisible = !_isVisible);
@@ -829,7 +826,6 @@ class SkyStreamPlayerControlsState
 
                 // OSD and volume overlay — only this subtree rebuilds on handler changes
                 PlayerOSDVolumeOverlay(
-                  handler: _gestureHandler,
                   getDuration: () => _duration,
                   formatDuration: _formatDuration,
                 ),

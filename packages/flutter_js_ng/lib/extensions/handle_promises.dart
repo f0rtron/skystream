@@ -6,7 +6,7 @@ import 'package:flutter_js/js_eval_result.dart';
 const REGISTER_PROMISE_FUNCTION = 'FLUTTER_NATIVEJS_REGISTER_PROMISE';
 
 extension HandlePromises on JavascriptRuntime {
-  enableHandlePromises() {
+  void enableHandlePromises() {
     final fnRegisterPromise = evaluate(""" 
      var FLUTTER_NATIVEJS_PENDING_PROMISES = {};
       var FLUTTER_NATIVEJS_PENDING_PROMISES_COUNT = -1;
@@ -79,7 +79,7 @@ extension HandlePromises on JavascriptRuntime {
   }
 
   bool isPendingPromise(int idx) {
-    String resultIsPending =
+    final String resultIsPending =
         evaluate("FLUTTER_NATIVEJS_IS_PENDING_PROMISE($idx)").stringResult;
 
     return "true" == resultIsPending;
@@ -107,10 +107,10 @@ extension HandlePromises on JavascriptRuntime {
       var completed = false;
       Function? fnEvaluatePromise;
       fnEvaluatePromise = () async {
-        this.executePendingJob();
+        executePendingJob();
         if (!completed) {
           await Future.delayed(
-              Duration(milliseconds: 20), () => fnEvaluatePromise!.call());
+              const Duration(milliseconds: 20), () => fnEvaluatePromise!.call());
         } else {
           if (JavascriptRuntime.debugEnabled) {
             print('Promise completed');
@@ -118,7 +118,7 @@ extension HandlePromises on JavascriptRuntime {
         }
       };
       Future.delayed(
-          Duration(milliseconds: 20), () => fnEvaluatePromise!.call());
+          const Duration(milliseconds: 20), () => fnEvaluatePromise!.call());
 
       // Future.delayed(Duration(seconds: 1), () {
       //   this.executePendingJob();
@@ -138,10 +138,10 @@ extension HandlePromises on JavascriptRuntime {
     // todo: investigate - application is crashing around this point
     final promiseQuerableIdx =
         callFunction(evalRegisterPromise, value.rawResult).stringResult;
-    int idxPromise = int.parse(promiseQuerableIdx);
-    Timer.periodic(Duration(milliseconds: 20), (timer) {
+    final int idxPromise = int.parse(promiseQuerableIdx);
+    Timer.periodic(const Duration(milliseconds: 20), (timer) {
       // call to _JS_ExecutePendingJob
-      this.executePendingJob();
+      executePendingJob();
       //eval(REGISTER_PROMISE_FUNCTION);
       // REFERENCE: https://github.com/p7s1digital/oasis-jsbridge-android/blob/3b104ec46d4817a0688e2e50e18eb3e5b2976485/jsbridge/src/main/jni/JsBridgeContext_quickjs.cpp#L343
       //  * https://github.com/p7s1digital/oasis-jsbridge-android/blob/82e2cb0211cefc4ae74675a4fa59ea3e4f2845f0/jsbridge/src/main/jni/java-types/Deferred_quickjs.cpp

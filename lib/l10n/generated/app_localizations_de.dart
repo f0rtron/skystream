@@ -1218,4 +1218,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get openLink => 'Link öffnen';
+
+  @override
+  String get diagnostics => 'Diagnose';
+
+  @override
+  String get viewLogs => 'Protokolle anzeigen';
+
+  @override
+  String get viewLogsSubtitle => 'Anwendungsaktivität und Fehler anzeigen';
 }

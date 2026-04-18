@@ -2,14 +2,15 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 
 import 'package:ffi/ffi.dart';
-import 'package:flutter_js/javascript_runtime.dart';
-import 'package:flutter_js/javascriptcore/binding/js_object_ref.dart'
+import '../javascript_runtime.dart';
+import './binding/js_object_ref.dart'
     as jsObject;
-import 'package:flutter_js/javascriptcore/flutter_jscore.dart';
-import 'package:flutter_js/javascriptcore/jscore_bindings.dart';
-import 'package:flutter_js/js_eval_result.dart';
+import './flutter_jscore.dart';
+import './jscore_bindings.dart';
+import '../js_eval_result.dart';
 
 class JavascriptCoreRuntime extends JavascriptRuntime {
   late Pointer _contextGroup;
@@ -17,6 +18,7 @@ class JavascriptCoreRuntime extends JavascriptRuntime {
   late JSContext context;
   late Pointer _globalObject;
 
+  @override
   int executePendingJob() {
     evaluate('(function(){})();');
     return 0;
@@ -34,8 +36,8 @@ class JavascriptCoreRuntime extends JavascriptRuntime {
 
     _sendMessageDartFunc = _sendMessage;
 
-    Pointer<Utf8> funcNameCString = 'sendMessage'.toNativeUtf8();
-    var functionObject = jSObjectMakeFunctionWithCallback(
+    final Pointer<Utf8> funcNameCString = 'sendMessage'.toNativeUtf8();
+    final functionObject = jSObjectMakeFunctionWithCallback(
         _globalContext,
         jSStringCreateWithUTF8CString(funcNameCString),
         Pointer.fromFunction(sendMessageBridgeFunction));
@@ -58,11 +60,11 @@ class JavascriptCoreRuntime extends JavascriptRuntime {
 
   @override
   JsEvalResult evaluate(String js, {String? sourceUrl}) {
-    Pointer<Utf8> scriptCString = js.toNativeUtf8();
-    Pointer<Utf8>? sourceUrlCString = sourceUrl?.toNativeUtf8();
+    final Pointer<Utf8> scriptCString = js.toNativeUtf8();
+    final Pointer<Utf8>? sourceUrlCString = sourceUrl?.toNativeUtf8();
 
-    JSValuePointer exception = JSValuePointer();
-    var jsValueRef = jSEvaluateScript(
+    final JSValuePointer exception = JSValuePointer();
+    final jsValueRef = jSEvaluateScript(
         _globalContext,
         jSStringCreateWithUTF8CString(scriptCString),
         nullptr,
@@ -78,14 +80,14 @@ class JavascriptCoreRuntime extends JavascriptRuntime {
 
     String result;
 
-    JSValue exceptionValue = exception.getValue(context);
+    final JSValue exceptionValue = exception.getValue(context);
     bool isPromise = false;
     if (exceptionValue.isObject) {
       result =
           'ERROR: ${exceptionValue.toObject().getProperty("message").string} \n  at ${exceptionValue.toObject().getProperty("stack").string}';
     } else {
       result = _getJsValue(jsValueRef);
-      JSValue resultValue = JSValuePointer(jsValueRef).getValue(context);
+      final JSValue resultValue = JSValuePointer(jsValueRef).getValue(context);
 
       isPromise = resultValue.isObject &&
           resultValue.toObject().getProperty('then').isObject &&
@@ -116,7 +118,7 @@ class JavascriptCoreRuntime extends JavascriptRuntime {
       try {
         context.setInspectable(inspectable);
       } on Error {
-        print('Could not set inspectable to $inspectable');
+        debugPrint('Could not set inspectable to $inspectable');
       }
     }
   }
@@ -153,14 +155,14 @@ class JavascriptCoreRuntime extends JavascriptRuntime {
     } else if (jSValueIsUndefined(_globalContext, jsValueRef) == 1) {
       return 'undefined';
     }
-    var resultJsString =
+    final resultJsString =
         jSValueToStringCopy(_globalContext, jsValueRef, nullptr);
-    var resultCString = jSStringGetCharactersPtr(resultJsString);
-    int resultCStringLength = jSStringGetLength(resultJsString);
+    final resultCString = jSStringGetCharactersPtr(resultJsString);
+    final int resultCStringLength = jSStringGetLength(resultJsString);
     if (resultCString == nullptr) {
       return 'null';
     }
-    String result = String.fromCharCodes(Uint16List.view(
+    final String result = String.fromCharCodes(Uint16List.view(
         resultCString.cast<Uint16>().asTypedList(resultCStringLength).buffer,
         0,
         resultCStringLength));
@@ -180,8 +182,8 @@ class JavascriptCoreRuntime extends JavascriptRuntime {
     final channelFunctions =
         JavascriptRuntime.channelFunctionsRegistered[getEngineInstanceId()]!;
 
-    String channelName = _getJsValue(arguments[0]);
-    String message = _getJsValue(arguments[1]);
+    final String channelName = _getJsValue(arguments[0]);
+    final String message = _getJsValue(arguments[1]);
 
     if (channelFunctions.containsKey(channelName)) {
       final result = channelFunctions[channelName]!.call(jsonDecode(message));
@@ -192,11 +194,11 @@ class JavascriptCoreRuntime extends JavascriptRuntime {
         final encoded = json.encode(result);
         return JSValue.makeFromJSONString(context, encoded).pointer;
       } catch (err) {
-        print(
+        debugPrint(
             'Could not encode return value of message on channel $channelName to json... returning null');
       }
     } else {
-      print('No channel $channelName registered');
+      debugPrint('No channel $channelName registered');
     }
 
     return nullptr;
@@ -204,12 +206,10 @@ class JavascriptCoreRuntime extends JavascriptRuntime {
 
   Pointer<NativeType> _constructPromiseFor(Future future) {
     final id = future.hashCode;
-    Pointer<Utf8> scriptCString = ('var __JSC_promise_result$id = {};' +
-            'new Promise(function(resolve, reject) { __JSC_promise_result$id.resolve = resolve;' +
-            ' __JSC_promise_result$id.reject = reject;});')
+    final Pointer<Utf8> scriptCString = ('var __JSC_promise_result$id = {};' 'new Promise(function(resolve, reject) { __JSC_promise_result$id.resolve = resolve;' ' __JSC_promise_result$id.reject = reject;});')
         .toNativeUtf8();
 
-    var jsValueRef = jSEvaluateScript(
+    final jsValueRef = jSEvaluateScript(
         _globalContext,
         jSStringCreateWithUTF8CString(scriptCString),
         nullptr,
@@ -231,15 +231,15 @@ class JavascriptCoreRuntime extends JavascriptRuntime {
 
   @override
   JsEvalResult callFunction(Pointer<NativeType>? fn, Pointer<NativeType>? obj) {
-    JSValue fnValue = JSValuePointer(fn).getValue(context);
-    JSObject functionObj = fnValue.toObject();
-    JSValuePointer exception = JSValuePointer();
-    JSValue result = functionObj.callAsFunction(
+    final JSValue fnValue = JSValuePointer(fn).getValue(context);
+    final JSObject functionObj = fnValue.toObject();
+    final JSValuePointer exception = JSValuePointer();
+    final JSValue result = functionObj.callAsFunction(
       functionObj,
       JSValuePointer(obj),
       exception: exception,
     );
-    JSValue exceptionValue = exception.getValue(context);
+    final JSValue exceptionValue = exception.getValue(context);
     bool isPromise = false;
 
     if (exceptionValue.isObject) {
@@ -269,27 +269,27 @@ class JavascriptCoreRuntime extends JavascriptRuntime {
     } else if (jSValueIsBoolean(_globalContext, jsValue.rawResult) == 1) {
       return (_getJsValue(jsValue.rawResult) == "true") as T;
     } else if (jSValueIsNumber(_globalContext, jsValue.rawResult) == 1) {
-      String valueString = _getJsValue(jsValue.rawResult);
+      final String valueString = _getJsValue(jsValue.rawResult);
 
       if (valueString.contains(".")) {
         try {
           return double.parse(valueString) as T;
         } on TypeError {
-          print('Failed to cast $valueString... returning null');
+          debugPrint('Failed to cast $valueString... returning null');
           return null;
         }
       } else {
         try {
           return int.parse(valueString) as T;
         } on TypeError {
-          print('Failed to cast $valueString... returning null');
+          debugPrint('Failed to cast $valueString... returning null');
           return null;
         }
       }
     } else if (jSValueIsObject(_globalContext, jsValue.rawResult) == 1 ||
         jSValueIsArray(_globalContext, jsValue.rawResult) == 1) {
-      JSValue objValue = JSValuePointer(jsValue.rawResult).getValue(context);
-      String serialized = objValue.createJSONString().string!;
+      final JSValue objValue = JSValuePointer(jsValue.rawResult).getValue(context);
+      final String serialized = objValue.createJSONString().string!;
       return jsonDecode(serialized);
     } else {
       return null;
@@ -298,7 +298,7 @@ class JavascriptCoreRuntime extends JavascriptRuntime {
 
   @override
   String jsonStringify(JsEvalResult jsValue) {
-    JSValue objValue = JSValuePointer(jsValue.rawResult).getValue(context);
+    final JSValue objValue = JSValuePointer(jsValue.rawResult).getValue(context);
     return objValue.createJSONString().string!;
   }
 

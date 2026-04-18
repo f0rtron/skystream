@@ -1,8 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'home_provider.dart';
+import 'home_state.dart';
 import 'package:skystream/features/home/presentation/widgets/continue_watching_section.dart';
 import 'package:skystream/features/library/presentation/history_provider.dart';
 import '../../settings/presentation/general_settings_provider.dart';
@@ -15,9 +15,7 @@ import 'package:flutter/rendering.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import 'package:skystream/core/extensions/extension_manager.dart';
 import 'package:skystream/core/extensions/base_provider.dart';
-import 'package:skystream/core/domain/entity/multimedia_item.dart';
 import 'package:skystream/core/router/app_router.dart';
-import '../../../core/utils/error_messages.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -142,7 +140,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                   builder: (context) {
                                     final l10n = AppLocalizations.of(context)!;
                                     final active = ref.watch(
-                                      activeProviderStateProvider,
+                                      activeProviderProvider,
                                     );
                                     final isDebug = active?.isDebug ?? false;
                                     return Row(
@@ -207,13 +205,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   Widget _buildBody(
     BuildContext context,
-    AsyncValue<Map<String, List<MultimediaItem>>> homeDataAsync,
+    HomeState state,
     List<dynamic> history,
     bool watchHistoryEnabled,
   ) {
     final l10n = AppLocalizations.of(context)!;
-    // Handling initial loading
     final isResolving = ref.watch(providerResolutionLoadingProvider);
+
     if (isResolving) {
       return Center(
         child: CircularProgressIndicator(
@@ -222,110 +220,101 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       );
     }
 
-    // No active provider selected
-    if (ref.watch(activeProviderStateProvider) == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.extension_off_rounded,
-              size: 64,
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.selectProviderToStart,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(l10n.tapExtensionIcon),
-          ],
-        ),
-      );
+    if (ref.watch(activeProviderProvider) == null) {
+      return _buildNoProviderState(context, l10n);
     }
 
-    // Main content
-    return homeDataAsync.when(
-      skipLoadingOnReload: false,
-      skipLoadingOnRefresh: false,
-      data: (data) {
-        final filteredEntries = data.entries
-            .where((e) => e.key != 'Trending')
-            .toList();
-        return RefreshIndicator(
-          onRefresh: () => ref.refresh(homeDataProvider.future),
-          child: CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              // Carousel
-              if (data.containsKey('Trending'))
-                SliverToBoxAdapter(
-                  child: DiscoverCarousel(
-                    movies: data['Trending']!.take(7).toList(),
-                    scrollController: _scrollController,
-                    onTap: (item) {
-                      context.push(
-                        '/details',
-                        extra: DetailsRouteExtra(item: item),
-                      );
-                    },
-                  ),
-                )
-              else if (data.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: DiscoverCarousel(
-                    movies: data.values.first.take(7).toList(),
-                    scrollController: _scrollController,
-                    onTap: (item) {
-                      context.push(
-                        '/details',
-                        extra: DetailsRouteExtra(item: item),
-                      );
-                    },
-                  ),
+    return switch (state) {
+      HomeLoading() => const Center(child: CircularProgressIndicator()),
+      HomeNoProvider() => _buildNoProviderState(context, l10n),
+      HomeOffline() => _buildErrorState(context, l10n.noInternetError, ref),
+      HomeError(:final message) => _buildErrorState(context, message, ref),
+      HomeSuccess(:final data) => RefreshIndicator(
+        onRefresh: () async => ref.read(homeDataProvider.notifier).fetch(),
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            // Carousel
+            if (data.containsKey('Trending'))
+              SliverToBoxAdapter(
+                child: DiscoverCarousel(
+                  movies: data['Trending']!.take(7).toList(),
+                  scrollController: _scrollController,
+                  onTap: (item) {
+                    DetailsRoute($extra: DetailsRouteExtra(item: item)).push<void>(context);
+                  },
                 ),
-
-              // Continue Watching
-              if (watchHistoryEnabled && history.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: ContinueWatchingSection(
-                    title: l10n.continueWatching,
-                    items: history.cast<HistoryItem>(),
-                  ),
+              )
+            else if (data.isNotEmpty)
+              SliverToBoxAdapter(
+                child: DiscoverCarousel(
+                  movies: data.values.first.take(7).toList(),
+                  scrollController: _scrollController,
+                  onTap: (item) {
+                    DetailsRoute($extra: DetailsRouteExtra(item: item)).push<void>(context);
+                  },
                 ),
-
-              // Category sections — lazily built
-              SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  if (index >= filteredEntries.length) return null;
-                  final entry = filteredEntries[index];
-                  return MediaHorizontalList(
-                    title: entry.key,
-                    mediaList: entry.value,
-                    category: ViewAllCategory.trending,
-                    showViewAll: false,
-                    onTap: (item) {
-                      context.push(
-                        '/details',
-                        extra: DetailsRouteExtra(item: item),
-                      );
-                    },
-                    heroTagPrefix: 'home',
-                  );
-                }, childCount: filteredEntries.length),
               ),
 
-              // Bottom padding for FAB
-              const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
-            ],
+            // Continue Watching
+            if (watchHistoryEnabled && history.isNotEmpty)
+              SliverToBoxAdapter(
+                child: ContinueWatchingSection(
+                  title: l10n.continueWatching,
+                  items: history.cast<HistoryItem>(),
+                ),
+              ),
+
+            // Category sections — lazily built
+            SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final filteredEntries = data.entries
+                    .where((e) => e.key != 'Trending')
+                    .toList();
+                if (index >= filteredEntries.length) return null;
+                final entry = filteredEntries[index];
+                return MediaHorizontalList(
+                  title: entry.key,
+                  mediaList: entry.value,
+                  category: ViewAllCategory.trending,
+                  showViewAll: false,
+                  onTap: (item) {
+                    DetailsRoute($extra: DetailsRouteExtra(item: item)).push<void>(context);
+                  },
+                  heroTagPrefix: 'home',
+                );
+              }, childCount: data.entries.where((e) => e.key != 'Trending').length),
+            ),
+
+            // Bottom padding for FAB
+            const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
+          ],
+        ),
+      ),
+    };
+  }
+
+  Widget _buildNoProviderState(BuildContext context, AppLocalizations l10n) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.extension_off_rounded,
+            size: 64,
+            color: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: 0.5),
           ),
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => _buildErrorState(context, AppErrorMessages.from(err, l10n), ref),
+          const SizedBox(height: 16),
+          Text(
+            l10n.selectProviderToStart,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(l10n.tapExtensionIcon),
+        ],
+      ),
     );
   }
 
@@ -391,7 +380,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   label: Text(l10n.retry),
                 ),
                 ElevatedButton.icon(
-                  onPressed: () => context.push('/library'),
+                    onPressed: () => const LibraryRoute().push<void>(context),
                   icon: const Icon(Icons.download_for_offline_rounded),
                   label: Text(l10n.goToDownloads),
                   style: ElevatedButton.styleFrom(
@@ -414,14 +403,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void _showProviderSelector(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final extManager = ref.read(extensionManagerProvider.notifier);
-    final activeProvider = ref.read(activeProviderStateProvider);
+    final activeProvider = ref.read(activeProviderProvider);
     final providers = List<SkyStreamProvider>.from(extManager.getAllProviders())
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
     final scrollController = ScrollController();
     final chipsScrollController = ScrollController();
 
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) {
         return AlertDialog(
@@ -499,7 +488,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                   (p) => p.packageName == val,
                                 );
                           ref
-                              .read(activeProviderStateProvider.notifier)
+                              .read(activeProviderProvider.notifier)
                               .set(selected);
                           Navigator.pop(context);
                           ref.invalidate(homeDataProvider);
@@ -518,7 +507,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                 onTap: () {
                                   ref
                                       .read(
-                                        activeProviderStateProvider.notifier,
+                                        activeProviderProvider.notifier,
                                       )
                                       .set(null);
                                   Navigator.pop(context);
@@ -562,7 +551,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                               leading: Radio<String?>(value: p.packageName),
                               onTap: () {
                                 ref
-                                    .read(activeProviderStateProvider.notifier)
+                                    .read(activeProviderProvider.notifier)
                                     .set(p);
                                 Navigator.pop(context);
                                 ref.invalidate(homeDataProvider);

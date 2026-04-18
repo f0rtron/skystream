@@ -580,5 +580,8 @@
   },
   "openSubtitles": "OpenSubtitles",
   "subDl": "SubDL",
-  "subSource": "SubSource"
+  "subSource": "SubSource",
+  "diagnostics": "Диагностика",
+  "viewLogs": "Просмотр журналов",
+  "viewLogsSubtitle": "Просмотр активности и ошибок приложения"
 }

@@ -76,7 +76,7 @@ class TorrentFileParser {
       else if (char == 108) {
         // 'l'
         index++;
-        final list = [];
+        final list = <dynamic>[];
         while (bytes[index] != 101) {
           // 'e'
           list.add(decodeNext());
@@ -153,7 +153,7 @@ class TorrentFileParser {
         builder.add(obj);
       } else if (obj is List) {
         builder.addByte(108); // l
-        for (var item in obj) {
+        for (final item in obj) {
           encodeRecursive(item);
         }
         builder.addByte(101); // e
@@ -163,7 +163,7 @@ class TorrentFileParser {
         final keys = obj.keys.toList();
         keys.sort((a, b) => a.toString().compareTo(b.toString()));
 
-        for (var key in keys) {
+        for (final key in keys) {
           encodeRecursive(key); // Encoded as string
           encodeRecursive(obj[key]);
         }

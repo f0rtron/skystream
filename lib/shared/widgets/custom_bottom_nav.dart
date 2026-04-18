@@ -3,7 +3,7 @@ import 'package:skystream/l10n/generated/app_localizations.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
-  final Function(int) onTap;
+  final void Function(int) onTap;
 
   const CustomBottomNavBar({
     super.key,

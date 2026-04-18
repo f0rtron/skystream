@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../storage/storage_service.dart';
 
-final localeProvider = NotifierProvider<LocaleNotifier, Locale>(() {
-  return LocaleNotifier();
-});
+part 'locale_provider.g.dart';
 
-class LocaleNotifier extends Notifier<Locale> {
+@Riverpod(keepAlive: true)
+class LocaleNotifier extends _$LocaleNotifier {
   late final StorageService _storage;
 
   @override

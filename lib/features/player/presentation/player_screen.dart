@@ -175,7 +175,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
   }
 
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    // Only handle KeyDown and KeyRepeat for volume/seeking
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.ignored;
 
     // TV Navigation Logic
     if (_isTv) {
@@ -254,13 +255,12 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
   }
 
   Future<void> _handleBack() async {
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     if (!Platform.isAndroid && !Platform.isIOS) {
       try {
         await windowManager.setFullScreen(false);
-        // Small delay to allow macOS/Windows to settle layout
-        await Future.delayed(const Duration(milliseconds: 150));
+        await Future<void>.delayed(const Duration(seconds: 1));
       } catch (e) {
         if (kDebugMode) debugPrint('PlayerScreen._handleBack: $e');
       }
@@ -357,7 +357,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
           },
           child: Scaffold(
             body: Focus(
-              autofocus: false,
+              autofocus: true,
               onKeyEvent: _handleKey,
               child: Stack(
                 children: [

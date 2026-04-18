@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/utils/layout_constants.dart';
 import '../../../core/theme/theme_provider.dart';
@@ -8,19 +7,15 @@ import '../../../core/theme/theme_provider.dart';
 import '../../../core/utils/stream_quality_sorter.dart';
 import 'widgets/settings_widgets.dart';
 import 'widgets/settings_dialogs.dart';
-import 'package:go_router/go_router.dart';
 import 'player_settings_provider.dart';
 import 'general_settings_provider.dart';
+import 'app_version_provider.dart';
 
 import 'package:skystream/l10n/generated/app_localizations.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/network/doh_service.dart';
+import '../../../core/router/app_router.dart';
 
-// Simple provider for app version
-final appVersionProvider = FutureProvider<String>((ref) async {
-  final info = await PackageInfo.fromPlatform();
-  return '${info.version} +${info.buildNumber}';
-});
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -28,7 +23,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final versionAsync = ref.watch(appVersionProvider);
-    final themeMode = ref.watch(themeModeProvider);
+    final themeMode = ref.watch(appThemeModeProvider);
     final generalSettings = ref.watch(generalSettingsProvider);
 
     final playerSettings =
@@ -70,7 +65,6 @@ class SettingsScreen extends ConsumerWidget {
                           .read(generalSettingsProvider.notifier)
                           .setWatchHistoryEnabled(val),
                     ),
-                    isLast: true,
                     onTap: () => ref
                         .read(generalSettingsProvider.notifier)
                         .setWatchHistoryEnabled(
@@ -84,7 +78,6 @@ class SettingsScreen extends ConsumerWidget {
                       generalSettings.defaultHomeScreen,
                       l10n,
                     ),
-                    isLast: true,
                     onTap: () => showDefaultHomeScreenDialog(
                       context,
                       ref,
@@ -361,7 +354,7 @@ class SettingsScreen extends ConsumerWidget {
                     title: l10n.manageExtensions,
                     subtitle: l10n.installRemoveProviders,
                     isLast: true,
-                    onTap: () => context.go('/settings/extensions'),
+                    onTap: () => const ExtensionsRoute().go(context),
                   ),
                 ],
               ),
@@ -393,7 +386,7 @@ class SettingsScreen extends ConsumerWidget {
                     title: l10n.developerOptions,
                     subtitle: l10n.developerOptionsSubtitle,
                     isLast: true,
-                    onTap: () => context.go('/settings/developer'),
+                    onTap: () => const DeveloperOptionsRoute().go(context),
                   ),
                 ],
               ),

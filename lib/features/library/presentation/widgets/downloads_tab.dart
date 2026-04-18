@@ -10,6 +10,7 @@ import '../../../../core/utils/layout_constants.dart';
 import '../../../details/presentation/playback_launcher.dart';
 import '../downloads_provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../../core/services/notification_service.dart';
 
 class DownloadsTab extends ConsumerWidget {
   const DownloadsTab({super.key});
@@ -46,7 +47,7 @@ class DownloadsTab extends ConsumerWidget {
         final Map<String, List<DownloadItem>> grouped = {};
         final List<String> keys = [];
 
-        for (var item in downloads) {
+        for (final item in downloads) {
           final String key = item.item.tmdbId?.toString() ?? item.item.title;
           if (!grouped.containsKey(key)) {
             keys.add(key);
@@ -244,7 +245,7 @@ class _GroupedDownloadTile extends ConsumerWidget {
 
   void _confirmDeleteAll(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.deleteAllEpisodes),
@@ -487,11 +488,7 @@ class _DownloadItemTile extends ConsumerWidget {
 
     if (file == null || !await file.exists()) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.fileNotFoundRemoving),
-          ),
-        );
+        ref.read(notificationServiceProvider).showError(l10n.fileNotFoundRemoving);
       }
       // Self-delete from DB
       await ref.read(downloadsProvider.notifier).removeDownload(item);
@@ -506,7 +503,7 @@ class _DownloadItemTile extends ConsumerWidget {
   }
 
   void _confirmDelete(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.deleteDownload),

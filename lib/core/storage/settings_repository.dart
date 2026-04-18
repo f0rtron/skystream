@@ -1,9 +1,12 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'storage_service.dart';
 
-final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
+part 'settings_repository.g.dart';
+
+@Riverpod(keepAlive: true)
+SettingsRepository settingsRepository(Ref ref) {
   return SettingsRepository(ref.watch(storageServiceProvider));
-});
+}
 
 class SettingsRepository {
   final StorageService _storageService;

@@ -76,6 +76,7 @@ key.properties
 lib/generated_plugin_registrant.dart
 
 # Project Specific
+*.g.dart
 *.sky
 assets/plugins/
 # Torrent Server Binaries (re-downloadable via scripts/download_torrserver.sh)

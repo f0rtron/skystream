@@ -1,8 +1,9 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/storage/settings_repository.dart';
-import '../../player/domain/entity/subtitle_model.dart';
 import '../../player/data/subtitle_providers.dart';
 import '../../../core/network/dio_client_provider.dart';
+
+part 'player_settings_provider.g.dart';
 
 enum PlayerGesture { brightness, volume, none }
 
@@ -29,8 +30,7 @@ class PlayerSettings {
   final int subtitleBackgroundColor;
   final double subtitleBackgroundOpacity;
   final bool hardwareDecoding;
-  final String?
-  preferredPlayer; // null = internal, 'vlc' / 'mpv' etc. = external
+  final String? preferredPlayer; // null = internal, 'vlc' / 'mpv' etc. = external
   final int readaheadSeconds;
   final double subtitlePosition;
   /// Quality to prefer when on Wi-Fi. Default: 4K (best available).
@@ -131,7 +131,8 @@ class PlayerSettings {
   }
 }
 
-class PlayerSettingsNotifier extends AsyncNotifier<PlayerSettings> {
+@Riverpod(keepAlive: true)
+class PlayerSettingsNotifier extends _$PlayerSettingsNotifier {
   SettingsRepository get _repository => ref.read(settingsRepositoryProvider);
 
   @override
@@ -243,44 +244,37 @@ class PlayerSettingsNotifier extends AsyncNotifier<PlayerSettings> {
 
   Future<void> setLeftGesture(PlayerGesture g) async {
     await _repository.setPlayerSetting('player_gesture_left', g.name);
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(leftGesture: g));
+    state = AsyncData(state.requireValue.copyWith(leftGesture: g));
   }
 
   Future<void> setRightGesture(PlayerGesture g) async {
     await _repository.setPlayerSetting('player_gesture_right', g.name);
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(rightGesture: g));
+    state = AsyncData(state.requireValue.copyWith(rightGesture: g));
   }
 
   Future<void> setDoubleTapEnabled(bool val) async {
     await _repository.setPlayerSetting('player_double_tap', val);
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(doubleTapEnabled: val));
+    state = AsyncData(state.requireValue.copyWith(doubleTapEnabled: val));
   }
 
   Future<void> setSwipeSeekEnabled(bool val) async {
     await _repository.setPlayerSetting('player_swipe_seek', val);
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(swipeSeekEnabled: val));
+    state = AsyncData(state.requireValue.copyWith(swipeSeekEnabled: val));
   }
 
   Future<void> setSeekDuration(int seconds) async {
     await _repository.setPlayerSetting('player_seek_duration', seconds);
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(seekDuration: seconds));
+    state = AsyncData(state.requireValue.copyWith(seekDuration: seconds));
   }
 
   Future<void> setDefaultResizeMode(String mode) async {
     await _repository.setPlayerSetting('player_default_resize', mode);
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(defaultResizeMode: mode));
+    state = AsyncData(state.requireValue.copyWith(defaultResizeMode: mode));
   }
 
   Future<void> setHardwareDecoding(bool val) async {
     await _repository.setPlayerSetting('player_hw_dec', val);
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(hardwareDecoding: val));
+    state = AsyncData(state.requireValue.copyWith(hardwareDecoding: val));
   }
 
   Future<void> setSubtitleSettings(double size, int color, int bg, [double? opacity]) async {
@@ -290,50 +284,43 @@ class PlayerSettingsNotifier extends AsyncNotifier<PlayerSettings> {
     if (opacity != null) {
       await _repository.setPlayerSetting('player_sub_bg_opacity', opacity);
     }
-    final current = state.asData?.value ?? const PlayerSettings();
     state = AsyncData(
-      current.copyWith(
+      state.requireValue.copyWith(
         subtitleSize: size,
         subtitleColor: color,
         subtitleBackgroundColor: bg,
-        subtitleBackgroundOpacity: opacity ?? current.subtitleBackgroundOpacity,
+        subtitleBackgroundOpacity: opacity ?? state.requireValue.subtitleBackgroundOpacity,
       ),
     );
   }
 
-  /// Set the preferred external player (null = internal player)
   Future<void> setPreferredPlayer(String? playerId) async {
     if (playerId == null) {
       await _repository.setPlayerSetting('player_preferred', null);
-      final current = state.asData?.value ?? const PlayerSettings();
-      state = AsyncData(current.copyWith(clearPreferredPlayer: true));
+      state = AsyncData(state.requireValue.copyWith(clearPreferredPlayer: true));
     } else {
       await _repository.setPlayerSetting('player_preferred', playerId);
-      final current = state.asData?.value ?? const PlayerSettings();
-      state = AsyncData(current.copyWith(preferredPlayer: playerId));
+      state = AsyncData(state.requireValue.copyWith(preferredPlayer: playerId));
     }
   }
 
   Future<void> setReadaheadSeconds(int seconds) async {
     await _repository.setPlayerSetting('player_readahead', seconds);
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(readaheadSeconds: seconds));
+    state = AsyncData(state.requireValue.copyWith(readaheadSeconds: seconds));
   }
 
   Future<void> setSubtitlePosition(double pos) async {
     await _repository.setPlayerSetting('player_sub_pos', pos);
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(subtitlePosition: pos));
+    state = AsyncData(state.requireValue.copyWith(subtitlePosition: pos));
   }
 
   Future<void> setSubtitleBackgroundOpacity(double val) async {
     await _repository.setPlayerSetting('player_sub_bg_opacity', val);
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(subtitleBackgroundOpacity: val));
+    state = AsyncData(state.requireValue.copyWith(subtitleBackgroundOpacity: val));
   }
 
   Future<void> resetSubtitleSettings() async {
-    final current = state.asData?.value ?? const PlayerSettings();
+    final current = state.requireValue;
     final newState = current.copyWith(
       subtitleSize: 22.0,
       subtitleColor: 0xFFFFFFFF,
@@ -353,14 +340,12 @@ class PlayerSettingsNotifier extends AsyncNotifier<PlayerSettings> {
 
   Future<void> setWifiQuality(QualityPreference q) async {
     await _repository.setPlayerSetting('player_wifi_quality', q.name);
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(wifiQuality: q));
+    state = AsyncData(state.requireValue.copyWith(wifiQuality: q));
   }
 
   Future<void> setMobileQuality(QualityPreference q) async {
     await _repository.setPlayerSetting('player_mobile_quality', q.name);
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(mobileQuality: q));
+    state = AsyncData(state.requireValue.copyWith(mobileQuality: q));
   }
 
   Future<void> setOpenSubtitlesCredentials(String user, String pass, [String? key]) async {
@@ -369,8 +354,7 @@ class PlayerSettingsNotifier extends AsyncNotifier<PlayerSettings> {
     if (key != null) {
       await _repository.setPlayerSetting('player_os_key', key);
     }
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(osUsername: user, osPassword: pass, osApiKey: key));
+    state = AsyncData(state.requireValue.copyWith(osUsername: user, osPassword: pass, osApiKey: key));
   }
 
   Future<void> setSubDlAuth({required String apiKey, String? email, String? pass}) async {
@@ -378,48 +362,41 @@ class PlayerSettingsNotifier extends AsyncNotifier<PlayerSettings> {
     if (email != null) await _repository.setPlayerSetting('player_subdl_email', email);
     if (pass != null) await _repository.setPlayerSetting('player_subdl_pass', pass);
     
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(
+    state = AsyncData(state.requireValue.copyWith(
       subdlApiKey: apiKey,
-      subdlEmail: email ?? current.subdlEmail, 
-      subdlPassword: pass ?? current.subdlPassword,
+      subdlEmail: email ?? state.requireValue.subdlEmail, 
+      subdlPassword: pass ?? state.requireValue.subdlPassword,
     ));
   }
 
   Future<void> setSubDlApiKey(String key) async {
     await _repository.setPlayerSetting('player_subdl_key', key);
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(subdlApiKey: key));
+    state = AsyncData(state.requireValue.copyWith(subdlApiKey: key));
   }
 
   Future<void> setSubSourceApiKey(String key) async {
     await _repository.setPlayerSetting('player_ss_key', key);
-    final current = state.asData?.value ?? const PlayerSettings();
-    state = AsyncData(current.copyWith(subsourceApiKey: key));
+    state = AsyncData(state.requireValue.copyWith(subsourceApiKey: key));
   }
 
-  /// Verifies OpenSubtitles credentials without saving.
   Future<bool> verifyOpenSubtitles(String user, String pass, [String? key]) async {
     final dio = ref.read(dioClientProvider);
     final provider = OpenSubtitlesProvider(dio, username: user, password: pass, apiKey: key);
     return await provider.verifyCredentials();
   }
 
-  /// Verifies SubDL credentials via login and returns the fetched key or error.
   Future<({String? key, String? error})> verifySubDl(String email, String pass) async {
     final dio = ref.read(dioClientProvider);
     final provider = SubDLProvider(dio, email: email, password: pass);
     return await provider.login(email, pass);
   }
 
-  /// Verifies SubDL API Key without saving.
   Future<bool> verifySubDlKey(String key) async {
     final dio = ref.read(dioClientProvider);
     final provider = SubDLProvider(dio, apiKey: key);
     return await provider.verifyKey();
   }
 
-  /// Verifies SubSource API Key without saving.
   Future<bool> verifySubSource(String key) async {
     final dio = ref.read(dioClientProvider);
     final provider = SubSourceProvider(dio, apiKey: key);
@@ -441,8 +418,3 @@ class PlayerSettingsNotifier extends AsyncNotifier<PlayerSettings> {
     );
   }
 }
-
-final playerSettingsProvider =
-    AsyncNotifierProvider<PlayerSettingsNotifier, PlayerSettings>(
-      PlayerSettingsNotifier.new,
-    );

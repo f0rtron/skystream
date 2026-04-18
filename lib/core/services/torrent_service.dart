@@ -18,7 +18,9 @@ class TorrentService {
   String? _activeTorrentHash;
 
   Future<TorrentStatus?> getCurrentStatus() async {
-    if (_activeTorrentHash == null || !_isStarted) return null;
+    if (_activeTorrentHash == null || !_isStarted) {
+      return null;
+    }
     try {
       final statusMap = await _server.getTorrentStatus(_activeTorrentHash!);
       if (statusMap != null) {
@@ -31,7 +33,9 @@ class TorrentService {
   }
 
   Future<void> start() async {
-    if (_isStarted) return;
+    if (_isStarted) {
+      return;
+    }
     try {
       final port = await _server.start();
       if (port > 0) {
@@ -63,8 +67,9 @@ class TorrentService {
       );
 
       if (response.statusCode == 200) {
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint("TorrServer settings configured for streaming.");
+        }
       }
     } catch (e) {
       if (kDebugMode) debugPrint("Failed to configure TorrServer settings: $e");
@@ -77,28 +82,37 @@ class TorrentService {
   }
 
   Future<String?> getStreamUrl(String magnetLink) async {
-    if (!_isStarted) await start();
-    if (_serverUrl == null) return null;
+    if (!_isStarted) {
+      await start();
+    }
+    if (_serverUrl == null) {
+      return null;
+    }
 
     try {
       final String linkToAdd = await _prepareMagnetLink(magnetLink);
 
       // Add Torrent
       final hash = await _server.addTorrent(linkToAdd);
-      if (hash == null) throw Exception("Failed to add torrent");
+      if (hash == null) {
+        throw Exception("Failed to add torrent");
+      }
       _activeTorrentHash = hash;
 
       // Poll for Status to get Filename and File Index
       final fileInfo = await _pollForMetadata(hash);
-      if (fileInfo == null)
+      if (fileInfo == null) {
         throw Exception("Timed out waiting for torrent metadata");
+      }
 
       final int fileIndex = fileInfo['index'];
 
       // Construct URL
       // Try to fetch from playlist first
       final playlistStreamUrl = await _fetchPlaylistUrl(hash, fileIndex);
-      if (playlistStreamUrl != null) return playlistStreamUrl;
+      if (playlistStreamUrl != null) {
+        return playlistStreamUrl;
+      }
 
       // Fallback: Use "Simplified" format
       return "$_serverUrl/stream?link=$hash&index=$fileIndex&play";
@@ -124,7 +138,7 @@ class TorrentService {
   Future<Map<String, dynamic>?> _pollForMetadata(String hash) async {
     int attempts = 0;
     while (attempts < 120) {
-      await Future.delayed(const Duration(seconds: 1));
+      await Future<void>.delayed(const Duration(seconds: 1));
       final status = await _server.getTorrentStatus(hash);
 
       if (status != null && status['file_stats'] is List) {
@@ -138,7 +152,7 @@ class TorrentService {
     return null;
   }
 
-  Map<String, dynamic> _findSequentialVideoFile(List fileStats) {
+  Map<String, dynamic> _findSequentialVideoFile(List<dynamic> fileStats) {
     final videoExtensions = ['.mp4', '.mkv', '.avi', '.mov', '.webm'];
     final videoFiles = <Map<dynamic, dynamic>>[];
 
@@ -165,10 +179,11 @@ class TorrentService {
       if (selectedFile['id'] != null) {
         fileIndex = (selectedFile['id'] as num).toInt();
       }
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint(
           "Auto-selected first video file: ${selectedFile['path']} (Index: $fileIndex)",
         );
+      }
       return {'index': fileIndex, 'path': selectedFile['path']};
     }
 
@@ -176,7 +191,7 @@ class TorrentService {
     return _findLargestFile(fileStats);
   }
 
-  Map<String, dynamic> _findLargestFile(List fileStats) {
+  Map<String, dynamic> _findLargestFile(List<dynamic> fileStats) {
     Map<dynamic, dynamic>? largestFile;
     int maxLen = -1;
     int largestIndex = 0;
@@ -201,10 +216,11 @@ class TorrentService {
       if (largestFile['id'] != null) {
         fileIndex = (largestFile['id'] as num).toInt();
       }
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint(
           "Fallback to largest file: ${largestFile['path']} (Index: $fileIndex)",
         );
+      }
       return {'index': fileIndex, 'path': largestFile['path']};
     }
 
@@ -242,13 +258,16 @@ class TorrentService {
   }
 
   Future<String?> getStreamUrlForFileIndex(int index) async {
-    if (_serverUrl == null || _activeTorrentHash == null) return null;
+    if (_serverUrl == null || _activeTorrentHash == null) {
+      return null;
+    }
 
     // Use "Simplified" format for maximum compatibility
     final streamUrl =
         "$_serverUrl/stream?link=$_activeTorrentHash&index=$index&play";
-    if (kDebugMode)
+    if (kDebugMode) {
       debugPrint("Generated Stream URL for Index $index: $streamUrl");
+    }
     return streamUrl;
   }
 }

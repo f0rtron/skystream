@@ -3,11 +3,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'dart:isolate';
-import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
-import 'package:flutter_js/flutter_js.dart';
+import '../flutter_js.dart';
 
 import 'ffi.dart';
 
@@ -53,10 +53,10 @@ class QuickJsRuntime2 extends JavascriptRuntime {
     this.memoryLimit,
     this.hostPromiseRejectionHandler,
   }) {
-    this.init();
+    init();
   }
 
-  _ensureEngine() {
+  void _ensureEngine() {
     if (_rt != null) return;
     final rt = jsNewRuntime((ctx, type, ptr) {
       try {
@@ -97,7 +97,7 @@ class QuickJsRuntime2 extends JavascriptRuntime {
             if (hostPromiseRejectionHandler != null) {
               hostPromiseRejectionHandler!(err);
             } else {
-              print('unhandled promise rejection: $err');
+              debugPrint('unhandled promise rejection: $err');
             }
             return nullptr;
           case JSChannelType.FREE_OBJECT:
@@ -108,11 +108,11 @@ class QuickJsRuntime2 extends JavascriptRuntime {
         throw JSError('call channel with wrong type');
       } catch (e) {
         if (type == JSChannelType.FREE_OBJECT) {
-          print('DartObject release error: $e');
+          debugPrint('DartObject release error: $e');
           return nullptr;
         }
         if (type == JSChannelType.MODULE) {
-          print('host Promise Rejection Handler error: $e');
+          debugPrint('host Promise Rejection Handler error: $e');
           return nullptr;
         }
         final throwObj = _dartToJs(ctx, e);
@@ -134,7 +134,7 @@ class QuickJsRuntime2 extends JavascriptRuntime {
   }
 
   /// Free Runtime and Context which can be recreate when evaluate again.
-  close() {
+  void close() {
     final rt = _rt;
     final ctx = _ctx;
     _rt = null;
@@ -157,9 +157,9 @@ class QuickJsRuntime2 extends JavascriptRuntime {
     final ctx = _ctx;
     if (rt == null || ctx == null) return;
     while (true) {
-      int err = jsExecutePendingJob(rt);
+      final int err = jsExecutePendingJob(rt);
       if (err <= 0) {
-        if (err < 0) print(_parseJSException(ctx));
+        if (err < 0) debugPrint(_parseJSException(ctx).toString());
         break;
       }
     }
@@ -178,6 +178,7 @@ class QuickJsRuntime2 extends JavascriptRuntime {
   }
 
   /// Evaluate js script.
+  @override
   JsEvalResult evaluate(
     String command, {
     String? name,
@@ -195,7 +196,7 @@ class QuickJsRuntime2 extends JavascriptRuntime {
 
     if (jsIsException(jsval) != 0) {
       jsFreeValue(ctx, jsval);
-      JSError exception = _parseJSException(ctx);
+      final JSError exception = _parseJSException(ctx);
       return JsEvalResult(exception.toString(), exception, isError: true);
     }
     final result = _jsToDart(ctx, jsval);
@@ -219,7 +220,7 @@ class QuickJsRuntime2 extends JavascriptRuntime {
       port.close(); // stop dispatch loop
       close(); // close engine
     } on JSError catch (e) {
-      print(e); // catch reference leak exception
+      debugPrint(e.toString()); // catch reference leak exception
     }
   }
 
@@ -230,13 +231,13 @@ class QuickJsRuntime2 extends JavascriptRuntime {
 
   @override
   int executePendingJob() {
-    this.dispatch();
+    dispatch();
     return 0;
   }
 
   @override
   String getEngineInstanceId() {
-    return this.hashCode.toString();
+    return hashCode.toString();
   }
 
   @override
@@ -254,10 +255,10 @@ class QuickJsRuntime2 extends JavascriptRuntime {
         if (channelFunctions.containsKey(channelName)) {
           return channelFunctions[channelName]!.call(jsonDecode(message));
         } else {
-          print('No channel $channelName registered');
+          debugPrint('No channel $channelName registered');
         }
         if (JavascriptRuntime.debugEnabled) {
-          print('CHANNEL: $channelName - Message: $message');
+          debugPrint('CHANNEL: $channelName - Message: $message');
         }
       }
     ]);

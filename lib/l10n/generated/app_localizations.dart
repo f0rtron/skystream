@@ -2358,6 +2358,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open link'**
   String get openLink;
+
+  /// No description provided for @diagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics'**
+  String get diagnostics;
+
+  /// No description provided for @viewLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'View Logs'**
+  String get viewLogs;
+
+  /// No description provided for @viewLogsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'View application activity & errors'**
+  String get viewLogsSubtitle;
 }
 
 class _AppLocalizationsDelegate

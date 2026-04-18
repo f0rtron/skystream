@@ -1,6 +1,8 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../discover/data/tmdb_provider.dart';
 import '../../discover/data/language_provider.dart';
+
+part 'tmdb_details_controller.g.dart';
 
 class TmdbDetailsState {
   final int selectedSeason;
@@ -19,13 +21,10 @@ class TmdbDetailsState {
   }
 }
 
-class TmdbDetailsController extends Notifier<TmdbDetailsState> {
-  final int movieId;
-
-  TmdbDetailsController(this.movieId);
-
+@riverpod
+class TmdbDetailsController extends _$TmdbDetailsController {
   @override
-  TmdbDetailsState build() {
+  TmdbDetailsState build(int movieId) {
     // Watch language so we re-fetch if it changes
     final lang = ref.watch(languageProvider);
 
@@ -37,7 +36,7 @@ class TmdbDetailsController extends Notifier<TmdbDetailsState> {
     return TmdbDetailsState(selectedSeason: 1, episodesFuture: future);
   }
 
-  void fetchEpisodes(int season) async {
+  Future<void> fetchEpisodes(int season) async {
     final lang = ref.read(languageProvider);
 
     final future = ref
@@ -47,8 +46,3 @@ class TmdbDetailsController extends Notifier<TmdbDetailsState> {
     state = state.copyWith(selectedSeason: season, episodesFuture: future);
   }
 }
-
-final tmdbDetailsControllerProvider = NotifierProvider.autoDispose
-    .family<TmdbDetailsController, TmdbDetailsState, int>(
-      TmdbDetailsController.new,
-    );

@@ -1211,4 +1211,13 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get openLink => 'Открыть ссылку';
+
+  @override
+  String get diagnostics => 'Диагностика';
+
+  @override
+  String get viewLogs => 'Просмотр журналов';
+
+  @override
+  String get viewLogsSubtitle => 'Просмотр активности и ошибок приложения';
 }

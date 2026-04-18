@@ -1,16 +1,14 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/storage/settings_repository.dart';
 
-final languageProvider = NotifierProvider<LanguageNotifier, String>(
-  () => LanguageNotifier(),
-);
+part 'language_provider.g.dart';
 
-class LanguageNotifier extends Notifier<String> {
+@Riverpod(keepAlive: true)
+class Language extends _$Language {
   @override
   String build() {
     final settings = ref.read(settingsRepositoryProvider);
-    final saved = settings.getLanguage();
-    return saved;
+    return settings.getLanguage();
   }
 
   Future<void> setLanguage(String language) async {
@@ -27,7 +25,8 @@ class LanguageOption {
   const LanguageOption(this.code, this.name, this.nativeName);
 }
 
-final languageListProvider = Provider<List<LanguageOption>>((ref) {
+@Riverpod(keepAlive: true)
+List<LanguageOption> languageList(Ref ref) {
   return const [
     LanguageOption('en-US', 'English', 'English'),
     LanguageOption('hi-IN', 'Hindi', 'हिंदी'),
@@ -46,4 +45,4 @@ final languageListProvider = Provider<List<LanguageOption>>((ref) {
     LanguageOption('ko-KR', 'Korean', '한국어'),
     LanguageOption('ru-RU', 'Russian', 'Русский'),
   ];
-});
+}

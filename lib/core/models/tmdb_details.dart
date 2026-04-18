@@ -71,10 +71,10 @@ class TmdbDetails extends MultimediaItem {
     final isMovie = mType == 'movie';
 
     var title = json['title'] != null || json['name'] != null
-        ? _unescape.convert(json['title'] ?? json['name'])
+        ? _unescape.convert((json['title'] ?? json['name']) as String)
         : 'Unknown';
     var overview = json['overview'] != null
-        ? _unescape.convert(json['overview'])
+        ? _unescape.convert(json['overview'] as String)
         : '';
 
     // Use English translation if available to avoid empty fields
@@ -89,11 +89,11 @@ class TmdbDetails extends MultimediaItem {
       if (enTrans.isNotEmpty && enTrans['data'] != null) {
         final enTitle = enTrans['data']['title'] ?? enTrans['data']['name'];
         if (enTitle != null && enTitle.toString().isNotEmpty) {
-          title = _unescape.convert(enTitle);
+          title = _unescape.convert(enTitle as String);
         }
         final enOverview = enTrans['data']['overview'];
         if (enOverview != null && enOverview.toString().isNotEmpty) {
-          overview = _unescape.convert(enOverview);
+          overview = _unescape.convert(enOverview as String);
         }
       }
     }
@@ -112,7 +112,7 @@ class TmdbDetails extends MultimediaItem {
     if (isMovie) {
       final releaseDates = json['release_dates'] != null
           ? json['release_dates']['results'] as List
-          : [];
+          : <dynamic>[];
       if (releaseDates.isNotEmpty) {
         final usRelease = releaseDates.firstWhere(
           (r) => r['iso_3166_1'] == 'US',
@@ -128,7 +128,7 @@ class TmdbDetails extends MultimediaItem {
     } else {
       final contentRatings = json['content_ratings'] != null
           ? json['content_ratings']['results'] as List
-          : [];
+          : <dynamic>[];
       if (contentRatings.isNotEmpty) {
         final usRating = contentRatings.firstWhere(
           (r) => r['iso_3166_1'] == 'US',
@@ -148,8 +148,8 @@ class TmdbDetails extends MultimediaItem {
           ).map((s) => TmdbSeason.fromJson(s)).toList()
         : <TmdbSeason>[];
 
-    final credits = json['credits'] ?? {};
-    final castList = List<Map<String, dynamic>>.from(credits['cast'] ?? []);
+    final credits = json['credits'] ?? <String, dynamic>{};
+        final castList = List<Map<String, dynamic>>.from(credits['cast'] ?? <dynamic>[]);
     final cast = castList.map((c) => TmdbCast.fromJson(c)).toList();
 
     // Find Director / Creator
@@ -164,7 +164,7 @@ class TmdbDetails extends MultimediaItem {
     } else {
       final creators = json['created_by'] as List?;
       if (creators != null && creators.isNotEmpty) {
-        director = creators.map((c) => c['name']).join(', ');
+        director = creators.map((c) => (c as Map)['name'] as String).join(', ');
       }
     }
 
@@ -187,10 +187,10 @@ class TmdbDetails extends MultimediaItem {
         .map((p) => TmdbProductionCompany.fromJson(p))
         .toList();
 
-    final tmdbStatus = json['status'] ?? 'Unknown';
+    final tmdbStatus = (json['status'] as String?) ?? 'Unknown';
     final budget = json['budget'] as num? ?? 0;
     final revenue = json['revenue'] as num? ?? 0;
-    final tagline = json['tagline'] ?? '';
+    final tagline = (json['tagline'] as String?) ?? '';
     final originCountry = (json['origin_country'] as List?)?.join(', ') ?? 'US';
     final originalLanguage =
         (json['original_language'] as String?)?.toUpperCase() ?? 'EN';
@@ -204,7 +204,7 @@ class TmdbDetails extends MultimediaItem {
       releaseDate: date,
       voteAverage: voteAvg,
       overview: overview,
-      logoUrl: json['logo_url'], // Might be populated before/after this
+      logoUrl: json['logo_url'] as String?, // Might be populated before/after this
       genresStr: genresStr,
       runtime: (runtime as num).toInt(),
       certification: certification,
@@ -242,11 +242,11 @@ class TmdbSeason {
 
   factory TmdbSeason.fromJson(Map<String, dynamic> json) {
     return TmdbSeason(
-      seasonNumber: json['season_number'] ?? 0,
-      name: json['name'] != null ? _unescape.convert(json['name']) : '',
-      posterPath: json['poster_path'],
-      episodeCount: json['episode_count'] ?? 0,
-      airDate: json['air_date'],
+      seasonNumber: (json['season_number'] as int?) ?? 0,
+      name: json['name'] != null ? _unescape.convert(json['name'] as String) : '',
+      posterPath: json['poster_path'] as String?,
+      episodeCount: (json['episode_count'] as int?) ?? 0,
+      airDate: json['air_date'] as String?,
     );
   }
 
@@ -263,11 +263,11 @@ class TmdbCast {
 
   factory TmdbCast.fromJson(Map<String, dynamic> json) {
     return TmdbCast(
-      name: json['name'] != null ? _unescape.convert(json['name']) : 'Unknown',
+      name: json['name'] != null ? _unescape.convert(json['name'] as String) : 'Unknown',
       character: json['character'] != null
-          ? _unescape.convert(json['character'])
+          ? _unescape.convert(json['character'] as String)
           : '',
-      profilePath: json['profile_path'],
+      profilePath: json['profile_path'] as String?,
     );
   }
 
@@ -284,9 +284,9 @@ class TmdbVideo {
 
   factory TmdbVideo.fromJson(Map<String, dynamic> json) {
     return TmdbVideo(
-      key: json['key'] ?? '',
-      type: json['type'] ?? '',
-      name: json['name'] ?? 'Trailer',
+      key: (json['key'] as String?) ?? '',
+      type: (json['type'] as String?) ?? '',
+      name: (json['name'] as String?) ?? 'Trailer',
     );
   }
 }
@@ -299,8 +299,8 @@ class TmdbProductionCompany {
 
   factory TmdbProductionCompany.fromJson(Map<String, dynamic> json) {
     return TmdbProductionCompany(
-      name: json['name'] ?? '',
-      logoPath: json['logo_path'],
+      name: (json['name'] as String?) ?? '',
+      logoPath: json['logo_path'] as String?,
     );
   }
 

@@ -105,7 +105,7 @@ class SettingsTile extends StatelessWidget {
             height: 1,
             indent: 56,
             endIndent: 16,
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.8),
           ),
       ],
     );

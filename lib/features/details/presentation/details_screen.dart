@@ -14,6 +14,7 @@ import 'package:virtual_mouse/virtual_mouse.dart';
 import 'package:skystream/core/providers/device_info_provider.dart';
 
 import '../../library/presentation/library_provider.dart';
+import '../../library/presentation/library_state.dart';
 
 import 'details_controller.dart';
 import "widgets/details_layout_widgets.dart";
@@ -56,7 +57,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
       final item = nextState.details.value!;
       _didTriggerAutoPlay = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
+        if (!context.mounted) return;
         ref
             .read(detailsControllerProvider(widget.item.url).notifier)
             .handlePlayPress(context, item);
@@ -64,7 +65,9 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
     });
     final isBookmarked = ref.watch(
       libraryProvider.select(
-        (items) => items.any((i) => i.url == widget.item.url),
+        (state) =>
+            state is LibrarySuccess &&
+            state.items.any((i) => i.url == widget.item.url),
       ),
     );
     final libraryNotifier = ref.read(libraryProvider.notifier);
@@ -297,7 +300,6 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                           ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 8),
-                    const SizedBox(height: 8),
                     ExpandableText(
                       text: item.description ?? l10n.noDescription,
                       maxLines: 10,
@@ -360,10 +362,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                 RecommendationsCarousel(
                   items: item.recommendations!,
                   onItemTap: (rec) {
-                    context.push(
-                      '/details',
-                      extra: DetailsRouteExtra(item: rec),
-                    );
+                    DetailsRoute($extra: DetailsRouteExtra(item: rec)).push(context);
                   },
                 ),
               ],
@@ -462,7 +461,6 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
-              const SizedBox(height: 8),
               ExpandableText(
                 text: item.description ?? l10n.noDescription,
                 maxLines: 4,
@@ -517,10 +515,7 @@ class _DetailsScreenState extends ConsumerState<DetailsScreen> {
                 RecommendationsCarousel(
                   items: item.recommendations!,
                   onItemTap: (rec) {
-                    context.push(
-                      '/details',
-                      extra: DetailsRouteExtra(item: rec),
-                    );
+                    DetailsRoute($extra: DetailsRouteExtra(item: rec)).push(context);
                   },
                 ),
               ],

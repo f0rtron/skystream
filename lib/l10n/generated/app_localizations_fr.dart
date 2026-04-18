@@ -1224,4 +1224,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get openLink => 'Ouvrir le lien';
+
+  @override
+  String get diagnostics => 'Diagnostics';
+
+  @override
+  String get viewLogs => 'Voir les journaux';
+
+  @override
+  String get viewLogsSubtitle =>
+      'Afficher l\'activité et les erreurs de l\'application';
 }

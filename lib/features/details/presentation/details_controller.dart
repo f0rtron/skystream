@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:collection/collection.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../core/extensions/base_provider.dart';
@@ -12,6 +12,8 @@ import '../../library/presentation/history_provider.dart';
 import 'playback_launcher.dart';
 import '../../../core/services/download_service.dart';
 import 'downloaded_file_provider.dart';
+
+part 'details_controller.g.dart';
 
 class DetailsState {
   final AsyncValue<MultimediaItem?> details;
@@ -65,12 +67,10 @@ class DetailsState {
   }
 }
 
-class DetailsController extends Notifier<DetailsState> {
-  final String itemUrl;
-  DetailsController(this.itemUrl);
-
+@riverpod
+class DetailsController extends _$DetailsController {
   @override
-  DetailsState build() {
+  DetailsState build(String itemUrl) {
     ref.listen(activeDownloadsProvider, (prev, next) {
       final details = state.details.asData?.value;
       if (details == null) return;
@@ -142,15 +142,12 @@ class DetailsController extends Notifier<DetailsState> {
     }
   }
 
-  /// Loads details for [item]. Auto-play is not handled here; the caller
-  /// (e.g. DetailsScreen) should trigger play after load completes when
-  /// [autoPlay] is true, using [handlePlayPress] with its BuildContext.
   Future<void> loadDetails(MultimediaItem item, {bool autoPlay = false}) async {
     if (state.details is AsyncData) return;
 
     state = state.copyWith(details: const AsyncLoading());
 
-    final active = ref.read(activeProviderStateProvider);
+    final active = ref.read(activeProviderProvider);
     final manager = ref.read(extensionManagerProvider.notifier);
 
     try {
@@ -228,14 +225,10 @@ class DetailsController extends Notifier<DetailsState> {
       return episodes;
     }
 
-    // Episodes are now automatically sorted by the MultimediaItem constructor
-
-    // Determine isMovie based on contentType if available
     bool isMovie =
         contextItem.contentType == MultimediaContentType.movie ||
         contextItem.contentType == MultimediaContentType.livestream;
 
-    // Fallback: If not explicitly movie/livestream, check episode count for legacy support
     if (!isMovie && episodes.length == 1) {
       isMovie = true;
     }
@@ -250,7 +243,7 @@ class DetailsController extends Notifier<DetailsState> {
     }
 
     final Map<int, List<Episode>> seasonMap = {};
-    for (var ep in episodes) {
+    for (final ep in episodes) {
       final season = ep.season > 0 ? ep.season : 1;
       seasonMap.putIfAbsent(season, () => []).add(ep);
     }
@@ -261,14 +254,12 @@ class DetailsController extends Notifier<DetailsState> {
 
     final historyRepo = ref.read(historyRepositoryProvider);
 
-    // Find target episode and auto-select season
     final allEpisodes = episodes;
     final lastEpisodeUrl = historyRepo.getLastEpisodeUrl(contextItem.url);
 
     if (lastEpisodeUrl != null) {
       int lastIndex = allEpisodes.indexWhere((e) => e.url == lastEpisodeUrl);
 
-      // Fallback: Match by season/episode numbers if URL matching fails
       if (lastIndex == -1) {
         final mainHistoryItem = ref
             .read(watchHistoryProvider)
@@ -304,7 +295,7 @@ class DetailsController extends Notifier<DetailsState> {
           if (lastIndex + 1 < allEpisodes.length) {
             targetEpisode = allEpisodes[lastIndex + 1];
           } else {
-            targetEpisode = allEpisodes[lastIndex]; // Stay on last if finished
+            targetEpisode = allEpisodes[lastIndex];
           }
         } else {
           targetEpisode = allEpisodes[lastIndex];
@@ -314,15 +305,12 @@ class DetailsController extends Notifier<DetailsState> {
 
     targetEpisode ??= allEpisodes.first;
 
-    // Auto-select season based on target episode ONLY if initial load
-    // or if we haven't manually switched seasons yet (using state.selectedSeason as 1 as a weak hint)
     if (isInitial && targetEpisode.season > 0) {
       selectedSeason = targetEpisode.season;
     } else {
       selectedSeason = state.selectedSeason;
     }
 
-    // Default DubStatus for mixed series (No "All" anymore)
     DubStatus selectedDubStatus = state.selectedDubStatus;
     if (isInitial) {
       final hasSub = episodes.any((e) => e.dubStatus == DubStatus.subbed);
@@ -401,8 +389,3 @@ class DetailsController extends Notifier<DetailsState> {
     }
   }
 }
-
-final detailsControllerProvider = NotifierProvider.autoDispose
-    .family<DetailsController, DetailsState, String>(
-      (url) => DetailsController(url),
-    );

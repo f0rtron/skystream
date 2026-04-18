@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../storage/settings_repository.dart';
 
-final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
-  ThemeModeNotifier.new,
-);
+part 'theme_provider.g.dart';
 
-class ThemeModeNotifier extends Notifier<ThemeMode> {
+@Riverpod(keepAlive: true)
+class AppThemeMode extends _$AppThemeMode {
   late SettingsRepository _repository;
 
   @override
@@ -16,7 +15,7 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
     return _getThemeMode(saved);
   }
 
-  void setThemeMode(ThemeMode mode) async {
+  Future<void> setThemeMode(ThemeMode mode) async {
     state = mode;
     await _repository.saveThemeMode(mode.name);
   }

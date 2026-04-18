@@ -280,10 +280,10 @@ final class JSStaticValue extends Struct {
   external int attributes;
 
   void setValue(JSStaticValueStruct struct) {
-    this.name = struct.name;
-    this.setProperty = struct.setProperty;
-    this.getProperty = struct.getProperty;
-    this.attributes = struct.attributes;
+    name = struct.name;
+    setProperty = struct.setProperty;
+    getProperty = struct.getProperty;
+    attributes = struct.attributes;
   }
 }
 
@@ -314,10 +314,10 @@ class JSStaticValueStruct {
     Pointer<NativeFunction<JSObjectGetPropertyCallback>>? getProperty,
     Pointer<NativeFunction<JSObjectSetPropertyCallback>>? setProperty,
     int attributes = JSPropertyAttributes.kJSPropertyAttributeNone,
-  })  : this.name = name ?? nullptr,
-        this.getProperty = getProperty ?? nullptr,
-        this.setProperty = setProperty ?? nullptr,
-        this.attributes = attributes;
+  })  : name = name ?? nullptr,
+        getProperty = getProperty ?? nullptr,
+        setProperty = setProperty ?? nullptr,
+        attributes = attributes;
 }
 
 /// struct JSStaticFunction
@@ -335,9 +335,9 @@ final class JSStaticFunction extends Struct {
   external int attributes;
 
   void setValue(JSStaticFunctionStruct struct) {
-    this.name = struct.name;
-    this.callAsFunction = struct.callAsFunction;
-    this.attributes = struct.attributes;
+    name = struct.name;
+    callAsFunction = struct.callAsFunction;
+    attributes = struct.attributes;
   }
 }
 
@@ -366,9 +366,9 @@ class JSStaticFunctionStruct {
     Pointer<Utf8>? name,
     Pointer<NativeFunction<JSObjectCallAsFunctionCallback>>? callAsFunction,
     int attributes = JSPropertyAttributes.kJSPropertyAttributeNone,
-  })  : this.name = name ?? nullptr,
-        this.callAsFunction = callAsFunction ?? nullptr,
-        this.attributes = attributes;
+  })  : name = name ?? nullptr,
+        callAsFunction = callAsFunction ?? nullptr,
+        attributes = attributes;
 }
 
 /// struct JSStaticFunction

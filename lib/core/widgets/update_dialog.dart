@@ -10,7 +10,7 @@ class UpdateDialog extends ConsumerWidget {
   const UpdateDialog({super.key, required this.release});
 
   static void show(BuildContext context, GithubRelease release) {
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (context) => UpdateDialog(release: release),

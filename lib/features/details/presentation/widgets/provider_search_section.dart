@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:skystream/core/domain/entity/multimedia_item.dart';
 import 'package:skystream/core/extensions/extension_manager.dart';
 import 'package:skystream/core/utils/image_fallbacks.dart';
@@ -15,18 +15,20 @@ import '../../../../shared/widgets/shimmer_placeholder.dart';
 import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 import 'package:skystream/l10n/generated/app_localizations.dart';
 
+part 'provider_search_section.g.dart';
+
 // Delegates to the shared searchAllProviders() function — no duplicated
 // fan-out, mapping, or filtering logic.
-final _providerSearchProvider = StreamProvider.family
-    .autoDispose<SearchAggregateState, String>((ref, query) {
-      ref.watch(extensionManagerProvider);
-      final manager = ref.read(extensionManagerProvider.notifier);
+@riverpod
+Stream<SearchAggregateState> providerSearch(Ref ref, String query) {
+  ref.watch(extensionManagerProvider);
+  final manager = ref.read(extensionManagerProvider.notifier);
 
-      var cancelled = false;
-      ref.onDispose(() => cancelled = true);
+  var cancelled = false;
+  ref.onDispose(() => cancelled = true);
 
-      return searchAllProviders(query, manager, isCancelled: () => cancelled);
-    });
+  return searchAllProviders(ref, query, manager, isCancelled: () => cancelled);
+}
 
 class ProviderSearchSection extends ConsumerStatefulWidget {
   final String query;
@@ -65,7 +67,7 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
     if (widget.query.isEmpty) return const SizedBox.shrink();
 
     final plugins = ref.watch(extensionManagerProvider);
-    final searchAsync = ref.watch(_providerSearchProvider(widget.query));
+    final searchAsync = ref.watch(providerSearchProvider(widget.query));
 
     Widget content;
     if (plugins.isEmpty) {
@@ -86,8 +88,8 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
       content = searchAsync.when(
         data: (state) {
           final allItems = <Map<String, dynamic>>[];
-          for (var pResult in state.results) {
-            for (var item in pResult.results) {
+          for (final pResult in state.results) {
+            for (final item in pResult.results) {
               allItems.add({
                 'item': item,
                 'providerName': pResult.providerName,
@@ -156,10 +158,8 @@ class _ProviderSearchSectionState extends ConsumerState<ProviderSearchSection> {
                                 )
                               : item.contentType,
                         );
-                        context.push(
-                          '/details',
-                          extra: DetailsRouteExtra(item: enrichedItem),
-                        );
+                        DetailsRoute($extra: DetailsRouteExtra(item: enrichedItem))
+                            .push(context);
                       },
                       child: SizedBox(
                         width: 220,

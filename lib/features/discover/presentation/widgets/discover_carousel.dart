@@ -1,6 +1,5 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -188,14 +187,11 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
     // Standardize media type mapping (prevents TMDB ID collisions)
     final String mediaType = movie.tmdbMediaType;
 
-    context.push(
-      '/tmdb-details',
-      extra: TmdbDetailsRouteExtra(
-        movieId: movie.id,
-        mediaType: mediaType,
-        heroTag: 'hero_${movie.id}',
-      ),
-    );
+    TmdbDetailsRoute(
+      movieId: movie.id,
+      mediaType: mediaType,
+      heroTag: 'hero_${movie.id}',
+    ).push(context);
   }
 
   Widget _buildCarouselItem(
@@ -507,7 +503,7 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
 
   Widget _buildTitleFallback(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: LayoutConstants.spacingMd),
+      padding: const EdgeInsets.only(bottom: LayoutConstants.spacingXs),
       child: Text(
         title.toUpperCase(),
         textAlign: TextAlign.center,

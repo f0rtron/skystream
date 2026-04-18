@@ -194,7 +194,7 @@ class JsEngineService {
               );
             }
           })
-          .catchError((e) {
+          .catchError((Object e) {
             final Map<String, dynamic> data = args is Map
                 ? Map<String, dynamic>.from(args)
                 : jsonDecode(args.toString());
@@ -299,7 +299,7 @@ class JsEngineService {
                   "_resolveDartAsync('$callbackId', ${jsonEncode(id)}, false)",
                 );
               })
-              .catchError((e) {
+              .catchError((Object e) {
                 _runtime.evaluate(
                   "_resolveDartAsync('$callbackId', ${jsonEncode(e.toString())}, true)",
                 );
@@ -433,10 +433,13 @@ class JsEngineService {
           );
         }
       } catch (e) {
-        debugPrint("Crypto Error (AES): $e");
+        if (kDebugMode) debugPrint("Crypto Error (AES): $e");
         if (callbackId != null) {
+          final String errorMsg = e is FormatException
+              ? "Invalid base64 format (padding or characters)"
+              : e.toString();
           _runtime.evaluate(
-            "_resolveDartAsync('$callbackId', ${jsonEncode(e.toString())}, true)",
+            "_resolveDartAsync('$callbackId', ${jsonEncode(errorMsg)}, true)",
           );
         }
       }
@@ -489,7 +492,7 @@ class JsEngineService {
             ? Map<String, dynamic>.from(args)
             : jsonDecode(args.toString());
         final String? nodeId = data['nodeId'];
-        final List queries = data['queries'] as List? ?? [];
+        final List<dynamic> queries = data['queries'] as List<dynamic>? ?? [];
 
         if (nodeId == null) return null;
         final node = _domRegistry[nodeId];
@@ -535,7 +538,7 @@ class JsEngineService {
             "_resolveDartAsync('$callbackId', ${jsonEncode(result)}, false)",
           );
         }
-      }).catchError((e) {
+      }).catchError((Object e) {
         if (callbackId != null) {
           _runtime.evaluate(
             "_resolveDartAsync('$callbackId', ${jsonEncode(e.toString())}, true)",
@@ -561,12 +564,12 @@ class JsEngineService {
         final regex = RegExp(pattern, caseSensitive: caseSensitive);
         final matches = regex.allMatches(text);
         return matches
-            .map((m) => m.group(group))
-            .where((g) => g != null)
+            .map<String?>((m) => m.group(group))
+            .whereType<String>()
             .toList();
       } catch (e) {
         if (kDebugMode) debugPrint('[Regex Bridge Error] $e');
-        return [];
+        return <String>[];
       }
     });
 
@@ -579,7 +582,7 @@ class JsEngineService {
             ? Map<String, dynamic>.from(args)
             : jsonDecode(args.toString());
         final String jsonStr = data['json'] ?? '{}';
-        final List paths = data['paths'] as List? ?? [];
+        final List<dynamic> paths = data['paths'] as List<dynamic>? ?? [];
 
         final dynamic parsed = jsonDecode(jsonStr);
         final Map<String, dynamic> result = {};
@@ -1037,12 +1040,11 @@ class JsEngineService {
     final requestId =
         "req_${DateTime.now().microsecondsSinceEpoch.toString().substring(10)}";
     try {
-      Map<String, dynamic> req;
-      if (args is Map) {
-        req = Map<String, dynamic>.from(args);
-      } else {
-        req = jsonDecode(args);
+      final dynamic decoded = args is Map ? args : jsonDecode(args.toString());
+      if (decoded is! Map) {
+        throw Exception("Invalid HTTP request args: $decoded");
       }
+      final Map<String, dynamic> req = Map<String, dynamic>.from(decoded);
 
       final String method = req['method'] ?? 'GET';
       final String url = req['url'];
@@ -1059,7 +1061,7 @@ class JsEngineService {
 
       if (kDebugMode) debugPrint("[JS HTTP] $method $url ($requestId)");
 
-      final response = await _dio.request(
+      final response = await _dio.request<String>(
         url,
         data: body,
         cancelToken: _currentCancelToken,
@@ -1073,10 +1075,11 @@ class JsEngineService {
         ),
       );
 
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint(
           "[JS HTTP] Back $url ($requestId) -> ${response.statusCode}",
         );
+      }
 
       final responseHeaders = response.headers.map.map(
         (k, v) => MapEntry(k, v.join(',')),
@@ -1264,6 +1267,7 @@ class JsEngineService {
           // Keep _currentCancelToken pointing at the cancelled token so
           // subsequent _handleHttp calls for this invocation see isCancelled.
           // It will be replaced when the next invokeAsync starts.
+          _decrementAsync();
           throw TimeoutException('Timeout executing $functionName');
         },
       );

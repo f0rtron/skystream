@@ -2,7 +2,9 @@ import 'dart:ui' as ui;
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'device_info_provider.g.dart';
 
 class DeviceProfile {
   final bool isTv;
@@ -20,7 +22,8 @@ class DeviceProfile {
   });
 }
 
-final deviceProfileProvider = FutureProvider<DeviceProfile>((ref) async {
+@riverpod
+Future<DeviceProfile> deviceProfile(Ref ref) async {
   bool isTv = false;
   bool isTablet = false;
   bool isDesktopOS = false;
@@ -49,4 +52,4 @@ final deviceProfileProvider = FutureProvider<DeviceProfile>((ref) async {
     isTablet: isTablet,
     isDesktopOS: isDesktopOS,
   );
-});
+}

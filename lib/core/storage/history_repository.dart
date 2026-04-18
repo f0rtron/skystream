@@ -1,6 +1,8 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/entity/multimedia_item.dart';
 import 'storage_service.dart';
+
+part 'history_repository.g.dart';
 
 class HistoryItem {
   final MultimediaItem item;
@@ -30,31 +32,32 @@ class HistoryItem {
   factory HistoryItem.fromMap(Map<String, dynamic> map) {
     return HistoryItem(
       item: MultimediaItem(
-        title: map['title'] ?? '',
-        url: map['url'] ?? '',
-        posterUrl: map['posterUrl'] ?? '',
-        bannerUrl: map['bannerUrl'],
-        description: map['description'],
+        title: (map['title'] as String?) ?? '',
+        url: (map['url'] as String?) ?? '',
+        posterUrl: (map['posterUrl'] as String?) ?? '',
+        bannerUrl: map['bannerUrl'] as String?,
+        description: map['description'] as String?,
         contentType: MultimediaItem.parseContentType(
-          map['type'] ?? map['contentType'] ?? 'movie',
+          (map['type'] as String?) ?? (map['contentType'] as String?) ?? 'movie',
         ),
-        provider: map['provider'],
+        provider: map['provider'] as String?,
       ),
-      position: map['position'] ?? 0,
-      duration: map['duration'] ?? 0,
-      lastStreamUrl: map['lastStreamUrl'],
-      lastEpisodeUrl: map['lastEpisodeUrl'],
-      season: map['season'],
-      episode: map['episode'],
-      episodeTitle: map['episodeTitle'],
-      timestamp: map['timestamp'] ?? 0,
+      position: (map['position'] as int?) ?? 0,
+      duration: (map['duration'] as int?) ?? 0,
+      lastStreamUrl: map['lastStreamUrl'] as String?,
+      lastEpisodeUrl: map['lastEpisodeUrl'] as String?,
+      season: map['season'] as int?,
+      episode: map['episode'] as int?,
+      episodeTitle: map['episodeTitle'] as String?,
+      timestamp: (map['timestamp'] as int?) ?? 0,
     );
   }
 }
 
-final historyRepositoryProvider = Provider<HistoryRepository>((ref) {
+@Riverpod(keepAlive: true)
+HistoryRepository historyRepository(Ref ref) {
   return HistoryRepository(ref.watch(storageServiceProvider));
-});
+}
 
 class HistoryRepository {
   final StorageService _storageService;

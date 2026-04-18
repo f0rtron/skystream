@@ -29,7 +29,7 @@ class DownloadManagementDialog extends HookConsumerWidget {
     File file, {
     Episode? episode,
   }) async {
-    return showDialog(
+    return showDialog<void>(
       context: context,
       builder: (context) =>
           DownloadManagementDialog(item: item, file: file, episode: episode),

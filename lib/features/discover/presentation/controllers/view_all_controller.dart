@@ -1,9 +1,11 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../data/tmdb_provider.dart';
 import '../../data/language_provider.dart';
 import '../../data/filter_provider.dart';
 import '../view_all_screen.dart'; // for ViewAllCategory
+
+part 'view_all_controller.g.dart';
 
 class ViewAllState {
   final ViewAllCategory? category;
@@ -37,16 +39,13 @@ class ViewAllState {
   }
 }
 
-class ViewAllController extends Notifier<ViewAllState> {
-  final ViewAllCategory categoryArg;
-
-  ViewAllController(this.categoryArg);
-
+@riverpod
+class ViewAllController extends _$ViewAllController {
   @override
-  ViewAllState build() {
+  ViewAllState build(ViewAllCategory category) {
     ref.watch(languageProvider);
     ref.watch(discoverFilterProvider);
-    return ViewAllState(category: categoryArg);
+    return ViewAllState(category: category);
   }
 
   void init(List<MultimediaItem> initialItems) {
@@ -68,7 +67,7 @@ class ViewAllController extends Notifier<ViewAllState> {
       final nextPage = isEmpty ? 1 : state.page + 1;
       List<MultimediaItem> newItems = [];
 
-      switch (categoryArg) {
+      switch (category) {
         case ViewAllCategory.popularMovies:
           newItems = await tmdbService.getPopularMovies(
             language: lang,
@@ -157,8 +156,3 @@ class ViewAllController extends Notifier<ViewAllState> {
     }
   }
 }
-
-final viewAllControllerProvider = NotifierProvider.autoDispose
-    .family<ViewAllController, ViewAllState, ViewAllCategory>(
-      (category) => ViewAllController(category),
-    );

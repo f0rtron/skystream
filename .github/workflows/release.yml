@@ -69,6 +69,7 @@ jobs:
         run: |
           flutter pub get
           flutter gen-l10n
+          dart run build_runner build --delete-conflicting-outputs
 
       # Remove desktop TorrServer binaries to reduce APK size by ~170MB
       # These are only needed for macOS, Windows, and Linux
@@ -146,6 +147,7 @@ jobs:
         run: |
           flutter pub get
           flutter gen-l10n
+          dart run build_runner build --delete-conflicting-outputs
         
       - name: Build iOS (No Codesign)
         run: |
@@ -193,6 +195,7 @@ jobs:
           flutter config --enable-macos-desktop
           flutter pub get
           flutter gen-l10n
+          dart run build_runner build --delete-conflicting-outputs
 
       # Keep only the required TorrServer binary for this architecture
       - name: Strip Unused Binaries
@@ -281,6 +284,7 @@ jobs:
           flutter config --enable-windows-desktop
           flutter pub get
           flutter gen-l10n
+          dart run build_runner build --delete-conflicting-outputs
 
       # Keep only the Windows TorrServer binary
       - name: Strip Unused Binaries
@@ -327,6 +331,7 @@ jobs:
           flutter config --enable-linux-desktop
           flutter pub get
           flutter gen-l10n
+          dart run build_runner build --delete-conflicting-outputs
 
       # Keep only the Linux TorrServer binary
       - name: Strip Unused Binaries

@@ -1,40 +1,47 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../../core/storage/library_repository.dart';
 
-class LibraryNotifier extends Notifier<List<MultimediaItem>> {
-  late LibraryRepository _repository;
+import './library_state.dart';
 
+part 'library_provider.g.dart';
+
+@Riverpod(keepAlive: true)
+class Library extends _$Library {
   @override
-  List<MultimediaItem> build() {
-    _repository = ref.watch(libraryRepositoryProvider);
-    return _repository.getLibraryItems();
+  LibraryState build() {
+    return refresh();
   }
 
-  void refresh() {
-    state = _repository.getLibraryItems();
+  LibraryState refresh() {
+    final repository = ref.read(libraryRepositoryProvider);
+    final items = repository.getLibraryItems();
+    if (items.isEmpty) {
+      state = const LibraryEmpty();
+    } else {
+      state = LibrarySuccess(items);
+    }
+    return state;
   }
 
   Future<void> addItem(MultimediaItem item) async {
-    await _repository.addToLibrary(item);
-    state = _repository.getLibraryItems(); // Refresh state
+    final repository = ref.read(libraryRepositoryProvider);
+    await repository.addToLibrary(item);
+    refresh();
   }
 
   Future<void> removeItem(String url) async {
-    await _repository.removeFromLibrary(url);
-    state = _repository.getLibraryItems(); // Refresh state
+    final repository = ref.read(libraryRepositoryProvider);
+    await repository.removeFromLibrary(url);
+    refresh();
   }
 
   bool isBookmarked(String url) {
-    return _repository.isInLibrary(url);
+    final repository = ref.read(libraryRepositoryProvider);
+    return repository.isInLibrary(url);
   }
 
   Future<void> clearAll() async {
-    // _repository doesn't have clear all library yet, we should loop or add it to repo if needed
-    // or just assume it is done via settingsdeleteAllData.
+    // repository.clearAll() if it exists
   }
 }
-
-final libraryProvider = NotifierProvider<LibraryNotifier, List<MultimediaItem>>(
-  LibraryNotifier.new,
-);

@@ -28,8 +28,9 @@ class PluginStorageService {
     String filePath,
     String? explicitRepoId,
   ) async {
-    if (kDebugMode)
+    if (kDebugMode) {
       debugPrint("PluginStorageService: Installing .sky from $filePath");
+    }
     final file = File(filePath);
     if (!await file.exists()) throw Exception("Plugin file not found");
 
@@ -71,8 +72,9 @@ class PluginStorageService {
     final rootDir = await _pluginsDir;
     final targetDir = Directory(p.join(rootDir.path, plugin.packageName));
 
-    if (kDebugMode)
+    if (kDebugMode) {
       debugPrint("PluginStorageService: Extracting to ${targetDir.path}");
+    }
 
     if (await targetDir.exists()) {
       await targetDir.delete(recursive: true);
@@ -99,10 +101,11 @@ class PluginStorageService {
     metaData['repositoryId'] = explicitRepoId; // cache source repo
     await metaFile.writeAsString(jsonEncode(metaData));
 
-    if (kDebugMode)
+    if (kDebugMode) {
       debugPrint(
         "PluginStorageService: Installation complete for ${plugin.packageName}",
       );
+    }
     return plugin;
   }
 
@@ -163,8 +166,9 @@ class PluginStorageService {
           // Legacy Folder Structure Loop (Optional: if we still want to see old plugins?)
           // User said "no backward compatibility", so we can ignore nested repo dirs if they don't follow new structure.
         } catch (e) {
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint("Error reading plugin at ${entity.path}: $e");
+          }
         }
       }
     }
@@ -196,10 +200,11 @@ class PluginStorageService {
       final data = jsonDecode(content) as Map<String, dynamic>;
       data['settingsSchema'] = schema;
       await metaFile.writeAsString(jsonEncode(data));
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint(
           "PluginStorageService: Saved settings schema for $packageName",
         );
+      }
     }
   }
 }

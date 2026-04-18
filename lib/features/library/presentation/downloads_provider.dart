@@ -1,8 +1,10 @@
 import 'package:background_downloader/background_downloader.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:skystream/core/storage/storage_service.dart';
 import '../../../core/domain/entity/multimedia_item.dart';
 import '../../../core/services/download_service.dart';
+
+part 'downloads_provider.g.dart';
 
 class DownloadItem {
   final Task task;
@@ -24,12 +26,8 @@ class DownloadItem {
   String get id => task.taskId;
 }
 
-final downloadsProvider =
-    AsyncNotifierProvider<DownloadsNotifier, List<DownloadItem>>(
-      DownloadsNotifier.new,
-    );
-
-class DownloadsNotifier extends AsyncNotifier<List<DownloadItem>> {
+@Riverpod(keepAlive: true)
+class DownloadsNotifier extends _$DownloadsNotifier {
   @override
   Future<List<DownloadItem>> build() async {
     // Listen to updates from DownloadService (broadcast) instead of FileDownloader (single)
@@ -84,7 +82,7 @@ class DownloadsNotifier extends AsyncNotifier<List<DownloadItem>> {
     return items;
   }
 
-  void _handleUpdate(TaskUpdate update) async {
+  Future<void> _handleUpdate(TaskUpdate update) async {
     if (state.value == null) return;
 
     final List<DownloadItem> currentList = state.value!;
@@ -154,7 +152,7 @@ class DownloadsNotifier extends AsyncNotifier<List<DownloadItem>> {
   }
 
   Future<void> removeDownloads(List<DownloadItem> items) async {
-    for (var item in items) {
+    for (final item in items) {
       await ref
           .read(downloadServiceProvider)
           .cancelDownload(item.task.taskId, item.task.url);

@@ -1203,6 +1203,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get openLink => 'فتح الرابط';
+
+  @override
+  String get diagnostics => 'Diagnostics';
+
+  @override
+  String get viewLogs => 'View Logs';
+
+  @override
+  String get viewLogsSubtitle => 'View application activity & errors';
 }
 
 /// The translations for Arabic (`ar_apc`).
@@ -2394,4 +2403,13 @@ class AppLocalizationsArApc extends AppLocalizationsAr {
 
   @override
   String get openLink => 'فتح الرابط';
+
+  @override
+  String get diagnostics => 'Diagnostics';
+
+  @override
+  String get viewLogs => 'View Logs';
+
+  @override
+  String get viewLogsSubtitle => 'View application activity & errors';
 }

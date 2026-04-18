@@ -22,7 +22,7 @@ class GithubRelease {
       body: json['body'] as String? ?? '',
       prerelease: json['prerelease'] as bool? ?? false,
       publishedAt: json['published_at'] != null
-          ? DateTime.tryParse(json['published_at'])
+          ? DateTime.tryParse(json['published_at'] as String)
           : null,
       assets:
           (json['assets'] as List<dynamic>?)

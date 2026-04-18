@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:skystream/core/utils/responsive_breakpoints.dart';
 
 import 'package:skystream/core/extensions/extension_manager.dart';
@@ -121,10 +120,8 @@ class _SearchResultSectionState extends ConsumerState<SearchResultSection> {
                         ),
                         title: item.title,
                         heroTag: uniqueTag,
-                        onTap: () => context.push(
-                          '/details',
-                          extra: DetailsRouteExtra(item: item),
-                        ),
+                        onTap: () => DetailsRoute($extra: DetailsRouteExtra(item: item))
+                            .push<void>(context),
                       ),
                     );
                   },

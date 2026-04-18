@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/layout_constants.dart';
 import '../../../core/extensions/models/extension_plugin.dart';
+import '../../../core/extensions/models/extension_repository.dart';
 import '../../../core/providers/device_info_provider.dart';
 import '../../../shared/widgets/custom_widgets.dart';
 import '../providers/extensions_controller.dart';
@@ -57,12 +58,12 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
     }
     // Listen for errors
     ref.listen(extensionsControllerProvider, (previous, next) {
-      if (previous?.error != next.error && next.error != null) {
-        showDialog(
+      if (next is ExtensionsError && (previous is! ExtensionsError || previous.message != next.message)) {
+        showDialog<void>(
           context: context,
           builder: (context) => AlertDialog(
             title: Text(l10n.error),
-            content: Text(next.error!),
+            content: Text(next.message),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -78,53 +79,47 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.extensions)),
-      body: Builder(
-        builder: (context) {
-          if (state.isLoading && state.repositories.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (state.repositories.isEmpty && state.installedPlugins.isEmpty) {
-            return Center(
-              child: Text(l10n.noReposFound),
-            );
-          }
-          final debugPlugins = state.installedPlugins
-              .where((p) => p.isDebug)
-              .toList();
-          final hasDebug = debugPlugins.isNotEmpty;
-          // Installed plugins not listed in any repo: no repos, or plugin was removed from repo
-          final allAvailablePackageNames = state.availablePlugins.values
-              .expand((list) => list)
-              .map((p) => p.packageName)
-              .toSet();
-          final installedOnlyPlugins = state.installedPlugins
-              .where(
-                (p) =>
-                    !p.isDebug &&
-                    !allAvailablePackageNames.contains(p.packageName),
-              )
-              .toList();
-          final hasInstalledOnly = installedOnlyPlugins.isNotEmpty;
-
-          final itemCount =
-              (hasDebug ? 1 : 0) +
-              (hasInstalledOnly ? 1 : 0) +
-              state.repositories.length;
-
-          return Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 800),
-              child: ListView.builder(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: switch (state) {
+            ExtensionsLoading(repositories: []) =>
+              const Center(child: CircularProgressIndicator()),
+            ExtensionsState()
+                when state.repositories.isEmpty &&
+                    state.installedPlugins.isEmpty =>
+              Center(
+                child: Text(l10n.noReposFound),
+              ),
+            _ => ListView.builder(
                 controller: _scrollController,
                 padding: const EdgeInsets.only(bottom: 80), // Fab space
-                itemCount: itemCount,
+                itemCount: _calculateItemCount(state),
                 itemBuilder: (context, index) {
-                  // Render Debug Section at index 0 if it exists
+                  final debugPlugins = state.installedPlugins
+                      .where((p) => p.isDebug)
+                      .toList();
+                  final hasDebug = debugPlugins.isNotEmpty;
+
+                  final allAvailablePackageNames = state.availablePlugins.values
+                      .expand((list) => list)
+                      .map((p) => p.packageName)
+                      .toSet();
+                  final installedOnlyPlugins = state.installedPlugins
+                      .where(
+                        (p) =>
+                            !p.isDebug &&
+                            !allAvailablePackageNames.contains(p.packageName),
+                      )
+                      .toList();
+                  final hasInstalledOnly = installedOnlyPlugins.isNotEmpty;
+
+                  // Render Debug Section
                   if (hasDebug && index == 0) {
                     return _buildDebugSection(context, debugPlugins);
                   }
 
-                  // Render Installed Extensions section (no repos or plugin removed from repo)
+                  // Render Installed Extensions section
                   if (hasInstalledOnly && index == (hasDebug ? 1 : 0)) {
                     return _buildInstalledOnlySection(
                       context,
@@ -140,107 +135,18 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
                   final repo = state.repositories[repoIndex];
                   final plugins = state.availablePlugins[repo.url] ?? [];
 
-                  return Card(
-                    margin: const EdgeInsets.only(
-                      bottom: LayoutConstants.spacingMd,
-                      left: LayoutConstants.spacingMd,
-                      right: LayoutConstants.spacingMd,
-                    ),
-                    color: Theme.of(context).colorScheme.surface,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: Theme.of(context).dividerColor),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: ExpansionTile(
-                      shape: const Border(),
-                      collapsedShape: const Border(),
-                      initiallyExpanded: true,
-                      backgroundColor: Colors.transparent,
-                      collapsedBackgroundColor: Colors.transparent,
-                      tilePadding: const EdgeInsets.symmetric(
-                        horizontal: LayoutConstants.spacingMd,
-                        vertical: LayoutConstants.spacingXs,
-                      ),
-                      title: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              repo.name,
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                          ),
-                          if (state.isLoading)
-                            const Padding(
-                              padding: EdgeInsets.all(12),
-                              child: SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            )
-                          else ...[
-                            IconButton(
-                              icon: const Icon(Icons.download),
-                              onPressed: () {
-                                ref
-                                    .read(extensionsControllerProvider.notifier)
-                                    .installPlugins(plugins);
-                              },
-                              tooltip: l10n.downloadAllProviders,
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.delete_outline,
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                              onPressed: () =>
-                                  _confirmDeleteRepo(context, ref, repo),
-                              tooltip: l10n.removeRepository,
-                            ),
-                          ],
-                        ],
-                      ),
-                      children: plugins.asMap().entries.map((entry) {
-                        final isLast = entry.key == plugins.length - 1;
-                        return Column(
-                          children: [
-                            if (entry.key == 0)
-                              Divider(
-                                height: 1,
-                                color: Theme.of(
-                                  context,
-                                ).dividerColor.withValues(alpha: 0.5),
-                              ),
-                            _PluginTile(plugin: entry.value),
-                            if (!isLast)
-                              Divider(
-                                height: 1,
-                                indent: 56,
-                                endIndent: 16,
-                                color: Theme.of(
-                                  context,
-                                ).dividerColor.withValues(alpha: 0.5),
-                              ),
-                          ],
-                        );
-                      }).toList(),
-                    ),
+                  return _buildRepositoryCard(
+                    context,
+                    ref,
+                    state,
+                    repo,
+                    plugins,
+                    l10n,
                   );
                 },
               ),
-            ),
-          );
-        },
+          },
+        ),
       ),
       floatingActionButton: ValueListenableBuilder<bool>(
         valueListenable: _isFabExtended,
@@ -429,9 +335,120 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
     );
   }
 
+  int _calculateItemCount(ExtensionsState state) {
+    final hasDebug = state.installedPlugins.any((p) => p.isDebug);
+    final allAvailablePackageNames = state.availablePlugins.values
+        .expand((list) => list)
+        .map((p) => p.packageName)
+        .toSet();
+    final hasInstalledOnly = state.installedPlugins.any(
+      (p) => !p.isDebug && !allAvailablePackageNames.contains(p.packageName),
+    );
+
+    return (hasDebug ? 1 : 0) +
+        (hasInstalledOnly ? 1 : 0) +
+        state.repositories.length;
+  }
+
+  Widget _buildRepositoryCard(
+    BuildContext context,
+    WidgetRef ref,
+    ExtensionsState state,
+    ExtensionRepository repo,
+    List<ExtensionPlugin> plugins,
+    AppLocalizations l10n,
+  ) {
+    return Card(
+      margin: const EdgeInsets.only(
+        bottom: LayoutConstants.spacingMd,
+        left: LayoutConstants.spacingMd,
+        right: LayoutConstants.spacingMd,
+      ),
+      color: Theme.of(context).colorScheme.surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Theme.of(context).dividerColor),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        shape: const Border(),
+        collapsedShape: const Border(),
+        initiallyExpanded: true,
+        backgroundColor: Colors.transparent,
+        collapsedBackgroundColor: Colors.transparent,
+        tilePadding: const EdgeInsets.symmetric(
+          horizontal: LayoutConstants.spacingMd,
+          vertical: LayoutConstants.spacingXs,
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                repo.name,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            if (state is ExtensionsLoading)
+              const Padding(
+                padding: EdgeInsets.all(12),
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            else ...[
+              IconButton(
+                icon: const Icon(Icons.download),
+                onPressed: () {
+                  ref
+                      .read(extensionsControllerProvider.notifier)
+                      .installPlugins(plugins);
+                },
+                tooltip: l10n.downloadAllProviders,
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.delete_outline,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                onPressed: () => _confirmDeleteRepo(context, ref, repo),
+                tooltip: l10n.removeRepository,
+              ),
+            ],
+          ],
+        ),
+        children: plugins.asMap().entries.map((entry) {
+          final isLast = entry.key == plugins.length - 1;
+          return Column(
+            children: [
+              if (entry.key == 0)
+                Divider(
+                  height: 1,
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                ),
+              _PluginTile(plugin: entry.value),
+              if (!isLast)
+                Divider(
+                  height: 1,
+                  indent: 56,
+                  endIndent: 16,
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                ),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   void _confirmDeleteRepo(BuildContext context, WidgetRef ref, dynamic repo) {
     final l10n = AppLocalizations.of(context)!;
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.removeRepoConfirm(repo.name)),
@@ -463,7 +480,7 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
     final controller = TextEditingController();
     final isTv = ref.read(deviceProfileProvider).asData?.value.isTv ?? false;
 
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         surfaceTintColor: Colors.transparent, // Remove M3 tint
@@ -631,7 +648,7 @@ class _PluginTile extends ConsumerWidget {
               icon: const Icon(Icons.settings),
               tooltip: l10n.settings,
               onPressed: () {
-                showDialog(
+                showDialog<void>(
                   context: context,
                   builder: (context) =>
                       PluginSettingsDialog(plugin: installedPlugin),

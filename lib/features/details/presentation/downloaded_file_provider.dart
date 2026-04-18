@@ -1,16 +1,14 @@
 import 'dart:io';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/domain/entity/multimedia_item.dart';
 import '../../../core/services/download_service.dart';
 
+part 'downloaded_file_provider.g.dart';
+
 /// Provider that tracks existing downloaded files on disk.
 /// Maps URL strings to File objects if they exist.
-final downloadedFilesProvider =
-    NotifierProvider<DownloadedFilesNotifier, Map<String, File?>>(
-      DownloadedFilesNotifier.new,
-    );
-
-class DownloadedFilesNotifier extends Notifier<Map<String, File?>> {
+@Riverpod(keepAlive: true)
+class DownloadedFiles extends _$DownloadedFiles {
   @override
   Map<String, File?> build() {
     return const <String, File?>{};

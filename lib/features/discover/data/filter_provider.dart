@@ -1,6 +1,8 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/models/tmdb_genre.dart';
+
+part 'filter_provider.g.dart';
 
 class FilterState {
   final TmdbGenre? selectedGenre; // {id: 123, name: 'Action'}
@@ -25,7 +27,8 @@ class FilterState {
   }
 }
 
-class FilterNotifier extends Notifier<FilterState> {
+@Riverpod(keepAlive: true)
+class DiscoverFilter extends _$DiscoverFilter {
   @override
   FilterState build() => const FilterState();
 
@@ -45,7 +48,3 @@ class FilterNotifier extends Notifier<FilterState> {
     state = const FilterState();
   }
 }
-
-final discoverFilterProvider = NotifierProvider<FilterNotifier, FilterState>(
-  () => FilterNotifier(),
-);

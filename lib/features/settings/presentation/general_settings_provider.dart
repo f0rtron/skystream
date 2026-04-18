@@ -1,5 +1,7 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/storage/settings_repository.dart';
+
+part 'general_settings_provider.g.dart';
 
 class GeneralSettings {
   final bool watchHistoryEnabled;
@@ -18,7 +20,8 @@ class GeneralSettings {
   }
 }
 
-class GeneralSettingsNotifier extends Notifier<GeneralSettings> {
+@Riverpod(keepAlive: true)
+class GeneralSettingsNotifier extends _$GeneralSettingsNotifier {
   @override
   GeneralSettings build() {
     final repository = ref.watch(settingsRepositoryProvider);
@@ -40,8 +43,3 @@ class GeneralSettingsNotifier extends Notifier<GeneralSettings> {
     state = state.copyWith(defaultHomeScreen: path);
   }
 }
-
-final generalSettingsProvider =
-    NotifierProvider<GeneralSettingsNotifier, GeneralSettings>(
-      GeneralSettingsNotifier.new,
-    );

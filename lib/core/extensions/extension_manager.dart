@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-// Contains ChangeNotifier
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'base_provider.dart';
 
 import 'dart:io';
@@ -12,12 +11,10 @@ import 'services/plugin_storage_service.dart';
 import 'providers.dart';
 import '../storage/settings_repository.dart';
 
-final extensionManagerProvider =
-    NotifierProvider<ExtensionManager, List<SkyStreamProvider>>(
-      ExtensionManager.new,
-    );
+part 'extension_manager.g.dart';
 
-class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
+@Riverpod(keepAlive: true)
+class ExtensionManager extends _$ExtensionManager {
   JsEngineService? _engine;
   PluginStorageService? _storageService;
   Future<void>? _syncLock;
@@ -249,12 +246,8 @@ class ExtensionManager extends Notifier<List<SkyStreamProvider>> {
 }
 
 // Provider to track if we are still resolving the initial active provider
-final providerResolutionLoadingProvider =
-    NotifierProvider<ProviderResolutionLoadingNotifier, bool>(
-      ProviderResolutionLoadingNotifier.new,
-    );
-
-class ProviderResolutionLoadingNotifier extends Notifier<bool> {
+@Riverpod(keepAlive: true)
+class ProviderResolutionLoading extends _$ProviderResolutionLoading {
   @override
   bool build() {
     return true;
@@ -264,12 +257,8 @@ class ProviderResolutionLoadingNotifier extends Notifier<bool> {
 }
 
 // Tracks whether the initial plugin sync has completed at least once
-final pluginSyncCompleteProvider =
-    NotifierProvider<PluginSyncCompleteNotifier, bool>(
-      PluginSyncCompleteNotifier.new,
-    );
-
-class PluginSyncCompleteNotifier extends Notifier<bool> {
+@Riverpod(keepAlive: true)
+class PluginSyncComplete extends _$PluginSyncComplete {
   @override
   bool build() {
     return false;
@@ -278,14 +267,9 @@ class PluginSyncCompleteNotifier extends Notifier<bool> {
   void set(bool value) => state = value;
 }
 
-// Global definition of activeProviderStateProvider
-final activeProviderStateProvider =
-    NotifierProvider<ActiveProviderNotifier, SkyStreamProvider?>(
-      ActiveProviderNotifier.new,
-    );
-
-// Currently selected provider
-class ActiveProviderNotifier extends Notifier<SkyStreamProvider?> {
+// Global definition of activeProviderState
+@Riverpod(keepAlive: true)
+class ActiveProvider extends _$ActiveProvider {
   String? _targetProviderId;
   bool _initialLoadDone = false;
 

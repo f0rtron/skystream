@@ -36,9 +36,9 @@ class MarqueeWidgetState extends State<MarqueeWidget> {
     super.dispose();
   }
 
-  void scroll(_) async {
+  Future<void> scroll(_) async {
     while (!_disposed && _controller.hasClients) {
-      await Future.delayed(widget.pauseDuration);
+      await Future<void>.delayed(widget.pauseDuration);
       if (_disposed) return;
       if (_controller.hasClients) {
         await _controller.animateTo(
@@ -48,7 +48,7 @@ class MarqueeWidgetState extends State<MarqueeWidget> {
         );
       }
       if (_disposed) return;
-      await Future.delayed(widget.pauseDuration);
+      await Future<void>.delayed(widget.pauseDuration);
       if (_disposed) return;
       if (_controller.hasClients) {
         await _controller.animateTo(

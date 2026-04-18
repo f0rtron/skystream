@@ -13,6 +13,7 @@ import '../../../../core/utils/layout_constants.dart';
 import '../../../../shared/widgets/shimmer_placeholder.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import 'dart:async';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -107,10 +108,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                 ),
                 child: CardsWrapper(
                   onTap: () {
-                    showDialog(
+                    unawaited(showDialog<void>(
                       context: context,
                       builder: (context) => const UnifiedFilterDialog(),
-                    );
+                    ));
                   },
                   borderRadius: BorderRadius.circular(50),
                   child: Consumer(
@@ -148,12 +149,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                 ),
                 child: CardsWrapper(
                   onTap: () {
-                    showSearch(
+                    unawaited(showSearch<void>(
                       context: context,
                       delegate: DiscoverSearchDelegate(),
                       useRootNavigator: false,
                       maintainState: true,
-                    );
+                    ));
                   },
                   borderRadius: BorderRadius.circular(50),
                   child: CircleAvatar(
@@ -180,67 +181,64 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                     final heroMoviesAsync = ref.watch(
                       discoverHeroMovieProvider,
                     );
-                    return heroMoviesAsync.when(
-                      skipLoadingOnReload: false,
-                      skipLoadingOnRefresh: false,
-                      data: (movies) {
-                        if (movies.isEmpty) return const SizedBox.shrink();
-                        return DiscoverCarousel(
-                          movies: movies,
-                          scrollController: _scrollController,
-                        );
-                      },
-                      loading: () => Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: LayoutConstants.spacingLg,
-                        ),
-                        child: SizedBox(
-                          height: 500,
-                          width: double.infinity,
-                          child: ShimmerPlaceholder(borderRadius: 12),
-                        ),
-                      ),
-                      error: (err, stack) => Container(
-                        height: 500,
-                        margin: const EdgeInsets.only(
-                          bottom: LayoutConstants.spacingLg,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest
-                              .withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.error_outline_rounded,
-                                size: 48,
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                AppLocalizations.of(context)!.couldNotLoadTrending,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              TextButton.icon(
-                                onPressed: () =>
-                                    ref.invalidate(discoverHeroMovieProvider),
-                                icon: const Icon(Icons.refresh),
-                                label: Text(AppLocalizations.of(context)!.retry),
-                              ),
-                            ],
+                    return switch (heroMoviesAsync) {
+                      AsyncData(:final value) => value.isEmpty
+                          ? const SizedBox.shrink()
+                          : DiscoverCarousel(
+                              movies: value,
+                              scrollController: _scrollController,
+                            ),
+                      AsyncLoading() => Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: LayoutConstants.spacingLg,
+                          ),
+                          child: SizedBox(
+                            height: 500,
+                            width: double.infinity,
+                            child: ShimmerPlaceholder(borderRadius: 12),
                           ),
                         ),
-                      ),
-                    );
+                      AsyncError() => Container(
+                          height: 500,
+                          margin: const EdgeInsets.only(
+                            bottom: LayoutConstants.spacingLg,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest
+                                .withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.error_outline_rounded,
+                                  size: 48,
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  AppLocalizations.of(context)!.couldNotLoadTrending,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                TextButton.icon(
+                                  onPressed: () =>
+                                      ref.invalidate(discoverHeroMovieProvider),
+                                  icon: const Icon(Icons.refresh),
+                                  label: Text(AppLocalizations.of(context)!.retry),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    };
                   },
                 ),
               ),
@@ -248,7 +246,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
               SliverToBoxAdapter(
                 child: _buildSection(
                   context,
-                  popularMoviesProvider,
+                  ref.watch(popularMoviesProvider),
                   AppLocalizations.of(context)!.popularMovies,
                   ViewAllCategory.popularMovies,
                 ),
@@ -257,7 +255,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
               SliverToBoxAdapter(
                 child: _buildSection(
                   context,
-                  popularTVProvider,
+                  ref.watch(popularTVProvider),
                   AppLocalizations.of(context)!.popularTVShows,
                   ViewAllCategory.popularTV,
                 ),
@@ -266,7 +264,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
               SliverToBoxAdapter(
                 child: _buildSection(
                   context,
-                  nowPlayingMoviesProvider,
+                  ref.watch(nowPlayingMoviesProvider),
                   AppLocalizations.of(context)!.newMovies,
                   ViewAllCategory.nowPlayingMovies,
                 ),
@@ -275,7 +273,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
               SliverToBoxAdapter(
                 child: _buildSection(
                   context,
-                  onTheAirTVProvider,
+                  ref.watch(onTheAirTVProvider),
                   AppLocalizations.of(context)!.newTVShows,
                   ViewAllCategory.onTheAirTV,
                 ),
@@ -284,7 +282,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
               SliverToBoxAdapter(
                 child: _buildSection(
                   context,
-                  topRatedMoviesProvider,
+                  ref.watch(topRatedMoviesProvider),
                   AppLocalizations.of(context)!.featuredMovies,
                   ViewAllCategory.topRatedMovies,
                 ),
@@ -293,7 +291,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
               SliverToBoxAdapter(
                 child: _buildSection(
                   context,
-                  topRatedTVProvider,
+                  ref.watch(topRatedTVProvider),
                   AppLocalizations.of(context)!.featuredTVShows,
                   ViewAllCategory.topRatedTV,
                 ),
@@ -302,7 +300,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
               SliverToBoxAdapter(
                 child: _buildSection(
                   context,
-                  airingTodayTVProvider,
+                  ref.watch(airingTodayTVProvider),
                   AppLocalizations.of(context)!.lastVideosTVShows,
                   ViewAllCategory.airingTodayTV,
                 ),
@@ -318,71 +316,65 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
 
   Widget _buildSection(
     BuildContext context,
-    FutureProvider<List<MultimediaItem>> provider,
+    AsyncValue<List<MultimediaItem>> asyncValue,
     String title,
     ViewAllCategory category,
   ) {
-    return Consumer(
-      builder: (context, ref, _) {
-        final asyncValue = ref.watch(provider);
-        return asyncValue.when(
-          data: (items) {
-            if (items.isEmpty) return const SizedBox.shrink();
-            return MediaHorizontalList(
+    return switch (asyncValue) {
+      AsyncData(:final value) => value.isEmpty
+          ? const SizedBox.shrink()
+          : MediaHorizontalList(
               title: title,
-              mediaList: items,
+              mediaList: value,
               category: category,
               heroTagPrefix: 'discover',
-            );
-          },
-          loading: () => Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: LayoutConstants.spacingMd,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title Placeholder
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: LayoutConstants.spacingMd,
-                  ),
-                  child: ShimmerPlaceholder.rectangular(
-                    width: 150,
-                    height: 24,
-                    borderRadius: 4,
-                  ),
-                ),
-                const SizedBox(height: LayoutConstants.spacingMd),
-                // List Placeholder
-                SizedBox(
-                  height: 250,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: 5,
-                    separatorBuilder: (_, _) =>
-                        const SizedBox(width: LayoutConstants.spacingSm),
-                    itemBuilder: (context, index) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ShimmerPlaceholder.rectangular(
-                            width: 130, // mobile width
-                            height: 195,
-                            borderRadius: 12,
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+      AsyncLoading() => Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: LayoutConstants.spacingMd,
           ),
-          error: (e, _) => const SizedBox.shrink(),
-        );
-      },
-    );
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title Placeholder
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: LayoutConstants.spacingMd,
+                ),
+                child: ShimmerPlaceholder.rectangular(
+                  width: 150,
+                  height: 24,
+                  borderRadius: 4,
+                ),
+              ),
+              const SizedBox(height: LayoutConstants.spacingMd),
+              // List Placeholder
+              SizedBox(
+                height: 250,
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: 5,
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(width: LayoutConstants.spacingSm),
+                  itemBuilder: (context, index) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ShimmerPlaceholder.rectangular(
+                          width: 130, // mobile width
+                          height: 195,
+                          borderRadius: 12,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      AsyncError() => const SizedBox.shrink(),
+    };
   }
 }

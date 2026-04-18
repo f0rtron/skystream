@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -10,7 +9,7 @@ import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 
 import '../controllers/discover_search_controller.dart';
 
-class DiscoverSearchDelegate extends SearchDelegate {
+class DiscoverSearchDelegate extends SearchDelegate<void> {
   DiscoverSearchDelegate()
     : super(
         searchFieldLabel: 'Search movies, tv shows...',
@@ -105,7 +104,7 @@ class _SearchSuggestionsListState
     super.didUpdateWidget(oldWidget);
     if (oldWidget.query != widget.query) {
       Future.microtask(() {
-        if (!mounted) return;
+        if (!context.mounted) return;
         ref
             .read(discoverSearchControllerProvider.notifier)
             .onQueryChanged(widget.query);
@@ -172,14 +171,11 @@ class _SearchSuggestionsListState
             ),
           ),
           onTap: () {
-            context.push(
-              '/tmdb-details',
-              extra: TmdbDetailsRouteExtra(
-                movieId: item.id,
-                mediaType: item.tmdbMediaType,
-                heroTag: 'search_${item.id}',
-              ),
-            );
+            TmdbDetailsRoute(
+              movieId: item.id,
+              mediaType: item.tmdbMediaType,
+              heroTag: 'search_${item.id}',
+            ).push(context);
           },
         );
       },
@@ -215,7 +211,7 @@ class _SearchResultsGridState extends ConsumerState<_SearchResultsGrid> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.query != widget.query) {
       Future.microtask(() {
-        if (!mounted) return;
+        if (!context.mounted) return;
         ref
             .read(discoverSearchControllerProvider.notifier)
             .fetchResults(widget.query);
@@ -322,20 +318,16 @@ class _SearchResultsGridState extends ConsumerState<_SearchResultsGrid> {
         final imageUrl = item.posterImageUrl;
         final title = item.title;
         final id = item.id;
-        final mediaType = item.mediaType;
         final uniqueTag = 'search_result_${id}_$index';
 
         return GestureDetector(
           onTap: () {
-            context.push(
-              '/tmdb-details',
-              extra: TmdbDetailsRouteExtra(
-                movieId: id,
-                mediaType: item.tmdbMediaType,
-                heroTag: uniqueTag,
-                placeholderPoster: imageUrl,
-              ),
-            );
+            TmdbDetailsRoute(
+              movieId: id,
+              mediaType: item.tmdbMediaType,
+              heroTag: uniqueTag,
+              placeholderPoster: imageUrl,
+            ).push(context);
           },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

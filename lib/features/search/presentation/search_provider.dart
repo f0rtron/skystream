@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/extensions/extension_manager.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../discover/data/tmdb_provider.dart';
+
+part 'search_provider.g.dart';
 
 class ProviderSearchResult {
   final String providerId;
@@ -56,18 +58,8 @@ List<MultimediaItem> _filterItems(_FilterParams params) {
   }).toList();
 }
 
-// ---------------------------------------------------------------------------
-// Core search fan-out — emits incrementally as providers complete.
-//
-// Key performance improvements vs the old implementation:
-//   1. Title filtering runs in a background isolate via compute().
-//   2. Stream emissions are THROTTLED: at most one emit per 150ms regardless
-//      of how many providers finish simultaneously. This collapses 32 rapid
-//      completions into a handful of smooth rebuilds.
-//   3. A guaranteed final emit fires when the very last provider finishes,
-//      regardless of throttle state.
-// ---------------------------------------------------------------------------
 Stream<SearchAggregateState> searchAllProviders(
+  Ref ref,
   String query,
   ExtensionManager manager, {
   required bool Function() isCancelled,
@@ -88,7 +80,6 @@ Stream<SearchAggregateState> searchAllProviders(
   final controller = StreamController<SearchAggregateState>();
   int activeFutures = providers.length;
 
-  // --- Throttle state ---
   Timer? throttleTimer;
   bool pendingEmit = false;
 
@@ -107,14 +98,12 @@ Stream<SearchAggregateState> searchAllProviders(
     if (isCancelled() || controller.isClosed) return;
 
     if (force) {
-      // Final emit — cancel throttle and emit immediately.
       throttleTimer?.cancel();
       throttleTimer = null;
       doEmit();
       return;
     }
 
-    // Throttle: only schedule if not already scheduled.
     pendingEmit = true;
     throttleTimer ??= Timer(const Duration(milliseconds: 150), () {
       throttleTimer = null;
@@ -145,7 +134,6 @@ Stream<SearchAggregateState> searchAllProviders(
             )
             .toList();
 
-        // Run filtering in a background isolate so it doesn't block the UI.
         final filtered = await compute(
           _filterItems,
           _FilterParams(providerItems, queryParts),
@@ -173,10 +161,8 @@ Stream<SearchAggregateState> searchAllProviders(
       } finally {
         activeFutures--;
         final isLast = activeFutures == 0;
-        // Force an immediate emit for the last provider; throttle all others.
         scheduleEmit(force: isLast);
         if (isLast && !controller.isClosed) {
-          // Give the final emit a microtask to land before we close.
           Future.microtask(() {
             if (!controller.isClosed) controller.close();
           });
@@ -188,28 +174,16 @@ Stream<SearchAggregateState> searchAllProviders(
   yield* controller.stream;
 }
 
-// ---------------------------------------------------------------------------
-// State for the committed (submitted) search query.
-// ---------------------------------------------------------------------------
-class SearchQueryNotifier extends Notifier<String> {
+@Riverpod(keepAlive: true)
+class SearchQuery extends _$SearchQuery {
   @override
   String build() => '';
 
   void set(String query) => state = query;
 }
 
-final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(
-  SearchQueryNotifier.new,
-);
-
-// ---------------------------------------------------------------------------
-// Incremental search results — delegates to searchAllProviders().
-//
-// NOT autoDispose: keeps the stream alive when the user switches tabs so
-// results aren't thrown away and the search doesn't re-run on return.
-// The stream naturally restarts whenever searchQueryProvider changes.
-// ---------------------------------------------------------------------------
-final searchResultsProvider = StreamProvider<SearchAggregateState>((ref) {
+@Riverpod(keepAlive: true)
+Stream<SearchAggregateState> searchResults(Ref ref) {
   final query = ref.watch(searchQueryProvider);
   ref.watch(extensionManagerProvider);
   final manager = ref.read(extensionManagerProvider.notifier);
@@ -217,8 +191,8 @@ final searchResultsProvider = StreamProvider<SearchAggregateState>((ref) {
   var cancelled = false;
   ref.onDispose(() => cancelled = true);
 
-  return searchAllProviders(query, manager, isCancelled: () => cancelled);
-});
+  return searchAllProviders(ref, query, manager, isCancelled: () => cancelled);
+}
 
 class SearchSuggestionState {
   final List<String> suggestions;
@@ -244,7 +218,8 @@ class SearchSuggestionState {
   }
 }
 
-class SearchSuggestionController extends Notifier<SearchSuggestionState> {
+@riverpod
+class SearchSuggestionController extends _$SearchSuggestionController {
   Timer? _debounce;
 
   @override
@@ -295,9 +270,3 @@ class SearchSuggestionController extends Notifier<SearchSuggestionState> {
     state = const SearchSuggestionState();
   }
 }
-
-final searchSuggestionControllerProvider =
-    NotifierProvider.autoDispose<
-      SearchSuggestionController,
-      SearchSuggestionState
-    >(SearchSuggestionController.new);

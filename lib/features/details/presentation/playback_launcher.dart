@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/domain/entity/multimedia_item.dart';
 import '../../../core/router/app_router.dart';
@@ -16,6 +15,14 @@ import '../../../core/services/download_service.dart';
 import '../../../shared/widgets/loading_dialog.dart';
 import '../../../core/utils/app_utils.dart';
 import 'package:skystream/l10n/generated/app_localizations.dart';
+import '../../../core/services/notification_service.dart';
+
+part 'playback_launcher.g.dart';
+
+@Riverpod(keepAlive: true)
+PlaybackLauncher playbackLauncher(Ref ref) {
+  return PlaybackLauncher(ref);
+}
 
 class PlaybackLauncher {
   final Ref _ref;
@@ -62,14 +69,11 @@ class PlaybackLauncher {
         }
       });
     } else {
-      await context.push(
-        '/player',
-        extra: PlayerRouteExtra(
-          item: detailedItem ?? baseItem,
-          videoUrl: finalUrl,
-          episode: episode,
-        ),
-      );
+      await PlayerRoute($extra: PlayerRouteExtra(
+        item: detailedItem ?? baseItem,
+        videoUrl: finalUrl,
+        episode: episode,
+      )).push(context);
     }
   }
 
@@ -110,7 +114,7 @@ class PlaybackLauncher {
           if (kDebugMode) debugPrint('PlaybackLauncher.launch: $e');
         }
       }
-      provider ??= _ref.read(activeProviderStateProvider);
+      provider ??= _ref.read(activeProviderProvider);
       if (provider == null) throw Exception('No active provider');
 
       final streams = await provider.loadStreams(episodeDataUrl);
@@ -127,19 +131,11 @@ class PlaybackLauncher {
                 .getPlayerById(playerId)
                 ?.displayName ??
             playerId;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
+        _ref.read(notificationServiceProvider).showError(
               AppLocalizations.of(context)!.playerNotDetected(playerName),
-            ),
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-        context.push(
-          '/player',
-          extra: PlayerRouteExtra(item: item, videoUrl: episodeDataUrl),
-        );
+            );
+        PlayerRoute($extra: PlayerRouteExtra(item: item, videoUrl: episodeDataUrl))
+            .push<void>(context);
         return;
       }
 
@@ -165,15 +161,11 @@ class PlaybackLauncher {
         Navigator.of(context).pop(); // Dismiss if still there
         dialogDismissed = true;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                AppLocalizations.of(context)!.usingInternalPlayerError(e.toString()))),
-      );
-      context.push(
-        '/player',
-        extra: PlayerRouteExtra(item: item, videoUrl: episodeDataUrl),
-      );
+      _ref.read(notificationServiceProvider).showError(
+            AppLocalizations.of(context)!.usingInternalPlayerError(e.toString()),
+          );
+      PlayerRoute($extra: PlayerRouteExtra(item: item, videoUrl: episodeDataUrl))
+          .push<void>(context);
     }
   }
 
@@ -207,17 +199,11 @@ class PlaybackLauncher {
       final playerName =
           ExternalPlayerService.instance.getPlayerById(playerId)?.displayName ??
           playerId;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.playerNotDetected(playerName)),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-      context.push(
-        '/player',
-        extra: PlayerRouteExtra(item: item, videoUrl: episodeDataUrl),
-      );
+      _ref.read(notificationServiceProvider).showError(
+            AppLocalizations.of(context)!.playerNotDetected(playerName),
+          );
+      PlayerRoute($extra: PlayerRouteExtra(item: item, videoUrl: episodeDataUrl))
+          .push<void>(context);
     }
   }
 
@@ -232,7 +218,7 @@ class PlaybackLauncher {
         ExternalPlayerService.instance.getPlayerById(playerId)?.displayName ??
         playerId;
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (ctx) => SafeArea(
@@ -291,6 +277,3 @@ class PlaybackLauncher {
   }
 }
 
-final playbackLauncherProvider = Provider<PlaybackLauncher>((ref) {
-  return PlaybackLauncher(ref);
-});

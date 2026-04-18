@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:collection/collection.dart';
@@ -13,9 +13,12 @@ import '../data/models/github_release.dart';
 
 import '../network/dio_client_provider.dart';
 
-final updateServiceProvider = Provider<UpdateService>((ref) {
+part 'update_service.g.dart';
+
+@riverpod
+UpdateService updateService(Ref ref) {
   return UpdateService(ref.watch(dioClientProvider));
-});
+}
 
 class UpdateService {
   final Dio _dio;
@@ -29,18 +32,25 @@ class UpdateService {
       final currentPackageInfo = await PackageInfo.fromPlatform();
       final currentVersion = Version.parse(currentPackageInfo.version);
 
-      final response = await _dio.get(
+      final response = await _dio.get<Map<String, dynamic>>(
         'https://api.github.com/repos/$_owner/$_repo/releases/latest',
       );
 
-      if (response.statusCode == 200) {
-        final release = GithubRelease.fromJson(response.data);
+      if (response.statusCode == 200 && response.data != null) {
+        final release = GithubRelease.fromJson(response.data!);
         // Clean tag name (remove 'v' prefix if present)
         final tagName = release.tagName.replaceAll(RegExp(r'^v'), '');
         final latestVersion = Version.parse(tagName);
 
+        if (kDebugMode) {
+          debugPrint('[UpdateService] Current version: $currentPackageInfo.version -> $currentVersion, Latest version: $tagName -> $latestVersion');
+        }
+
         if (latestVersion > currentVersion) {
+          if (kDebugMode) debugPrint('[UpdateService] Update check RESULT: New version available ($latestVersion)');
           return release;
+        } else {
+          if (kDebugMode) debugPrint('[UpdateService] Update check RESULT: Already up to date');
         }
       }
     } catch (e) {
@@ -52,7 +62,7 @@ class UpdateService {
 
   Future<File?> downloadUpdateAsset(
     GithubRelease release,
-    Function(double) onProgress,
+    void Function(double) onProgress,
   ) async {
     try {
       final asset = await findPlatformAsset(release);

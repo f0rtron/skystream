@@ -2,10 +2,13 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'doh_service.dart';
 
-final dioClientProvider = Provider<Dio>((ref) {
+part 'dio_client_provider.g.dart';
+
+@riverpod
+Dio dioClient(Ref ref) {
   final dio = Dio(
     BaseOptions(
       connectTimeout: const Duration(seconds: 15),
@@ -82,4 +85,4 @@ final dioClientProvider = Provider<Dio>((ref) {
   );
 
   return dio;
-});
+}

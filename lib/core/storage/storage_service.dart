@@ -2,21 +2,25 @@ import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'dart:io';
 import '../domain/entity/multimedia_item.dart';
 
-final storageServiceProvider = Provider<StorageService>((ref) {
+part 'storage_service.g.dart';
+
+@Riverpod(keepAlive: true)
+StorageService storageService(Ref ref) {
   throw UnimplementedError('StorageService must be initialized');
-});
+}
 
 class StorageService {
-  late Box _libraryBox;
-  late Box _settingsBox;
-  late Box _extensionsBox;
+  late Box<dynamic> _libraryBox;
+  late Box<dynamic> _settingsBox;
+  late Box<dynamic> _extensionsBox;
+  late Box<dynamic> _historyBox;
 
   static const String kLibraryBox = 'library_box';
   static const String kSettingsBox = 'settings_box';
@@ -36,9 +40,9 @@ class StorageService {
     await initHistory();
   }
 
-  Future<Box> _safeOpenBox(String boxName) async {
+  Future<Box<dynamic>> _safeOpenBox(String boxName) async {
     try {
-      return await Hive.openBox(boxName);
+      return await Hive.openBox<dynamic>(boxName);
     } catch (e) {
       if (kDebugMode) {
         debugPrint(
@@ -47,9 +51,9 @@ class StorageService {
       }
 
       // Attempt to salvage any readable entries before wiping the box.
-      Map<dynamic, dynamic> salvaged = {};
+      final Map<dynamic, dynamic> salvaged = {};
       try {
-        final recoveryBox = await Hive.openBox(boxName, crashRecovery: true);
+        final recoveryBox = await Hive.openBox<dynamic>(boxName, crashRecovery: true);
         for (var i = 0; i < recoveryBox.length; i++) {
           final key = recoveryBox.keyAt(i);
           salvaged[key] = recoveryBox.get(key);
@@ -63,7 +67,7 @@ class StorageService {
         await Hive.deleteBoxFromDisk(boxName);
       } catch (_) {}
 
-      final fresh = await Hive.openBox(boxName);
+      final fresh = await Hive.openBox<dynamic>(boxName);
 
       // Re-insert recovered entries.
       if (salvaged.isNotEmpty) {
@@ -240,7 +244,7 @@ class StorageService {
   // --- Watch History ---
 
   static const String kHistoryBox = 'history_box';
-  late Box _historyBox;
+  // Box late initialization is handled in init()
   List<Map<String, dynamic>>? _cachedHistory;
   bool _historyCacheDirty = true;
 
@@ -490,7 +494,7 @@ class StorageService {
     MultimediaItem item, {
     Episode? episode,
   }) async {
-    final box = await Hive.openBox(kDownloadMetadataBox);
+    final box = await Hive.openBox<dynamic>(kDownloadMetadataBox);
     await box.put(taskId, {
       'item': item.toJson(),
       'episode': episode?.toJson(),
@@ -499,14 +503,14 @@ class StorageService {
   }
 
   Future<Map<String, dynamic>?> getDownloadMetadata(String taskId) async {
-    final box = await Hive.openBox(kDownloadMetadataBox);
+    final box = await Hive.openBox<dynamic>(kDownloadMetadataBox);
     final data = box.get(taskId);
     if (data == null) return null;
     return Map<String, dynamic>.from(data);
   }
 
   Future<void> removeDownloadMetadata(String taskId) async {
-    final box = await Hive.openBox(kDownloadMetadataBox);
+    final box = await Hive.openBox<dynamic>(kDownloadMetadataBox);
     await box.delete(taskId);
   }
 

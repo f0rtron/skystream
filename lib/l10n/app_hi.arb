@@ -387,5 +387,8 @@
   },
   "openSubtitles": "OpenSubtitles",
   "subDl": "SubDL",
-  "subSource": "SubSource"
+  "subSource": "SubSource",
+  "diagnostics": "डायग्नोस्टिक्स",
+  "viewLogs": "लॉग देखें",
+  "viewLogsSubtitle": "एप्लिकेशन गतिविधि और त्रुटियां देखें"
 }

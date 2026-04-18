@@ -338,6 +338,22 @@ class PlayerController extends Notifier<PlayerState> {
   bool _isInitialized = false;
   bool _isDisposed = false;
 
+  Player get player => _player;
+  VideoController? get videoViewController => _videoViewController;
+  bool get isDisposed => _isDisposed;
+  PlayerState get currentState => state;
+  List<SubtitleFile> get userAddedExternalSubtitles => _userAddedExternalSubtitles;
+
+  Set<String>? get pendingVideoViewSubtitleIdsBeforeReload => _pendingVideoViewSubtitleIdsBeforeReload;
+  set pendingVideoViewSubtitleIdsBeforeReload(Set<String>? values) => _pendingVideoViewSubtitleIdsBeforeReload = values;
+
+  bool get selectNewestVideoViewSubtitleAfterReload => _selectNewestVideoViewSubtitleAfterReload;
+  set selectNewestVideoViewSubtitleAfterReload(bool value) => _selectNewestVideoViewSubtitleAfterReload = value;
+
+  void updateState(PlayerState Function(PlayerState s) update) {
+    state = update(state);
+  }
+
   bool _isDashStreamUrl(String url) {
     final lower = url.toLowerCase();
     return lower.contains('.mpd') ||
@@ -391,15 +407,15 @@ class PlayerController extends Notifier<PlayerState> {
   static const double _saveThresholdPercent = 0.05; // 5% of video
 
   // Subscriptions to prevent leaks
-  StreamSubscription? _videoParamsSub;
-  StreamSubscription? _errorSub;
-  StreamSubscription? _playingSub;
-  StreamSubscription? _positionSub;
-  StreamSubscription? _durationSub;
-  StreamSubscription? _bufferingSub;
-  StreamSubscription? _completedSub;
-  StreamSubscription? _rateSub;
-  StreamSubscription? _logSub;
+  StreamSubscription<dynamic>? _videoParamsSub;
+  StreamSubscription<dynamic>? _errorSub;
+  StreamSubscription<dynamic>? _playingSub;
+  StreamSubscription<dynamic>? _positionSub;
+  StreamSubscription<dynamic>? _durationSub;
+  StreamSubscription<dynamic>? _bufferingSub;
+  StreamSubscription<dynamic>? _completedSub;
+  StreamSubscription<dynamic>? _rateSub;
+  StreamSubscription<dynamic>? _logSub;
 
   // Stall Watchdog state
   Duration? _lastPosition;
@@ -1094,8 +1110,9 @@ class PlayerController extends Notifier<PlayerState> {
         // Error during active playback.
         if (state.isLive && state.currentStream != null) {
           if (_isRecoveringFromStall) return; // watchdog already reconnecting
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint("Live stream error. Triggering reconnect...");
+          }
           _isRecoveringFromStall = true;
           _enterRuntimePhase(
             kind: PlaybackUiPhaseKind.reconnectingLive,
@@ -1431,7 +1448,7 @@ class PlayerController extends Notifier<PlayerState> {
   }
 
   SkyStreamProvider? _resolveProvider() {
-    final activeState = ref.read(activeProviderStateProvider);
+    final activeState = ref.read(activeProviderProvider);
     final manager = ref.read(extensionManagerProvider.notifier);
 
     if (_item.provider != null) {
@@ -1904,7 +1921,7 @@ class PlayerController extends Notifier<PlayerState> {
     final stream = state.streams[index];
     final rawProviderName =
         _item.provider ??
-        ref.read(activeProviderStateProvider)?.name ??
+        ref.read(activeProviderProvider)?.name ??
         "Unknown";
     final providerName = _getProviderDisplayName(rawProviderName);
     final subtitles = _effectiveExternalSubtitles(stream.subtitles);
@@ -2123,7 +2140,7 @@ class PlayerController extends Notifier<PlayerState> {
 
     final rawPName =
         _item.provider ??
-        ref.read(activeProviderStateProvider)?.name ??
+        ref.read(activeProviderProvider)?.name ??
         'Unknown';
     final pName = _getProviderDisplayName(rawPName);
 
@@ -2485,7 +2502,7 @@ class PlayerController extends Notifier<PlayerState> {
       if (isLivestream) {
         final pId =
             _item.provider ??
-            ref.read(activeProviderStateProvider)?.packageName ??
+            ref.read(activeProviderProvider)?.packageName ??
             'Unknown';
         final itemToSave = _item.copyWith(provider: pId);
         ref
@@ -2508,7 +2525,7 @@ class PlayerController extends Notifier<PlayerState> {
 
       final pId =
           _item.provider ??
-          ref.read(activeProviderStateProvider)?.packageName ??
+          ref.read(activeProviderProvider)?.packageName ??
           'Unknown';
       final itemToSave = _item.copyWith(provider: pId);
 
@@ -3300,7 +3317,7 @@ class PlayerController extends Notifier<PlayerState> {
 
     String? path = filePath;
     if (path == null) {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['srt', 'vtt', 'ass', 'ssa'],
       );

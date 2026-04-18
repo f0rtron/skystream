@@ -149,6 +149,7 @@ git clone https://github.com/akashdh11/skystream.git
 cd skystream
 flutter pub get
 flutter gen-l10n
+dart run build_runner build --delete-conflicting-outputs
 flutter run
 ```
 

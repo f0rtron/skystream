@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:app_restarter/app_restarter.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
@@ -18,6 +19,7 @@ import 'features/extensions/widgets/extensions_sync_bridge.dart';
 import 'core/providers/update_provider.dart';
 import 'core/widgets/update_dialog.dart';
 import 'core/services/download_service.dart';
+import 'core/services/notification_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:skystream/l10n/generated/app_localizations.dart';
 import 'core/providers/locale_provider.dart';
@@ -43,11 +45,11 @@ void main() async {
       titleBarStyle: TitleBarStyle.normal,
     );
 
-    windowManager.waitUntilReadyToShow(windowOptions, () async {
+    unawaited(windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
       await windowManager.maximize();
       await windowManager.focus();
-    });
+    }));
   }
 
   runApp(const AppRestarter(child: AppRoot()));
@@ -79,7 +81,7 @@ class _AppRootState extends State<AppRoot> {
         _storageService.init(),
         DohService.instance.init(),
         if (Platform.isAndroid)
-          FlutterDisplayMode.setHighRefreshRate().catchError((e) {
+          FlutterDisplayMode.setHighRefreshRate().catchError((Object e) {
             if (kDebugMode) debugPrint("Error setting high refresh rate: $e");
           }),
       ]);
@@ -155,48 +157,41 @@ class _MyAppState extends ConsumerState<MyApp> {
   }
 
   Future<void> _checkAppUpdates() async {
-    // Delay slightly to not block UI/Animations on launch
-    await Future.delayed(const Duration(seconds: 3));
-    if (!mounted) return;
+    if (kDebugMode) debugPrint('[Lifecycle] Starting _checkAppUpdates after 5s delay...');
+    await Future<void>.delayed(const Duration(seconds: 5));
+    if (!mounted) {
+      if (kDebugMode) debugPrint('[Lifecycle] _checkAppUpdates aborted: MyApp unmounted');
+      return;
+    }
 
     try {
       final controller = ref.read(updateControllerProvider.notifier);
       await controller.checkForUpdates();
-      if (!mounted) return;
-
-      final state = ref.read(updateControllerProvider);
-      final appRouter = ref.read(appRouterProvider);
-      final navContext = appRouter.routerDelegate.navigatorKey.currentContext;
-
-      if (state is UpdateAvailable &&
-          navContext != null &&
-          navContext.mounted) {
-        UpdateDialog.show(navContext, state.release);
-      }
     } catch (e) {
-      if (kDebugMode) debugPrint("App update check failed: $e");
+      if (kDebugMode) {
+        debugPrint("[Lifecycle] App update trigger failed: $e");
+      }
     }
   }
 
   Future<void> _checkExtensionsUpdates() async {
     try {
       final controller = ref.read(extensionsControllerProvider.notifier);
-      controller.ensureInitialized();
-      await Future.delayed(const Duration(seconds: 2));
+      unawaited(controller.ensureInitialized());
+      await Future<void>.delayed(const Duration(seconds: 2));
       if (!mounted) return;
 
-      final count = await controller.checkForUpdates();
-      if (!mounted) return;
-      if (count > 0) {
-        _scaffoldMessengerKey.currentState?.showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context)!.extensionsUpdated(count),
-            ),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.green,
-          ),
-        );
+      if (mounted) {
+        final count = await controller.checkForUpdates();
+        final navContext = _scaffoldMessengerKey.currentContext;
+        if (mounted && navContext != null && navContext.mounted) {
+          final l10n = AppLocalizations.of(navContext);
+          if (l10n != null && count > 0) {
+            ref.read(notificationServiceProvider).showSuccess(
+                  l10n.extensionsUpdated(count),
+                );
+          }
+        }
       }
     } catch (e) {
       if (kDebugMode) debugPrint("Auto-update failed: $e");
@@ -205,9 +200,22 @@ class _MyAppState extends ConsumerState<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    final themeMode = ref.watch(themeModeProvider);
+    final themeMode = ref.watch(appThemeModeProvider);
     final appRouter = ref.watch(appRouterProvider);
     final locale = ref.watch(localeProvider);
+
+    // Reactive Listener: Keeps UpdateController alive and handles the UI side-effect
+    ref.listen<UpdateState>(updateControllerProvider, (previous, next) {
+      if (next is UpdateAvailable) {
+        final navContext = appRouter.routerDelegate.navigatorKey.currentContext;
+        if (navContext != null && navContext.mounted) {
+          if (kDebugMode) debugPrint('[Lifecycle] State update detected: UpdateAvailable. Showing dialog.');
+          UpdateDialog.show(navContext, next.release);
+        } else {
+          if (kDebugMode) debugPrint('[Lifecycle] Update available but navContext not ready/mounted.');
+        }
+      }
+    });
 
     return DynamicColorBuilder(
       builder: (lightDynamic, darkDynamic) {
@@ -227,7 +235,7 @@ class _MyAppState extends ConsumerState<MyApp> {
           darkTheme: AppTheme.createDarkTheme(darkScheme),
           routerConfig: appRouter,
           locale: locale,
-          localizationsDelegates: [
+          localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
@@ -255,7 +263,7 @@ class LaunchErrorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      localizationsDelegates: [
+      localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

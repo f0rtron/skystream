@@ -7,6 +7,7 @@ import 'package:skystream/features/home/presentation/widgets/continue_watching_c
 import 'package:skystream/features/library/presentation/history_provider.dart';
 import 'package:skystream/shared/widgets/desktop_scroll_wrapper.dart';
 import 'package:skystream/l10n/generated/app_localizations.dart';
+import 'package:skystream/core/services/notification_service.dart';
 
 class ContinueWatchingSection extends ConsumerStatefulWidget {
   final String title;
@@ -78,7 +79,7 @@ class _ContinueWatchingSectionState
               TextButton.icon(
                 onPressed: () {
                   final l10n = AppLocalizations.of(context)!;
-                  showDialog(
+                  showDialog<void>(
                     context: context,
                     builder: (context) => AlertDialog(
                       title: Text(l10n.clearAllHistory),
@@ -94,11 +95,9 @@ class _ContinueWatchingSectionState
                                 .read(watchHistoryProvider.notifier)
                                 .clearAllHistory();
                             Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(l10n.watchHistoryCleared),
-                              ),
-                            );
+                            ref
+                                .read(notificationServiceProvider)
+                                .showSuccess(l10n.watchHistoryCleared);
                           },
                           child: Text(
                             l10n.clearAll,

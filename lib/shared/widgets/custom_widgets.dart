@@ -252,21 +252,38 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // Define consistent premium borders for the project
+    final enabledBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: colorScheme.outline.withValues(alpha: 0.5),
+        width: 1,
+      ),
+    );
+
+    final focusedBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: colorScheme.primary,
+        width: 2,
+      ),
+    );
+
+    // Merge the provided decoration with our consistent styling
+    final effectiveDecoration = (widget.decoration ?? const InputDecoration()).copyWith(
+      hintText: widget.hintText ?? widget.decoration?.hintText,
+      enabledBorder: widget.decoration?.enabledBorder ?? enabledBorder,
+      focusedBorder: widget.decoration?.focusedBorder ?? focusedBorder,
+      border: widget.decoration?.border ?? enabledBorder,
+    );
+
     return TextField(
       focusNode: _focusNode,
       controller: widget.controller,
-      decoration:
-          widget.decoration ??
-          InputDecoration(
-            hintText: widget.hintText,
-            border: const OutlineInputBorder(),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.primary,
-                width: 2,
-              ),
-            ),
-          ),
+      decoration: effectiveDecoration,
       autofocus: widget.autofocus,
       textInputAction: widget.textInputAction ?? TextInputAction.done,
       obscureText: widget.obscureText,

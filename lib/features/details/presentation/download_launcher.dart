@@ -1,7 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/domain/entity/multimedia_item.dart';
 import '../../../core/extensions/extension_manager.dart';
@@ -11,6 +11,13 @@ import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/loading_dialog.dart';
 import '../../../shared/widgets/custom_widgets.dart';
 import 'package:skystream/l10n/generated/app_localizations.dart';
+
+part 'download_launcher.g.dart';
+
+@Riverpod(keepAlive: true)
+DownloadLauncher downloadLauncher(Ref ref) {
+  return DownloadLauncher(ref);
+}
 
 class DownloadLauncher {
   final Ref _ref;
@@ -47,7 +54,7 @@ class DownloadLauncher {
           if (kDebugMode) debugPrint('DownloadLauncher.launch: $e');
         }
       }
-      provider ??= _ref.read(activeProviderStateProvider);
+      provider ??= _ref.read(activeProviderProvider);
       if (provider == null) throw Exception('No active provider');
 
       final streams = await provider.loadStreams(resolveUrl);
@@ -77,7 +84,7 @@ class DownloadLauncher {
     String resolveUrl,
   ) {
     final l10n = AppLocalizations.of(context)!;
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (ctx) => SafeArea(
@@ -143,7 +150,7 @@ class DownloadLauncher {
     final navContext = rootNavigatorKey.currentContext ?? context;
 
     bool isCanceled = false;
-    showDialog(
+    showDialog<void>(
       context: navContext,
       barrierDismissible: false, // Block UI interaction
       builder: (ctx) {
@@ -204,7 +211,7 @@ class DownloadLauncher {
 
     // 2. Show Confirmation Dialog
     if (finalContext.mounted) {
-      showDialog(
+      showDialog<void>(
         context: finalContext,
         builder: (ctx) => AlertDialog(
           title: Text(l10n.confirmDownload),
@@ -300,7 +307,7 @@ class DownloadLauncher {
     String resolveUrl,
   ) {
     final l10n = AppLocalizations.of(context)!;
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(l10n.downloadUnavailable),
@@ -346,6 +353,3 @@ class DownloadLauncher {
   }
 }
 
-final downloadLauncherProvider = Provider<DownloadLauncher>((ref) {
-  return DownloadLauncher(ref);
-});

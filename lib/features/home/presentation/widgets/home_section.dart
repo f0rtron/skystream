@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:skystream/core/utils/responsive_breakpoints.dart';
 import 'package:skystream/core/router/app_router.dart';
 import 'package:skystream/core/utils/image_fallbacks.dart';
@@ -86,10 +85,7 @@ class _HomeSectionState extends ConsumerState<HomeSection> {
                             '',
                         title: item.title,
                         heroTag: 'home_${item.url}_$index',
-                        onTap: () => context.push(
-                          '/details',
-                          extra: DetailsRouteExtra(item: item),
-                        ),
+                        onTap: () => DetailsRoute($extra: DetailsRouteExtra(item: item)).push(context),
                       ),
                     );
                   },
