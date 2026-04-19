@@ -21,8 +21,10 @@ class CloudflareBypass {
   /// Active background WebView sessions indexed by normalized host.
   final Map<String, _HostWebView> _hostWebViews = {};
 
-  /// Futures for in-progress operations (solves or navigations) to prevent concurrency issues.
-  final Map<String, Future<dynamic>> _locks = {};
+  /// Global Mutex to serialize all Cloudflare operations system-wide.
+  /// Prevents spawning multiple HeadlessInAppWebViews concurrently, which
+  /// causes severe GPU/RAM exhaustion on Android and macOS.
+  Future<void>? _globalLock;
 
   // ---------------------------------------------------------------------------
   // Detection
@@ -62,10 +64,10 @@ class CloudflareBypass {
     if (rawHost.isEmpty) return null;
     final host = _normalizeHost(rawHost);
 
-    // Serialize all operations for this host to avoid race conditions.
-    final prevLock = _locks[host] ?? Future.value();
+    // Serialize ALL operations globally to avoid WebView explosion.
+    final prevLock = _globalLock ?? Future.value();
     final completer = Completer<void>();
-    _locks[host] = completer.future;
+    _globalLock = completer.future;
 
     try {
       await prevLock;
@@ -108,7 +110,7 @@ class CloudflareBypass {
       return result;
     } finally {
       completer.complete();
-      if (_locks[host] == completer.future) _locks.remove(host);
+      if (_globalLock == completer.future) _globalLock = null;
     }
   }
 
@@ -119,8 +121,17 @@ class CloudflareBypass {
     }
   }
 
+  static const _maxCachedWebViews = 2;
+
   Future<CfResult?> _fetchViaWebView(String url, String host) async {
     if (kDebugMode) debugPrint('$_tag Starting fresh solve for $url');
+
+    // Evict oldest cached WebViews to prevent GPU memory exhaustion.
+    while (_hostWebViews.length >= _maxCachedWebViews) {
+      final oldest = _hostWebViews.keys.first;
+      if (kDebugMode) debugPrint('$_tag Evicting cached WebView for $oldest');
+      await _disposeHostSession(oldest);
+    }
 
     final holder = _ViewHolder();
     CfResult? result;
@@ -190,6 +201,11 @@ class CloudflareBypass {
         }
         holder.hostView?.onLoaded(null);
       },
+      // Suppress console messages from cached pages (e.g. cinemacity's
+      // content-protector.min.js polls the DOM in a tight setInterval,
+      // flooding the platform channel with ~40 calls/sec of serialized
+      // "[object Object]" strings).
+      onConsoleMessage: (_, __) {},
     );
 
     try {
@@ -208,6 +224,11 @@ class CloudflareBypass {
       holder.hostView = hostView;
       _hostWebViews[host] = hostView;
       hostView.startIdleTimer();
+
+      // Silence the cached page's console to prevent scripts like
+      // cinemacity's content-protector.min.js from flooding native logcat
+      // and the plugin's method-channel debug layer with ~40 calls/sec.
+      await hostView.silenceConsole();
 
       if (kDebugMode) debugPrint('$_tag WebView session ready for $host');
       return result;
@@ -243,7 +264,7 @@ class _HostWebView {
   bool _disposed = false;
   Timer? _idleTimer;
 
-  static const _idleTimeout = Duration(minutes: 5);
+  static const _idleTimeout = Duration(seconds: 90);
 
   _HostWebView(this.host, this._headless, this._controller);
 
@@ -279,6 +300,8 @@ class _HostWebView {
         await Future<void>.delayed(const Duration(milliseconds: 500));
         return navigate(url, retries: retries - 1);
       }
+      // Re-silence console after each navigation (page reload replaces overrides).
+      await silenceConsole();
       return html;
     } on TimeoutException {
       if (!(_pending?.isCompleted ?? true)) _pending!.complete(null);
@@ -308,6 +331,24 @@ class _HostWebView {
         CloudflareBypass.instance._hostWebViews.remove(host);
       }
       await _headless.dispose();
+    } catch (_) {}
+  }
+
+  /// Override all console methods on the loaded page to prevent scripts
+  /// (e.g. cinemacity's content-protector.min.js) from flooding logcat
+  /// and the InAppWebView method-channel debug layer.
+  Future<void> silenceConsole() async {
+    if (_disposed || _controller == null) return;
+    try {
+      await _controller.evaluateJavascript(source: '''
+        (function() {
+          var noop = function(){};
+          console.log = noop;
+          console.info = noop;
+          console.debug = noop;
+          console.warn = noop;
+        })();
+      ''');
     } catch (_) {}
   }
 }

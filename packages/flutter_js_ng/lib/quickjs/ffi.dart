@@ -239,6 +239,54 @@ final void Function(
             )>>('jsSetMemoryLimit')
     .asFunction();
 
+/// DLLEXPORT void jsSetInterrupted(JSRuntime *rt, int32_t flag);
+final void Function(
+  Pointer<JSRuntime>,
+  int,
+) jsSetInterrupted = _qjsLib
+    .lookup<
+        NativeFunction<
+            Void Function(
+              Pointer<JSRuntime>,
+              Int32,
+            )>>('jsSetInterrupted')
+    .asFunction();
+
+/// DLLEXPORT int32_t jsGetInterrupted(JSRuntime *rt);
+final int Function(
+  Pointer<JSRuntime>,
+) jsGetInterrupted = _qjsLib
+    .lookup<
+        NativeFunction<
+            Int32 Function(
+              Pointer<JSRuntime>,
+            )>>('jsGetInterrupted')
+    .asFunction();
+
+/// DLLEXPORT void jsRunGC(JSRuntime *rt);
+final void Function(
+  Pointer<JSRuntime>,
+) jsRunGC = _qjsLib
+    .lookup<
+        NativeFunction<
+            Void Function(
+              Pointer<JSRuntime>,
+            )>>('jsRunGC')
+    .asFunction();
+
+/// DLLEXPORT void jsSetGCThreshold(JSRuntime *rt, size_t threshold);
+final void Function(
+  Pointer<JSRuntime>,
+  int,
+) jsSetGCThreshold = _qjsLib
+    .lookup<
+        NativeFunction<
+            Void Function(
+              Pointer<JSRuntime>,
+              IntPtr,
+            )>>('jsSetGCThreshold')
+    .asFunction();
+
 /// void jsFreeRuntime(JSRuntime *rt)
 final void Function(
   Pointer<JSRuntime>,

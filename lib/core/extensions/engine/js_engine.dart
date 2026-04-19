@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
 import 'package:flutter/foundation.dart'; // For kDebugMode
+
 import 'package:flutter_js/flutter_js.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart' as wv;
 import '../../storage/extension_repository.dart';
 import '../../network/cloudflare_bypass.dart';
@@ -43,7 +45,8 @@ final jsEngineProvider = Provider.autoDispose<JsEngineService>((ref) {
 class JsEngineService {
   final JavascriptRuntime _runtime;
   final Dio _dio;
-  final CookieJar _cookieJar = CookieJar(); // RAM-based cookie jar
+  late final PersistCookieJar _cookieJar;
+  bool _cookieJarReady = false;
   final ExtensionRepository _storage;
   final PluginStorageService _pluginStorage;
 
@@ -53,11 +56,10 @@ class JsEngineService {
   final Map<String, Completer<dynamic>> _pendingCallbacks = {};
   final Map<String, dynamic> _domRegistry = {};
 
-  // Cancel token for the currently executing invokeAsync invocation.
-  // When a long-running JS function (e.g. getHome) times out on the Dart side,
-  // cancelling this token causes any subsequent Dio requests from that JS
-  // execution to fail immediately instead of spawning more CF bypass WebViews.
-  CancelToken? _currentCancelToken;
+  // Per-invocation cancel tokens indexed by callback ID.
+  // Each invokeAsync call stores its cancel token here so _handleHttp
+  // can look up the correct token instead of using a single shared field.
+  final Map<String, CancelToken> _callbackCancelTokens = {};
 
   // Monotonic counter for callback IDs — avoids Windows clock-resolution collisions
   // where DateTime.now().microsecondsSinceEpoch returns the same value for concurrent calls.
@@ -67,14 +69,18 @@ class JsEngineService {
   int _activeAsyncCount = 0;
   Timer? _centralPump;
 
+
+  // Tracks the callback ID of the most recently started invokeAsync call.
+  // Used to map HTTP requests dispatched during synchronous JS evaluation
+  // to the correct per-invocation CancelToken.
+  String? _latestCallbackId;
+
   JsEngineService(this._storage, this._pluginStorage, this._dio)
-    : _runtime = getJavascriptRuntime() {
-    final bool hasCookieManager = _dio.interceptors.any(
-      (i) => i is CookieManager,
-    );
-    if (!hasCookieManager) {
-      _dio.interceptors.add(CookieManager(_cookieJar));
-    }
+    : _runtime = getJavascriptRuntime(extraArgs: {
+        'stackSize': 2 * 1024 * 1024,
+        'memoryLimit': 256 * 1024 * 1024,
+      }) {
+    _initCookieJar();
     // DohInterceptor is provided globally by dioClientProvider
     // Defer polyfill injection to avoid blocking the UI thread
     Future.microtask(() async {
@@ -83,22 +89,47 @@ class JsEngineService {
     });
   }
 
+  Future<void> _initCookieJar() async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      _cookieJar = PersistCookieJar(
+        storage: FileStorage('${dir.path}/.cf_cookies/'),
+      );
+    } catch (e) {
+      // Fallback to in-memory if file system is unavailable
+      if (kDebugMode) debugPrint('[CookieJar] Persist init failed, using RAM: $e');
+      _cookieJar = PersistCookieJar();
+    }
+    _cookieJarReady = true;
+    final bool hasCookieManager = _dio.interceptors.any(
+      (i) => i is CookieManager,
+    );
+    if (!hasCookieManager) {
+      _dio.interceptors.add(CookieManager(_cookieJar));
+    }
+  }
+
   void _startPump() {
-    _centralPump?.cancel();
-    final interval = _activeAsyncCount > 0 ? 10 : 100;
-    _centralPump = Timer.periodic(Duration(milliseconds: interval), (_) {
-      _runtime.executePendingJob();
+    // Only create the pump once. It runs continuously at ~60Hz and drains
+    // up to 64 pending QuickJS jobs per tick. This is fast enough to keep
+    // promise chains flowing without starving the Dart event loop.
+    if (_centralPump != null) return;
+    _centralPump = Timer.periodic(const Duration(milliseconds: 16), (_) {
+      // Drain the QuickJS job queue — a single executePendingJob() only
+      // processes ONE microtask.  When dozens of HTTP callbacks resolve
+      // concurrently we need to flush them all in the same tick.
+      for (int i = 0; i < 64; i++) {
+        _runtime.executePendingJob();
+      }
     });
   }
 
   void _incrementAsync() {
     _activeAsyncCount++;
-    if (_activeAsyncCount == 1) _startPump();
   }
 
   void _decrementAsync() {
     _activeAsyncCount--;
-    if (_activeAsyncCount == 0) _startPump();
   }
 
   void _initPolyfills() {
@@ -180,8 +211,14 @@ class JsEngineService {
     """);
 
     _runtime.onMessage('http_request', (dynamic args) {
+      // Capture the cancel token at dispatch time — this is correct because
+      // evaluate() is synchronous and triggers HTTP calls during the eval,
+      // so _latestCallbackId always points to the invokeAsync that initiated this.
+      final capturedToken = _latestCallbackId != null
+          ? _callbackCancelTokens[_latestCallbackId]
+          : null;
       // We don't await here to let the bridge continue immediately
-      _handleHttp(args)
+      _handleHttp(args, cancelToken: capturedToken)
           .then((result) {
             final Map<String, dynamic> data = args is Map
                 ? Map<String, dynamic>.from(args)
@@ -287,9 +324,10 @@ class JsEngineService {
                 final String id =
                     "doc_${DateTime.now().microsecondsSinceEpoch}";
 
-                if (_domRegistry.length > 50) {
+                if (_domRegistry.length > 100) {
                   final keys = _domRegistry.keys.toList();
-                  for (int i = 0; i < 10; i++) {
+                  final evictCount = _domRegistry.length - 50;
+                  for (int i = 0; i < evictCount && i < keys.length; i++) {
                     _domRegistry.remove(keys[i]);
                   }
                 }
@@ -1036,7 +1074,7 @@ class JsEngineService {
     """);
   }
 
-  Future<Map<String, dynamic>> _handleHttp(dynamic args) async {
+  Future<Map<String, dynamic>> _handleHttp(dynamic args, {CancelToken? cancelToken}) async {
     final requestId =
         "req_${DateTime.now().microsecondsSinceEpoch.toString().substring(10)}";
     try {
@@ -1064,7 +1102,7 @@ class JsEngineService {
       final response = await _dio.request<String>(
         url,
         data: body,
-        cancelToken: _currentCancelToken,
+        cancelToken: cancelToken,
         options: Options(
           method: method,
           headers: finalHeaders,
@@ -1094,8 +1132,7 @@ class JsEngineService {
         // Check cancellation before starting a new WebView — but don't pass
         // isCancelled into the solve loop so an in-flight bypass can finish
         // and store CF cookies for future visits.
-        final capturedToken = _currentCancelToken;
-        if (capturedToken != null && capturedToken.isCancelled) {
+        if (cancelToken != null && cancelToken.isCancelled) {
           return {'code': 0, 'statusCode': 0, 'status': 0, 'body': '', 'error': 'cancelled'};
         }
         final cfResult = await CloudflareBypass.instance.solveAndFetch(
@@ -1201,6 +1238,7 @@ class JsEngineService {
   Future<dynamic> invokeAsync(
     String functionName, [
     List<dynamic>? args,
+    CancelToken? externalCancelToken,
   ]) async {
     String argsStr = "";
     if (args != null && args.isNotEmpty) {
@@ -1210,8 +1248,9 @@ class JsEngineService {
     final callbackId = "cb_${_callbackCounter++}";
     final completer = Completer<dynamic>();
     _pendingCallbacks[callbackId] = completer;
-    final cancelToken = CancelToken();
-    _currentCancelToken = cancelToken;
+    final cancelToken = externalCancelToken ?? CancelToken();
+    _callbackCancelTokens[callbackId] = cancelToken;
+    _latestCallbackId = callbackId;
 
     final evalWrapper =
         """
@@ -1260,21 +1299,19 @@ class JsEngineService {
         const Duration(seconds: 90),
         onTimeout: () {
           _pendingCallbacks.remove(callbackId);
+          _callbackCancelTokens.remove(callbackId);
           // Cancel all in-flight Dio requests from this JS invocation so
           // background JS code (e.g. iterating CF-protected URLs) stops
           // spawning new network requests / WebViews after the timeout.
           cancelToken.cancel('invokeAsync timeout: $functionName');
-          // Keep _currentCancelToken pointing at the cancelled token so
-          // subsequent _handleHttp calls for this invocation see isCancelled.
-          // It will be replaced when the next invokeAsync starts.
           _decrementAsync();
           throw TimeoutException('Timeout executing $functionName');
         },
       );
-      if (_currentCancelToken == cancelToken) _currentCancelToken = null;
+      _callbackCancelTokens.remove(callbackId);
       _decrementAsync();
     } catch (e) {
-      if (_currentCancelToken == cancelToken) _currentCancelToken = null;
+      _callbackCancelTokens.remove(callbackId);
       _decrementAsync();
       rethrow;
     }
@@ -1317,8 +1354,19 @@ class JsEngineService {
 
   void dispose() {
     _centralPump?.cancel();
+    // Cancel all in-flight requests
+    for (final token in _callbackCancelTokens.values) {
+      if (!token.isCancelled) token.cancel('engine disposed');
+    }
+    _callbackCancelTokens.clear();
     _runtime.dispose();
     _pendingCallbacks.clear();
+    _domRegistry.clear();
+  }
+
+  /// Trigger garbage collection in the underlying JS runtime.
+  void runGC() {
+    _runtime.runGC();
   }
 
   String _sanitizeLog(dynamic args) {

@@ -33,15 +33,20 @@ JavascriptRuntime getJavascriptRuntime({
   JavascriptRuntime runtime;
   if ((Platform.isAndroid && !forceJavascriptCoreOnAndroid)) {
     final int stackSize = extraArgs?['stackSize'] ?? 1024 * 1024;
-    runtime = QuickJsRuntime2(stackSize: stackSize);
+    final int memoryLimit = extraArgs?['memoryLimit'] ?? 0;
+    runtime = QuickJsRuntime2(stackSize: stackSize, memoryLimit: memoryLimit > 0 ? memoryLimit : null);
     // FlutterJs engine = FlutterJs();
     // runtime = QuickJsService(engine);
   } else if (Platform.isWindows) {
-    runtime = QuickJsRuntime2();
+    final int stackSize = extraArgs?['stackSize'] ?? 1024 * 1024;
+    final int memoryLimit = extraArgs?['memoryLimit'] ?? 0;
+    runtime = QuickJsRuntime2(stackSize: stackSize, memoryLimit: memoryLimit > 0 ? memoryLimit : null);
   } else if (Platform.isLinux) {
     // runtime = FlutterJsLinuxWin()..init();
     //runtime = JavascriptCoreRuntime(); //('f1.js');
-    runtime = QuickJsRuntime2();
+    final int stackSize = extraArgs?['stackSize'] ?? 1024 * 1024;
+    final int memoryLimit = extraArgs?['memoryLimit'] ?? 0;
+    runtime = QuickJsRuntime2(stackSize: stackSize, memoryLimit: memoryLimit > 0 ? memoryLimit : null);
   } else {
     runtime = JavascriptCoreRuntime();
   }

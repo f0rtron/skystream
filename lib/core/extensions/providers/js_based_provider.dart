@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart'; // For kDebugMode
+import 'package:dio/dio.dart';
 
 import '../../domain/entity/multimedia_item.dart';
 import '../base_provider.dart';
@@ -270,11 +271,11 @@ class JsBasedProvider extends SkyStreamProvider {
   }
 
   @override
-  Future<List<MultimediaItem>> search(String query) async {
+  Future<List<MultimediaItem>> search(String query, {CancelToken? cancelToken}) async {
     await _initFuture;
     if (_error != null) throw JsPluginException("INIT_ERROR", _error!);
     try {
-      final result = await _jsEngine.invokeAsync(_fn('search'), [query]);
+      final result = await _jsEngine.invokeAsync(_fn('search'), [query], cancelToken);
       if (result is List) {
         return await compute(_parseSearchResults, result);
       }

@@ -348,6 +348,7 @@ extern "C"
       JSChannel * channel;
       int64_t timeout;
       int64_t start;
+      volatile int32_t interrupted;
     };
 
     JSModuleDef *js_module_loader(
@@ -389,6 +390,7 @@ extern "C"
 
     int js_interrupt_handler(JSRuntime * rt, void * opaque) {
         RuntimeOpaque *op = (RuntimeOpaque *)opaque;
+        if (op->interrupted) return 1;
         if(op->timeout && op->start && (clock() - op->start) > op->timeout * CLOCKS_PER_SEC / 1000) {
         op->start = 0;
         return 1;
@@ -400,12 +402,34 @@ extern "C"
     DLLEXPORT JSRuntime *jsNewRuntime(JSChannel channel, int64_t timeout)
     {
         JSRuntime *rt = JS_NewRuntime();
-        RuntimeOpaque *opaque = new RuntimeOpaque({channel, timeout, 0});
+        RuntimeOpaque *opaque = new RuntimeOpaque({channel, timeout, 0, 0});
         JS_SetRuntimeOpaque(rt, opaque);
         JS_SetHostPromiseRejectionTracker(rt, js_promise_rejection_tracker, opaque);
         JS_SetModuleLoaderFunc(rt, nullptr, js_module_loader, opaque);
         JS_SetInterruptHandler(rt, js_interrupt_handler, opaque);
         return rt;
+    }
+
+    DLLEXPORT void jsSetInterrupted(JSRuntime *rt, int32_t flag) {
+        RuntimeOpaque *op = (RuntimeOpaque *)JS_GetRuntimeOpaque(rt);
+        if (op) op->interrupted = flag;
+    }
+
+    DLLEXPORT int32_t jsGetInterrupted(JSRuntime *rt) {
+        RuntimeOpaque *op = (RuntimeOpaque *)JS_GetRuntimeOpaque(rt);
+        return op ? op->interrupted : 0;
+    }
+
+    DLLEXPORT void jsRunGC(JSRuntime *rt) {
+        JS_RunGC(rt);
+    }
+
+    DLLEXPORT void jsSetGCThreshold(JSRuntime *rt, size_t threshold) {
+        JS_SetGCThreshold(rt, threshold);
+    }
+
+    DLLEXPORT void jsSetMemoryLimit(JSRuntime *rt, size_t limit) {
+        JS_SetMemoryLimit(rt, limit);
     }
 
     

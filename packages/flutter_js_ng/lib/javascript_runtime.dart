@@ -99,6 +99,16 @@ abstract class JavascriptRuntime {
 
   int executePendingJob();
 
+  /// Set the external interrupt flag to force-terminate running JS execution.
+  /// Only effective on QuickJS-based runtimes. No-op on JavaScriptCore.
+  void setInterrupted(bool flag) {}
+
+  /// Clear the interrupt flag. Must be called before resuming JS after interrupt.
+  void clearInterrupted() {}
+
+  /// Trigger garbage collection. Only effective on QuickJS-based runtimes.
+  void runGC() {}
+
   void _setupConsoleLog() {
     evaluate("""
     var console = {

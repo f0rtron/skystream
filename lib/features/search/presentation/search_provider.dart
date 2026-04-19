@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:io' as io;
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:dio/dio.dart';
 import '../../../../core/extensions/extension_manager.dart';
+import '../../../../core/extensions/base_provider.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../discover/data/tmdb_provider.dart';
 
@@ -65,6 +68,9 @@ Stream<SearchAggregateState> searchAllProviders(
   required bool Function() isCancelled,
 }) async* {
   final providers = manager.getAllProviders();
+  debugPrint(
+    '[SEARCH DBG] searchAllProviders called: query="$query", providers=${providers.length}, cancelled=${isCancelled()}',
+  );
 
   if (query.isEmpty || providers.isEmpty) {
     yield const SearchAggregateState(results: [], isLoading: false);
@@ -78,17 +84,48 @@ Stream<SearchAggregateState> searchAllProviders(
   final queryParts = queryLower.split(' ').where((s) => s.isNotEmpty).toList();
 
   final controller = StreamController<SearchAggregateState>();
-  int activeFutures = providers.length;
+
+  // Semaphore sizing based on hardware
+  int getSemaphoreSize() {
+    int maxSlots = 8;
+    try {
+      final cores = io.Platform.numberOfProcessors;
+      if (io.Platform.isMacOS || io.Platform.isWindows || io.Platform.isLinux) {
+        maxSlots = 32;
+      } else {
+        // Mobile: (cores * 2) clamp between 4 and 8.
+        // Higher values overload the single-threaded JS pump when HTTP
+        // callbacks arrive in bursts.
+        maxSlots = (cores * 2).clamp(4, 8);
+      }
+    } catch (_) {}
+    return maxSlots;
+  }
+
+  final maxSlots = getSemaphoreSize();
+  int activeJobs = 0;
+  final queue = List<SkyStreamProvider>.from(providers);
+  final List<CancelToken> activeTokens = [];
+  bool isCompleted = false;
 
   Timer? throttleTimer;
   bool pendingEmit = false;
 
   void doEmit() {
-    if (controller.isClosed || isCancelled()) return;
+    if (controller.isClosed || isCancelled()) {
+      debugPrint(
+        '[SEARCH DBG] doEmit SKIPPED — closed=${controller.isClosed}, cancelled=${isCancelled()}',
+      );
+      return;
+    }
+    final totalItems = results.fold<int>(0, (sum, r) => sum + r.results.length);
+    debugPrint(
+      '[SEARCH DBG] doEmit — ${results.length} providers, $totalItems items, loading=${queue.isNotEmpty || activeJobs > 0}',
+    );
     controller.add(
       SearchAggregateState(
         results: List.from(results),
-        isLoading: activeFutures > 0,
+        isLoading: queue.isNotEmpty || activeJobs > 0,
       ),
     );
     pendingEmit = false;
@@ -105,71 +142,146 @@ Stream<SearchAggregateState> searchAllProviders(
     }
 
     pendingEmit = true;
-    throttleTimer ??= Timer(const Duration(milliseconds: 150), () {
+    // Mobile gets a wider throttle window to reduce rebuild frequency
+    // during high-concurrency search phases (70 providers).
+    final throttleDuration = (io.Platform.isAndroid || io.Platform.isIOS)
+        ? const Duration(milliseconds: 350)
+        : const Duration(milliseconds: 150);
+    throttleTimer ??= Timer(throttleDuration, () {
       throttleTimer = null;
       if (pendingEmit) doEmit();
     });
   }
 
-  for (final provider in providers) {
-    Future(() async {
-      if (isCancelled()) return;
-
-      try {
-        final rawResults = await provider.search(query);
-        if (isCancelled()) return;
-
-        final providerItems = rawResults
-            .map(
-              (item) => MultimediaItem(
-                title: item.title,
-                url: item.url,
-                posterUrl: item.posterUrl,
-                bannerUrl: item.bannerUrl,
-                description: item.description,
-                contentType: item.contentType,
-                episodes: item.episodes,
-                provider: provider.packageName,
-              ),
-            )
-            .toList();
-
-        final filtered = await compute(
-          _filterItems,
-          _FilterParams(providerItems, queryParts),
-        );
-
-        if (isCancelled()) return;
-
-        results.add(
-          ProviderSearchResult(
-            providerId: provider.packageName,
-            providerName: provider.name,
-            results: filtered,
-          ),
-        );
-      } catch (e) {
-        if (isCancelled()) return;
-        results.add(
-          ProviderSearchResult(
-            providerId: provider.packageName,
-            providerName: provider.name,
-            results: [],
-            error: e.toString(),
-          ),
-        );
-      } finally {
-        activeFutures--;
-        final isLast = activeFutures == 0;
-        scheduleEmit(force: isLast);
-        if (isLast && !controller.isClosed) {
-          Future.microtask(() {
-            if (!controller.isClosed) controller.close();
-          });
-        }
+  void processNext() {
+    if (isCancelled()) {
+      for (final t in activeTokens) {
+        if (!t.isCancelled) t.cancel('Search cancelled');
       }
-    });
+      activeTokens.clear();
+      return;
+    }
+
+    // Fill up to max slots
+    while (activeJobs < maxSlots && queue.isNotEmpty) {
+      final provider = queue.removeAt(0);
+      activeJobs++;
+      final token = CancelToken();
+      activeTokens.add(token);
+
+      Future(() async {
+        if (isCancelled() || token.isCancelled) {
+          debugPrint(
+            '[SEARCH DBG] SKIP ${provider.packageName} — cancelled before start',
+          );
+          return;
+        }
+
+        try {
+          debugPrint('[SEARCH DBG] START ${provider.packageName}');
+          final rawResults = await provider.search(query, cancelToken: token);
+          debugPrint(
+            '[SEARCH DBG] DONE ${provider.packageName} — rawResults=${rawResults.length}',
+          );
+          if (isCancelled() || token.isCancelled) {
+            debugPrint(
+              '[SEARCH DBG] CANCELLED after search ${provider.packageName}',
+            );
+            return;
+          }
+
+          final providerItems = rawResults
+              .map(
+                (item) => MultimediaItem(
+                  title: item.title,
+                  url: item.url,
+                  posterUrl: item.posterUrl,
+                  bannerUrl: item.bannerUrl,
+                  description: item.description,
+                  contentType: item.contentType,
+                  episodes: item.episodes,
+                  provider: provider.packageName,
+                ),
+              )
+              .toList();
+
+          // For small result sets, skip the compute() isolate overhead
+          // (spawn + serialize + deserialize costs more than the filter work).
+          final filtered = providerItems.length < 30
+              ? _filterItems(_FilterParams(providerItems, queryParts))
+              : await compute(
+                  _filterItems,
+                  _FilterParams(providerItems, queryParts),
+                );
+          debugPrint(
+            '[SEARCH DBG] FILTERED ${provider.packageName} — ${filtered.length}/${providerItems.length} items',
+          );
+
+          if (isCancelled() || token.isCancelled) {
+            debugPrint(
+              '[SEARCH DBG] CANCELLED after filter ${provider.packageName}',
+            );
+            return;
+          }
+
+          results.add(
+            ProviderSearchResult(
+              providerId: provider.packageName,
+              providerName: provider.name,
+              results: filtered,
+            ),
+          );
+          debugPrint(
+            '[SEARCH DBG] ADDED ${provider.packageName} — total results sets=${results.length}',
+          );
+        } catch (e) {
+          debugPrint('[SEARCH DBG] ERROR ${provider.packageName}: $e');
+          if (isCancelled() || token.isCancelled) {
+            debugPrint(
+              '[SEARCH DBG] CANCELLED during error ${provider.packageName}',
+            );
+            return;
+          }
+          if (e is DioException && e.type == DioExceptionType.cancel) return;
+
+          results.add(
+            ProviderSearchResult(
+              providerId: provider.packageName,
+              providerName: provider.name,
+              results: [],
+              error: e.toString(),
+            ),
+          );
+        } finally {
+          activeJobs--;
+          activeTokens.remove(token);
+
+          final isLast = activeJobs == 0 && queue.isEmpty;
+          debugPrint(
+            '[SEARCH DBG] FINALLY ${provider.packageName} — activeJobs=$activeJobs, queueLeft=${queue.length}, isLast=$isLast, cancelled=${isCancelled()}, controllerClosed=${controller.isClosed}',
+          );
+          scheduleEmit(force: isLast);
+
+          if (isLast && !isCompleted) {
+            isCompleted = true;
+            debugPrint(
+              '[SEARCH DBG] ALL DONE — total result sets=${results.length}',
+            );
+            manager.runGC();
+            if (!controller.isClosed) {
+              Future.microtask(() {
+                if (!controller.isClosed) controller.close();
+              });
+            }
+          } else if (!isCancelled()) {
+            processNext();
+          }
+        }
+      });
+    }
   }
+
+  processNext();
 
   yield* controller.stream;
 }
@@ -185,11 +297,15 @@ class SearchQuery extends _$SearchQuery {
 @Riverpod(keepAlive: true)
 Stream<SearchAggregateState> searchResults(Ref ref) {
   final query = ref.watch(searchQueryProvider);
-  ref.watch(extensionManagerProvider);
   final manager = ref.read(extensionManagerProvider.notifier);
 
+  debugPrint('[SEARCH DBG] searchResults PROVIDER BUILT — query="$query"');
+
   var cancelled = false;
-  ref.onDispose(() => cancelled = true);
+  ref.onDispose(() {
+    debugPrint('[SEARCH DBG] searchResults DISPOSED — query="$query"');
+    cancelled = true;
+  });
 
   return searchAllProviders(ref, query, manager, isCancelled: () => cancelled);
 }

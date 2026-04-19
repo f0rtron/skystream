@@ -45,11 +45,13 @@ void main() async {
       titleBarStyle: TitleBarStyle.normal,
     );
 
-    unawaited(windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.maximize();
-      await windowManager.focus();
-    }));
+    unawaited(
+      windowManager.waitUntilReadyToShow(windowOptions, () async {
+        await windowManager.show();
+        await windowManager.maximize();
+        await windowManager.focus();
+      }),
+    );
   }
 
   runApp(const AppRestarter(child: AppRoot()));
@@ -157,10 +159,12 @@ class _MyAppState extends ConsumerState<MyApp> {
   }
 
   Future<void> _checkAppUpdates() async {
-    if (kDebugMode) debugPrint('[Lifecycle] Starting _checkAppUpdates after 5s delay...');
+    if (kDebugMode)
+      debugPrint('[Lifecycle] Starting _checkAppUpdates after 5s delay...');
     await Future<void>.delayed(const Duration(seconds: 5));
     if (!mounted) {
-      if (kDebugMode) debugPrint('[Lifecycle] _checkAppUpdates aborted: MyApp unmounted');
+      if (kDebugMode)
+        debugPrint('[Lifecycle] _checkAppUpdates aborted: MyApp unmounted');
       return;
     }
 
@@ -187,9 +191,9 @@ class _MyAppState extends ConsumerState<MyApp> {
         if (mounted && navContext != null && navContext.mounted) {
           final l10n = AppLocalizations.of(navContext);
           if (l10n != null && count > 0) {
-            ref.read(notificationServiceProvider).showSuccess(
-                  l10n.extensionsUpdated(count),
-                );
+            ref
+                .read(notificationServiceProvider)
+                .showSuccess(l10n.extensionsUpdated(count));
           }
         }
       }
@@ -209,10 +213,16 @@ class _MyAppState extends ConsumerState<MyApp> {
       if (next is UpdateAvailable) {
         final navContext = appRouter.routerDelegate.navigatorKey.currentContext;
         if (navContext != null && navContext.mounted) {
-          if (kDebugMode) debugPrint('[Lifecycle] State update detected: UpdateAvailable. Showing dialog.');
+          if (kDebugMode)
+            debugPrint(
+              '[Lifecycle] State update detected: UpdateAvailable. Showing dialog.',
+            );
           UpdateDialog.show(navContext, next.release);
         } else {
-          if (kDebugMode) debugPrint('[Lifecycle] Update available but navContext not ready/mounted.');
+          if (kDebugMode)
+            debugPrint(
+              '[Lifecycle] Update available but navContext not ready/mounted.',
+            );
         }
       }
     });
@@ -275,67 +285,73 @@ class LaunchErrorApp extends StatelessWidget {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
-            child: Builder(builder: (context) {
-              final l10n = AppLocalizations.of(context);
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.white),
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n?.startupError ?? 'Startup Error',
-                    style: const TextStyle(
+            child: Builder(
+              builder: (context) {
+                final l10n = AppLocalizations.of(context);
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
                       color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    error.toString(),
-                    style: const TextStyle(color: Colors.white70),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.refresh),
-                    label: Text(l10n?.retry ?? 'Retry'),
-                    onPressed: () {
-                      main();
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n?.startupError ?? 'Startup Error',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    icon: const Icon(Icons.delete_forever),
-                    label: Text(l10n?.factoryReset ?? 'Factory Reset'),
-                    onPressed: () async {
-                      await storageService.deleteAllData();
-                      if (context.mounted) await AppUtils.restartApp(context);
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.orange),
+                    const SizedBox(height: 16),
+                    Text(
+                      error.toString(),
+                      style: const TextStyle(color: Colors.white70),
+                      textAlign: TextAlign.center,
                     ),
-                    icon: const Icon(Icons.restore),
-                    label: Text(
-                      l10n?.resetDataKeepExtensions ??
-                          'Reset Data (Keep Extensions)',
+                    const SizedBox(height: 32),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.refresh),
+                      label: Text(l10n?.retry ?? 'Retry'),
+                      onPressed: () {
+                        main();
+                      },
                     ),
-                    onPressed: () async {
-                      await storageService.clearPreferences();
-                      if (context.mounted) await AppUtils.restartApp(context);
-                    },
-                  ),
-                ],
-              );
-            }),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white),
+                      ),
+                      icon: const Icon(Icons.delete_forever),
+                      label: Text(l10n?.factoryReset ?? 'Factory Reset'),
+                      onPressed: () async {
+                        await storageService.deleteAllData();
+                        if (context.mounted) await AppUtils.restartApp(context);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.orange),
+                      ),
+                      icon: const Icon(Icons.restore),
+                      label: Text(
+                        l10n?.resetDataKeepExtensions ??
+                            'Reset Data (Keep Extensions)',
+                      ),
+                      onPressed: () async {
+                        await storageService.clearPreferences();
+                        if (context.mounted) await AppUtils.restartApp(context);
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import '../domain/entity/multimedia_item.dart';
 
 enum ProviderType { movie, series, anime, livestream, other }
@@ -16,7 +17,7 @@ abstract class SkyStreamProvider {
   bool get isDebug => packageName.endsWith('.debug');
 
   // Key methods providers must implement
-  Future<List<MultimediaItem>> search(String query);
+  Future<List<MultimediaItem>> search(String query, {CancelToken? cancelToken});
   // Returns categorized content (Section Name -> Items)
   Future<Map<String, List<MultimediaItem>>> getHome();
   Future<MultimediaItem> getDetails(String url);

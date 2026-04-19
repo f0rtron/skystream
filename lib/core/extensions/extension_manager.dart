@@ -147,6 +147,11 @@ class ExtensionManager extends _$ExtensionManager {
     }
   }
 
+  /// Trigger garbage collection in the underlying JS engine
+  void runGC() {
+    _engine?.runGC();
+  }
+
   Future<void> updateCustomBaseUrl(String packageName, String? url) async {
     final settings = ref.read(settingsRepositoryProvider);
     await settings.setCustomBaseUrl(packageName, url);
