@@ -10,6 +10,7 @@ import 'providers/js_based_provider.dart';
 import 'services/plugin_storage_service.dart';
 import 'providers.dart';
 import '../storage/settings_repository.dart';
+import '../logger/app_logger.dart';
 
 part 'extension_manager.g.dart';
 
@@ -175,6 +176,7 @@ class ExtensionManager extends _$ExtensionManager {
     try {
       final path = await _storageService!.getPluginJsPath(plugin);
       if (kDebugMode) debugPrint("ExtensionManager: Loading JS from: $path");
+      talker.debug("ExtensionManager: Loading JS from: $path");
 
       if (!path.startsWith('assets/')) {
         if (!await File(path).exists()) {
@@ -209,6 +211,7 @@ class ExtensionManager extends _$ExtensionManager {
       await provider.waitForInit;
       if (kDebugMode) {
         debugPrint("ExtensionManager: Init complete for ${plugin.packageName}");
+        talker.debug("ExtensionManager: Init complete for ${plugin.packageName}");
       }
 
       if (addToState) {
@@ -217,6 +220,7 @@ class ExtensionManager extends _$ExtensionManager {
       return provider;
     } catch (e) {
       if (kDebugMode) debugPrint("Failed to load plugin ${plugin.name}: $e");
+      talker.error("Failed to load plugin ${plugin.name}: $e");
       return null;
     }
   }

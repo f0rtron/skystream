@@ -14,8 +14,13 @@ Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=..\..\windows\runner\resources\app_icon.ico
-ArchitecturesAllowed={#AppArch}
-ArchitecturesInstallIn64BitMode={#AppArch}
+#if AppArch == "x64"
+  ArchitecturesAllowed=x64compatible
+  ArchitecturesInstallIn64BitMode=x64compatible
+#else
+  ArchitecturesAllowed={#AppArch}
+  ArchitecturesInstallIn64BitMode={#AppArch}
+#endif
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

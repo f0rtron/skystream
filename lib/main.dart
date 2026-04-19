@@ -48,7 +48,9 @@ void main() async {
     unawaited(
       windowManager.waitUntilReadyToShow(windowOptions, () async {
         await windowManager.show();
-        await windowManager.maximize();
+        if (!Platform.isWindows) {
+          await windowManager.maximize();
+        }
         await windowManager.focus();
       }),
     );

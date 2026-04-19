@@ -17,6 +17,7 @@ import 'package:pointycastle/export.dart';
 import 'package:crypto/crypto.dart' as crypto_lib;
 import '../services/plugin_storage_service.dart';
 import '../providers.dart';
+import '../../logger/app_logger.dart';
 
 import '../../network/dio_client_provider.dart';
 import 'package:html/parser.dart' as html_parser;
@@ -183,10 +184,14 @@ class JsEngineService {
 
     // Console Polyfill
     _runtime.onMessage('console_log', (dynamic args) {
-      if (kDebugMode) debugPrint("[JS] ${_sanitizeLog(args)}");
+      final msg = "[JS LOG] ${_sanitizeLog(args)}";
+      talker.debug(msg);
+      if (kDebugMode) debugPrint(msg);
     });
     _runtime.onMessage('console_error', (dynamic args) {
-      if (kDebugMode) debugPrint("[JS ERROR] ${_sanitizeLog(args)}");
+      final msg = "[JS ERROR] ${_sanitizeLog(args)}";
+      talker.error(msg);
+      if (kDebugMode) debugPrint(msg);
     });
 
     _runtime.evaluate("""
@@ -402,6 +407,7 @@ class JsEngineService {
     // Native SDK Helpers
     _runtime.onMessage('register_settings', (dynamic args) async {
       if (kDebugMode) debugPrint("[JS SDK] Settings Registration: $args");
+      talker.debug("[JS SDK] Settings Registration: $args");
       try {
         final Map<String, dynamic> data = args is Map
             ? Map<String, dynamic>.from(args)
@@ -1098,6 +1104,7 @@ class JsEngineService {
       }
 
       if (kDebugMode) debugPrint("[JS HTTP] $method $url ($requestId)");
+      talker.debug("[JS HTTP] $method $url ($requestId)");
 
       final response = await _dio.request<String>(
         url,
@@ -1117,6 +1124,7 @@ class JsEngineService {
         debugPrint(
           "[JS HTTP] Back $url ($requestId) -> ${response.statusCode}",
         );
+        talker.debug("[JS HTTP] Back $url ($requestId) -> ${response.statusCode}");
       }
 
       final responseHeaders = response.headers.map.map(
@@ -1161,6 +1169,7 @@ class JsEngineService {
       };
     } catch (e) {
       if (kDebugMode) debugPrint("[JS HTTP ERROR] $requestId: $e");
+      talker.error("[JS HTTP ERROR] $requestId: $e");
       return {
         'code': 0,
         'statusCode': 0,

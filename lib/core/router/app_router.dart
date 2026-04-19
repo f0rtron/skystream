@@ -26,24 +26,16 @@ part 'app_router.g.dart';
 @TypedStatefulShellRoute<AppShellRouteData>(
   branches: [
     TypedStatefulShellBranch<HomeBranchData>(
-      routes: [
-        TypedGoRoute<HomeRoute>(path: '/home'),
-      ],
+      routes: [TypedGoRoute<HomeRoute>(path: '/home')],
     ),
     TypedStatefulShellBranch<SearchBranchData>(
-      routes: [
-        TypedGoRoute<SearchRoute>(path: '/search'),
-      ],
+      routes: [TypedGoRoute<SearchRoute>(path: '/search')],
     ),
     TypedStatefulShellBranch<DiscoverBranchData>(
-      routes: [
-        TypedGoRoute<DiscoverRoute>(path: '/discover'),
-      ],
+      routes: [TypedGoRoute<DiscoverRoute>(path: '/discover')],
     ),
     TypedStatefulShellBranch<LibraryBranchData>(
-      routes: [
-        TypedGoRoute<LibraryRoute>(path: '/library'),
-      ],
+      routes: [TypedGoRoute<LibraryRoute>(path: '/library')],
     ),
     TypedStatefulShellBranch<SettingsBranchData>(
       routes: [
@@ -51,12 +43,7 @@ part 'app_router.g.dart';
           path: '/settings',
           routes: [
             TypedGoRoute<ExtensionsRoute>(path: 'extensions'),
-            TypedGoRoute<DeveloperOptionsRoute>(
-              path: 'developer',
-              routes: [
-                TypedGoRoute<AppLogsRoute>(path: 'logs'),
-              ],
-            ),
+            TypedGoRoute<DeveloperOptionsRoute>(path: 'developer'),
           ],
         ),
       ],
@@ -93,7 +80,8 @@ class SearchBranchData extends StatefulShellBranchData {
 class SearchRoute extends GoRouteData with $SearchRoute {
   const SearchRoute();
   @override
-  Widget build(BuildContext context, GoRouterState state) => const SearchScreen();
+  Widget build(BuildContext context, GoRouterState state) =>
+      const SearchScreen();
 }
 
 class DiscoverBranchData extends StatefulShellBranchData {
@@ -103,7 +91,8 @@ class DiscoverBranchData extends StatefulShellBranchData {
 class DiscoverRoute extends GoRouteData with $DiscoverRoute {
   const DiscoverRoute();
   @override
-  Widget build(BuildContext context, GoRouterState state) => const DiscoverScreen();
+  Widget build(BuildContext context, GoRouterState state) =>
+      const DiscoverScreen();
 }
 
 class LibraryBranchData extends StatefulShellBranchData {
@@ -113,7 +102,8 @@ class LibraryBranchData extends StatefulShellBranchData {
 class LibraryRoute extends GoRouteData with $LibraryRoute {
   const LibraryRoute();
   @override
-  Widget build(BuildContext context, GoRouterState state) => const LibraryScreen();
+  Widget build(BuildContext context, GoRouterState state) =>
+      const LibraryScreen();
 }
 
 class SettingsBranchData extends StatefulShellBranchData {
@@ -123,7 +113,8 @@ class SettingsBranchData extends StatefulShellBranchData {
 class SettingsRoute extends GoRouteData with $SettingsRoute {
   const SettingsRoute();
   @override
-  Widget build(BuildContext context, GoRouterState state) => const SettingsScreen();
+  Widget build(BuildContext context, GoRouterState state) =>
+      const SettingsScreen();
 }
 
 // --- Sub-routes of Settings ---
@@ -131,19 +122,31 @@ class SettingsRoute extends GoRouteData with $SettingsRoute {
 class ExtensionsRoute extends GoRouteData with $ExtensionsRoute {
   const ExtensionsRoute();
   @override
-  Widget build(BuildContext context, GoRouterState state) => const ExtensionsScreen();
+  Widget build(BuildContext context, GoRouterState state) =>
+      const ExtensionsScreen();
 }
 
 class DeveloperOptionsRoute extends GoRouteData with $DeveloperOptionsRoute {
   const DeveloperOptionsRoute();
   @override
-  Widget build(BuildContext context, GoRouterState state) => const DeveloperOptionsScreen();
+  Widget build(BuildContext context, GoRouterState state) =>
+      const DeveloperOptionsScreen();
 }
 
+@TypedGoRoute<AppLogsRoute>(path: '/logs')
 class AppLogsRoute extends GoRouteData with $AppLogsRoute {
   const AppLogsRoute();
   @override
-  Widget build(BuildContext context, GoRouterState state) => TalkerScreen(talker: talker);
+  Widget build(BuildContext context, GoRouterState state) {
+    return TalkerScreen(
+      talker: talker,
+      theme: TalkerScreenTheme(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        textColor: Theme.of(context).colorScheme.onSurface,
+        cardColor: Theme.of(context).colorScheme.surface,
+      ),
+    );
+  }
 }
 
 // --- Typed Extras ---

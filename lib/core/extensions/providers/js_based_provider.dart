@@ -8,6 +8,7 @@ import '../../domain/entity/multimedia_item.dart';
 import '../base_provider.dart';
 import '../engine/js_engine.dart';
 import '../../services/local_proxy_service.dart';
+import '../../logger/app_logger.dart';
 
 // Top-level function for compute() isolate
 Map<String, List<MultimediaItem>> _parseHomeResults(dynamic result) {
@@ -154,6 +155,7 @@ class JsBasedProvider extends SkyStreamProvider {
           debugPrint(
             "JsBasedProvider: Loaded namespaced script for $_packageName",
           );
+          talker.debug("JsBasedProvider: Loaded namespaced script for $_packageName");
         }
       } catch (e) {
         _error = "Eval: $e";
@@ -263,9 +265,11 @@ class JsBasedProvider extends SkyStreamProvider {
       throw Exception("Extension returned invalid home data (not a map).");
     } on JsPluginException catch (e) {
       if (kDebugMode) debugPrint("JsPluginException in getHome: $e");
+      talker.error("JsPluginException in getHome: $e");
       rethrow;
     } catch (e) {
       if (kDebugMode) debugPrint("Error in getHome: $e");
+      talker.error("Error in getHome: $e");
       throw Exception("Failed to load home content: $e");
     }
   }
@@ -282,9 +286,11 @@ class JsBasedProvider extends SkyStreamProvider {
       return [];
     } on JsPluginException catch (e) {
       if (kDebugMode) debugPrint("JsPluginException in search: $e");
+      talker.error("JsPluginException in search: $e");
       rethrow;
     } catch (e) {
       if (kDebugMode) debugPrint("Error in search: $e");
+      talker.error("Error in search: $e");
       return [];
     }
   }
@@ -305,9 +311,11 @@ class JsBasedProvider extends SkyStreamProvider {
       throw Exception("Extension returned invalid detail data.");
     } on JsPluginException catch (e) {
       if (kDebugMode) debugPrint("JsPluginException in getDetails: $e");
+      talker.error("JsPluginException in getDetails: $e");
       rethrow;
     } catch (e) {
       if (kDebugMode) debugPrint("Error in getDetails: $e");
+      talker.error("Error in getDetails: $e");
       return MultimediaItem(title: "Error: $e", url: url, posterUrl: "");
     }
   }
@@ -418,9 +426,11 @@ class JsBasedProvider extends SkyStreamProvider {
       return [];
     } on JsPluginException catch (e) {
       if (kDebugMode) debugPrint("JsPluginException in loadStreams: $e");
+      talker.error("JsPluginException in loadStreams: $e");
       rethrow;
     } catch (e) {
       if (kDebugMode) debugPrint("Error in loadStreams: $e");
+      talker.error("Error in loadStreams: $e");
       return [];
     }
   }
