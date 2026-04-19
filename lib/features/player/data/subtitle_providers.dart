@@ -7,7 +7,7 @@ class OpenSubtitlesProvider extends SubtitleProvider {
   final String? _apiKey;
   static const String baseUrl = "https://api.opensubtitles.com/api/v1";
   static const String _defaultApiKey = "uyBLgFD17MgrYmA0gSXoKllMJBelOYj2";
-  static const String _userAgent = "SkyStream v2.1.0";
+  static const String _userAgent = "SkyStream v2.2.1";
 
   // Auth state
   final String? _username;
@@ -286,6 +286,7 @@ class OpenSubtitlesProvider extends SubtitleProvider {
       final Map<String, String> headers = {
         ...SubtitleProvider.commonHeaders,
         'user-agent': _userAgent,
+        'Content-Type': 'application/json',
         'Api-Key': _effectiveApiKey,
       };
       if (_token != null) {
@@ -306,12 +307,19 @@ class OpenSubtitlesProvider extends SubtitleProvider {
     }
     return null;
   }
+
+  @override
+  Map<String, String> getDownloadHeaders(OnlineSubtitle subtitle) {
+    // OpenSubtitles download links are CDN URLs that don't need auth headers
+    return SubtitleProvider.commonHeaders;
+  }
 }
 
 /// Provider for SubDL.com.
 class SubDLProvider extends SubtitleProvider {
   final Dio _dio;
   static const String baseUrl = "https://api.subdl.com/api/v1/subtitles";
+  static const String downloadBaseUrl = "https://dl.subdl.com";
   static const String authUrl = "https://apiold.subdl.com";
   String? _apiKey;
   String? _email;
@@ -389,14 +397,20 @@ class SubDLProvider extends SubtitleProvider {
       if (kDebugMode) print("[SubDL] Found ${data.length} results.");
 
       return data.map((item) {
+        final String rawUrl = (item['url'] as String?) ?? "";
+        // SubDL returns relative paths like /subtitle/123.zip
+        // Must prepend the download CDN base URL
+        final String fullUrl = rawUrl.isNotEmpty
+            ? "$downloadBaseUrl${rawUrl.startsWith('/') ? rawUrl : '/$rawUrl'}"
+            : "";
         return OnlineSubtitle(
           id: item['id'].toString(),
           name: (item['release_name'] as String?) ?? (item['fileName'] as String?) ?? query,
           language: (item['language'] as String?) ?? langCode,
           source: name,
-          downloadUrl: (item['url'] as String?) ?? "",
+          downloadUrl: fullUrl,
           isHearingImpaired: item['hi'] == 1,
-          metadata: {'url': item['url']},
+          metadata: {'url': fullUrl},
         );
       }).toList();
     } catch (e) {
@@ -410,6 +424,11 @@ class SubDLProvider extends SubtitleProvider {
   @override
   Future<String?> getDownloadUrl(OnlineSubtitle subtitle) async {
     return subtitle.metadata?['url'] as String?;
+  }
+
+  @override
+  Map<String, String> getDownloadHeaders(OnlineSubtitle subtitle) {
+    return SubtitleProvider.commonHeaders;
   }
 
   /// Verifies if the API key is valid by performing a dummy search.
@@ -743,7 +762,15 @@ class SubSourceProvider extends SubtitleProvider {
         "$baseUrlKeyless/getMovie",
         data: postData,
         cancelToken: cancelToken,
-        options: Options(headers: SubtitleProvider.commonHeaders),
+        options: Options(
+          headers: {
+            ...SubtitleProvider.commonHeaders,
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36',
+            'Referer': 'https://subsource.net/',
+            'Origin': 'https://subsource.net/',
+          },
+        ),
       );
 
       if (movieResponse.data == null || movieResponse.data?['success'] != true) {
@@ -812,7 +839,15 @@ class SubSourceProvider extends SubtitleProvider {
       final response = await _dio.post<Map<String, dynamic>>(
         "$baseUrlKeyless/getSub",
         data: {'movie': movie, 'lang': lang, 'id': id},
-        options: Options(headers: SubtitleProvider.commonHeaders),
+        options: Options(
+          headers: {
+            ...SubtitleProvider.commonHeaders,
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36',
+            'Referer': 'https://subsource.net/',
+            'Origin': 'https://subsource.net/',
+          },
+        ),
       );
 
       if (response.data != null && response.data?['sub'] != null) {
@@ -825,6 +860,28 @@ class SubSourceProvider extends SubtitleProvider {
       if (kDebugMode) print("[SubSource Keyless] Download failed: $e");
     }
     return null;
+  }
+
+  /// Browser-mimicking headers for keyless SubSource
+  static const Map<String, String> _keylessBrowserHeaders = {
+    'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36',
+    'Referer': 'https://subsource.net/',
+    'Origin': 'https://subsource.net/',
+    'Accept': '*/*',
+  };
+
+  @override
+  Map<String, String> getDownloadHeaders(OnlineSubtitle subtitle) {
+    final mode = subtitle.metadata?['mode'] ?? 'v1';
+    if (mode == 'keyless') {
+      return _keylessBrowserHeaders;
+    }
+    // V1 mode needs the API key
+    return {
+      ...SubtitleProvider.commonHeaders,
+      if (_apiKey != null && _apiKey!.isNotEmpty) 'X-API-Key': _apiKey!,
+    };
   }
 
   /// Helper to convert language tag to full English name.

@@ -31,23 +31,51 @@ class NotificationService {
   }
 
   void showError(String message) {
-    showSnackBar(
-      message,
-      backgroundColor: Colors.red.shade800,
+    messengerKey.currentState?.showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(message, style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w500)),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFFFFF0F0),
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
   void showSuccess(String message) {
-    showSnackBar(
-      message,
-      backgroundColor: Colors.green.shade800,
+    messengerKey.currentState?.showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle_outline, color: Colors.green.shade700, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(message, style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.w500)),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFFF0FFF0),
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
   void showInfo(String message) {
-    showSnackBar(
-      message,
-      backgroundColor: Colors.blue.shade800,
+    messengerKey.currentState?.showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.black)),
+        backgroundColor: Colors.white,
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 

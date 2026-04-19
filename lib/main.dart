@@ -147,8 +147,6 @@ class MyApp extends ConsumerStatefulWidget {
 }
 
 class _MyAppState extends ConsumerState<MyApp> {
-  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
-      GlobalKey<ScaffoldMessengerState>();
 
   @override
   void initState() {
@@ -243,7 +241,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         }
 
         return MaterialApp.router(
-          scaffoldMessengerKey: _scaffoldMessengerKey,
+          scaffoldMessengerKey: ref.read(notificationServiceProvider).messengerKey,
           title: 'SkyStream',
           debugShowCheckedModeBanner: false,
           themeMode: themeMode,

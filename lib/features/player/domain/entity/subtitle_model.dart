@@ -49,7 +49,7 @@ abstract class SubtitleProvider {
   String get idPrefix;
 
   static const Map<String, String> commonHeaders = {
-    'User-Agent': 'Cloudstream3 v0.2',
+    'User-Agent': 'SkyStream v2.2.1',
     'Accept': 'application/json',
   };
 
@@ -64,4 +64,10 @@ abstract class SubtitleProvider {
   });
 
   Future<String?> getDownloadUrl(OnlineSubtitle subtitle);
+
+  /// Returns provider-specific headers needed when downloading
+  /// the actual subtitle file from the resolved URL.
+  Map<String, String> getDownloadHeaders(OnlineSubtitle subtitle) {
+    return commonHeaders;
+  }
 }

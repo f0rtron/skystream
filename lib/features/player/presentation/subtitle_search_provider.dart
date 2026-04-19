@@ -157,40 +157,110 @@ class SubtitleSearch extends _$SubtitleSearch {
     
     String? url = subtitle.downloadUrl;
     if (url.isEmpty) {
+      if (kDebugMode) {
+        print("[SubtitleDownload] No direct URL for '${subtitle.name}' from ${subtitle.source}. Fetching download URL...");
+      }
       url = await provider.getDownloadUrl(subtitle) ?? "";
     }
     
-    if (url.isEmpty) return null;
+    if (url.isEmpty) {
+      if (kDebugMode) {
+        print("[SubtitleDownload] ❌ Failed: No download URL could be resolved for '${subtitle.name}' from ${subtitle.source}");
+      }
+      return null;
+    }
+
+    if (kDebugMode) {
+      print("[SubtitleDownload] Downloading from ${subtitle.source}: $url");
+    }
 
     try {
       final tempDir = await getTemporaryDirectory();
       final savePath = p.join(tempDir.path, "temp_sub_${DateTime.now().millisecondsSinceEpoch}");
       
+      // Use provider-specific headers for the download request
+      final downloadHeaders = provider.getDownloadHeaders(subtitle);
+      
       final response = await dio.get<List<int>>(
         url,
         options: Options(
           responseType: ResponseType.bytes,
-          headers: SubtitleProvider.commonHeaders,
+          headers: downloadHeaders,
+          receiveTimeout: const Duration(seconds: 30),
         ),
       );
 
+      if (response.data == null || response.data!.isEmpty) {
+        if (kDebugMode) {
+          print("[SubtitleDownload] ❌ Failed: Empty response body from ${subtitle.source} (HTTP ${response.statusCode})");
+        }
+        return null;
+      }
+
       final List<int> bytes = response.data!;
       
+      if (kDebugMode) {
+        print("[SubtitleDownload] Received ${bytes.length} bytes from ${subtitle.source}");
+      }
+
+      // Detect archive format by magic bytes
       if (bytes.length > 4 && bytes[0] == 0x50 && bytes[1] == 0x4B) {
+        // ZIP archive (most common for SubDL and SubSource)
+        if (kDebugMode) print("[SubtitleDownload] Detected ZIP archive, extracting...");
         final archive = ZipDecoder().decodeBytes(bytes);
         for (final file in archive) {
-          if (file.isFile && (file.name.endsWith('.srt') || file.name.endsWith('.vtt'))) {
-            final subFile = File(p.join(tempDir.path, file.name));
+          if (file.isFile && (file.name.endsWith('.srt') || file.name.endsWith('.vtt') || file.name.endsWith('.ass'))) {
+            final subFile = File(p.join(tempDir.path, "sub_${DateTime.now().millisecondsSinceEpoch}_${file.name}"));
             await subFile.writeAsBytes(file.content as List<int>);
+            if (kDebugMode) print("[SubtitleDownload] ✅ Extracted: ${file.name}");
             return subFile.path;
           }
         }
+        if (kDebugMode) {
+          print("[SubtitleDownload] ❌ ZIP contained no .srt/.vtt/.ass files. Entries: ${archive.map((f) => f.name).toList()}");
+        }
+      } else if (bytes.length > 2 && bytes[0] == 0x1F && bytes[1] == 0x8B) {
+        // GZIP compressed file
+        if (kDebugMode) print("[SubtitleDownload] Detected GZIP, decompressing...");
+        final decompressed = GZipDecoder().decodeBytes(bytes);
+        final subFile = File("$savePath.srt");
+        await subFile.writeAsBytes(decompressed);
+        return subFile.path;
+      } else if (bytes.length > 4 && bytes[0] == 0x52 && bytes[1] == 0x61 && bytes[2] == 0x72 && bytes[3] == 0x21) {
+        // RAR archive - not supported
+        if (kDebugMode) {
+          print("[SubtitleDownload] ❌ RAR archive detected but not supported. Source: ${subtitle.source}");
+        }
+        return null;
       } else {
+        // Raw subtitle file (typical for OpenSubtitles CDN links)
         final subFile = File("$savePath.srt");
         await subFile.writeAsBytes(bytes);
+        if (kDebugMode) print("[SubtitleDownload] ✅ Saved raw subtitle file");
         return subFile.path;
       }
-    } catch (e) {
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print("[SubtitleDownload] ❌ HTTP Error from ${subtitle.source}: "
+            "Status=${e.response?.statusCode}, "
+            "Message=${e.message}, "
+            "URL=$url");
+        if (e.response?.data != null) {
+          // Try to read error body if it's text
+          try {
+            final body = e.response?.data is List<int>
+                ? String.fromCharCodes(e.response!.data as List<int>)
+                : e.response?.data.toString();
+            print("[SubtitleDownload] Response body: ${body?.substring(0, (body.length > 200 ? 200 : body.length))}");
+          } catch (_) {}
+        }
+      }
+      return null;
+    } catch (e, stack) {
+      if (kDebugMode) {
+        print("[SubtitleDownload] ❌ Unexpected error from ${subtitle.source}: $e");
+        print("[SubtitleDownload] Stack: $stack");
+      }
       return null;
     }
     return null;
