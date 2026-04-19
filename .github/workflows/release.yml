@@ -289,28 +289,12 @@ jobs:
           - os: windows-latest
             arch: x64
             torrserver_binary: TorrServer-windows-amd64.exe
-          - os: windows-11-arm
-            arch: arm64
-            torrserver_binary: TorrServer-windows-arm64.exe
     steps:
       - uses: actions/checkout@v4
       
       - uses: subosito/flutter-action@v2
-        if: ${{ matrix.arch != 'arm64' }}
         with:
           channel: 'stable'
-
-      - name: Enforce ARM64 Architecture Native Host
-        if: ${{ matrix.arch == 'arm64' }}
-        shell: pwsh
-        run: echo "PROCESSOR_ARCHITECTURE=ARM64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-      - name: Setup Flutter (ARM64 Windows)
-        if: ${{ matrix.arch == 'arm64' }}
-        shell: pwsh
-        run: |
-          git clone https://github.com/flutter/flutter.git -b stable $env:RUNNER_TOOL_CACHE\flutter
-          echo "$env:RUNNER_TOOL_CACHE\flutter\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Install Dependencies
         run: |
           flutter config --enable-windows-desktop
