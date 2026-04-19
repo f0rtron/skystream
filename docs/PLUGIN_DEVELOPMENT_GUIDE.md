@@ -41,7 +41,45 @@ The CLI will automatically generate a new folder with a safe `packageName` based
 Navigate to your plugin folder (e.g., `my-plugin/`) and open `plugin.js`. This is where you implement the four core functions.
 
 > [!IMPORTANT]
-> **Dynamic Base URL Architecture**: Always use `manifest.baseUrl` instead of hardcoded domain strings. This allows users to override the domain (e.g., for mirrors or proxies) directly from the app.
+> **Dynamic Base URL Architecture**: Always use `manifest.baseUrl` instead of hardcoded domain strings. This allows users to switch domains (mirrors) directly from the app without any plugin code changes.
+
+### Declaring Mirror Domains
+
+To let users pick from multiple domains, add a `domains` array to `plugin.json`:
+
+```json
+{
+  "packageName": "com.example.myplugin",
+  "name": "My Plugin",
+  "baseUrl": "https://primary-domain.com",
+  "domains": [
+    { "name": "primary-domain.com", "url": "https://primary-domain.com" },
+    { "name": "mirror1.com",        "url": "https://mirror1.com" },
+    { "name": "mirror2.com",        "url": "https://mirror2.com" }
+  ]
+}
+```
+
+When `domains` is present, a **domain selector** appears in the plugin's settings gear in the Extensions screen. The selected URL is automatically injected as `manifest.baseUrl` — your plugin JS needs **no changes**.
+
+### Declaring Sub-Providers (One JS, Many Feeds)
+
+If a single JS file can serve multiple independent sources (e.g., different M3U playlists), declare them as `providers` instead of creating separate plugins:
+
+```json
+{
+  "packageName": "com.example.mybundle",
+  "name": "My Bundle",
+  "baseUrl": "https://fallback.com",
+  "providers": [
+    { "id": "feed1", "name": "Feed One",  "baseUrl": "https://feed1.com/playlist.m3u" },
+    { "id": "feed2", "name": "Feed Two",  "baseUrl": "https://feed2.com/playlist.m3u" },
+    { "id": "feed3", "name": "Feed Three","baseUrl": "https://feed3.com/playlist.m3u" }
+  ]
+}
+```
+
+The app creates one provider instance per entry and injects each entry's `baseUrl` as `manifest.baseUrl` — again, **no JS changes needed**. Users can enable/disable individual sub-providers from the plugin settings. Cannot be combined with `domains`.
 
 <details>
 <summary><b>View the Core Function Templates</b></summary>
@@ -249,52 +287,15 @@ If you prefer raw objects, ensure they match these definitions:
 </details>
 
 <details>
-<summary><b>Advanced Features & Performance</b></summary>
-
-### Performance Helpers (Native Bridge)
-SkyStream provides specialized methods that offload heavy processing (like DOM scraping and Regex) to the native Dart engine, which is much faster than running in the JS environment.
-
-| Function | Signature | Use Case |
-| :--- | :--- | :--- |
-| **Batch DOM** | `nativeDomBatch(nodeId, queries)` | Run many CSS selectors synchronously without IPC overhead. |
-| **Extract All** | `await nativeExtract(html, schema)` | Parse HTML and extract everything in a background isolate. |
-| **Native Regex** | `nativeRegex(string, pattern)` | Use native ICU regex engines for heavy string parsing. |
-| **JSON Path** | `nativeJsonExtract(json, paths)` | Avoid `JSON.parse()` on huge payloads. |
-| **Hashing** | `nativeMd5(str)` / `nativeSha256(str)` | Fast hash calculation for API auth. |
-
-**Example: Converting DOM Queries to nativeExtract**
-```javascript
-// Slow: Blocks JS thread, multiple round trips
-const doc = await parseHtml(html);
-const title = doc.querySelector('.title').textContent;
-const img = doc.querySelector('img').getAttribute('src');
-
-// Fast: Non-blocking, single isolate execution
-const data = await nativeExtract(html, {
-  title: { query: '.title', attr: 'textContent', first: true },
-  img: { query: 'img', attr: 'src', first: true }
-});
-```
+<summary><b>Advanced Features</b></summary>
 
 ### Native SDK Helpers
-SkyStream Gen 2 provides high-level SDK helpers for complex tasks like settings, captcha, and crypto.
+SkyStream Gen 2 provides high-level SDK helpers for captcha and crypto.
 
 | Helper | Signature | Description |
 | :--- | :--- | :--- |
-| **Settings** | `registerSettings(schema)` | Register plugin settings (Toggles, Selects, Input). |
 | **Captcha** | `await solveCaptcha(key, url)` | Opens a captcha solver for the user. Returns token. |
-| **Crypto AES** | `await crypto.decryptAES(data, key, iv)`| Optimized AES decryption bridge. |
-
-**Using Settings:**
-```javascript
-registerSettings([
-  { id: "quality", name: "Default Quality", type: "select", options: ["1080p", "720p"], default: "1080p" },
-  { id: "dubbed", name: "Prefer Dubbed", type: "toggle", default: false }
-]);
-
-// Access via global settings object
-const preferredQuality = settings.quality;
-```
+| **Crypto** | `await crypto.decryptAES(data, key, iv)`| Optimized AES decryption bridge. |
 
 ### Byte-Level Proxying
 If a video host requires specific headers that the player can't send, use the Magic Proxy:

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/extensions/models/extension_plugin.dart';
+import '../../../core/extensions/extension_manager.dart';
+import '../../../core/storage/settings_repository.dart';
 import '../../../core/storage/extension_repository.dart';
 import 'package:skystream/l10n/generated/app_localizations.dart';
 
@@ -15,134 +17,159 @@ class PluginSettingsDialog extends ConsumerStatefulWidget {
 }
 
 class _PluginSettingsDialogState extends ConsumerState<PluginSettingsDialog> {
-  final Map<String, dynamic> _values = {};
-  bool _isLoading = true;
+  late String _selectedDomain;
+  late Map<String, bool> _providerEnabled;
+  bool _reloading = false;
 
   @override
   void initState() {
     super.initState();
-    _loadValues();
-  }
-
-  Future<void> _loadValues() async {
+    final settings = ref.read(settingsRepositoryProvider);
     final storage = ref.read(extensionRepositoryProvider);
-    final schema = widget.plugin.settingsSchema ?? [];
+    final domains = widget.plugin.domains ?? [];
+    final saved = settings.getCustomBaseUrl(widget.plugin.packageName);
+    _selectedDomain = saved ?? (domains.isNotEmpty ? domains.first.url : '');
 
-    for (final item in schema) {
-      if (item is Map<String, dynamic>) {
-        final id = item['id'];
-        final defaultValue = item['default'];
-        if (id != null) {
-          final savedValue = storage.getExtensionData(
-            "${widget.plugin.packageName}:$id",
-          );
-          _values[id] = savedValue ?? defaultValue;
-        }
-      }
-    }
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    _providerEnabled = {
+      for (final sub in widget.plugin.providers ?? <PluginSubProvider>[])
+        sub.id:
+            storage.getExtensionData(
+              '${widget.plugin.packageName}:_provider_enabled_${sub.id}',
+            ) !=
+            'false',
+    };
   }
 
-  Future<void> _updateValue(String id, dynamic value) async {
+  Future<void> _applyDomain(String url) async {
+    if (_reloading || url == _selectedDomain) return;
     setState(() {
-      _values[id] = value;
+      _selectedDomain = url;
+      _reloading = true;
     });
-    final storage = ref.read(extensionRepositoryProvider);
-    await storage.setExtensionData("${widget.plugin.packageName}:$id", value);
+    await ref
+        .read(settingsRepositoryProvider)
+        .setCustomBaseUrl(widget.plugin.packageName, url);
+    await ref
+        .read(extensionManagerProvider.notifier)
+        .reloadPlugin(widget.plugin);
+    if (mounted) setState(() => _reloading = false);
+  }
+
+  Future<void> _toggleProvider(String providerId, bool enabled) async {
+    if (_reloading) return;
+    setState(() {
+      _providerEnabled[providerId] = enabled;
+      _reloading = true;
+    });
+    await ref
+        .read(extensionRepositoryProvider)
+        .setExtensionData(
+          '${widget.plugin.packageName}:_provider_enabled_$providerId',
+          enabled ? null : 'false',
+        );
+    await ref
+        .read(extensionManagerProvider.notifier)
+        .reloadPlugin(widget.plugin);
+    if (mounted) setState(() => _reloading = false);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    if (_isLoading) {
-      return const AlertDialog(
-        content: Center(child: CircularProgressIndicator()),
-      );
-    }
+    final domains = widget.plugin.domains ?? [];
+    final providers = widget.plugin.providers ?? <PluginSubProvider>[];
 
-    final schema = widget.plugin.settingsSchema ?? [];
-
-    return AlertDialog(
-      title: Text(l10n.pluginSettings(widget.plugin.name)),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: SingleChildScrollView(
+    return Dialog(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: schema.map((item) {
-              if (item is! Map<String, dynamic>) return const SizedBox.shrink();
-              return _buildSettingItem(item);
-            }).toList(),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.close),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSettingItem(Map<String, dynamic> item) {
-    final l10n = AppLocalizations.of(context)!;
-    final String? id = item['id'];
-    final String name = item['name'] ?? id ?? l10n.unknown;
-    final String type = item['type'] ?? "text";
-    final String? description = item['description'];
-
-    if (id == null) return const SizedBox.shrink();
-
-    switch (type) {
-      case 'toggle':
-        return SwitchListTile(
-          title: Text(name),
-          subtitle: description != null ? Text(description) : null,
-          value: _values[id] == true,
-          onChanged: (val) => _updateValue(id, val),
-        );
-      case 'select':
-        final List<dynamic> options = item['options'] ?? [];
-        return ListTile(
-          title: Text(name),
-          subtitle: description != null ? Text(description) : null,
-          trailing: DropdownButton<String>(
-            value:
-                _values[id]?.toString() ??
-                (options.isNotEmpty ? options.first.toString() : null),
-            items: options.map((opt) {
-              return DropdownMenuItem<String>(
-                value: opt.toString(),
-                child: Text(opt.toString()),
-              );
-            }).toList(),
-            onChanged: (val) {
-              if (val != null) _updateValue(id, val);
-            },
-          ),
-        );
-      case 'text':
-      default:
-        return ListTile(
-          title: Text(name),
-          subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (description != null) Text(description),
-              TextFormField(
-                initialValue: _values[id]?.toString(),
-                decoration: const InputDecoration(isDense: true),
-                onFieldSubmitted: (val) => _updateValue(id, val),
+              Text(
+                l10n.pluginSettings(widget.plugin.name),
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              if (domains.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text(
+                  'Select Domain',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                RadioGroup<String>(
+                  groupValue: _selectedDomain,
+                  onChanged: (url) {
+                    if (url != null) _applyDomain(url);
+                  },
+                  child: Column(
+                    children: domains
+                        .map(
+                          (d) => RadioListTile<String>(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(d.name),
+                            value: d.url,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ],
+              if (providers.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text(
+                  'Select Providers',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                ...providers.map(
+                  (sub) => CheckboxListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(sub.name),
+                    value: _providerEnabled[sub.id] ?? true,
+                    onChanged: _reloading
+                        ? null
+                        : (val) => _toggleProvider(sub.id, val ?? true),
+                  ),
+                ),
+              ],
+              if (_reloading) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Applying…',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(l10n.close),
+                ),
               ),
             ],
           ),
-        );
-    }
+        ),
+      ),
+    );
   }
 }

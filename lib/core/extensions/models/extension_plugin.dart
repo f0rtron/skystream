@@ -1,3 +1,37 @@
+class PluginDomain {
+  final String name;
+  final String url;
+
+  const PluginDomain({required this.name, required this.url});
+
+  factory PluginDomain.fromJson(Map<String, dynamic> json) {
+    return PluginDomain(
+      name: json['name'] as String? ?? json['url'] as String? ?? '',
+      url: json['url'] as String? ?? '',
+    );
+  }
+}
+
+class PluginSubProvider {
+  final String id;
+  final String name;
+  final String baseUrl;
+
+  const PluginSubProvider({
+    required this.id,
+    required this.name,
+    required this.baseUrl,
+  });
+
+  factory PluginSubProvider.fromJson(Map<String, dynamic> json) {
+    return PluginSubProvider(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? json['id'] as String? ?? '',
+      baseUrl: json['baseUrl'] as String? ?? '',
+    );
+  }
+}
+
 class ExtensionPlugin {
   final String packageName; // Unique Plugin ID (e.g. "com.hexated.superstream")
   final String name; // Display Name (e.g. "SuperStream")
@@ -15,7 +49,8 @@ class ExtensionPlugin {
   final int status; // 0: Down, 1: Ok, 2: Slow, 3: Beta
   final Map<String, dynamic> manifest; // Raw JSON manifest
   final String? customBaseUrl; // User-defined override for baseUrl
-  final List<dynamic>? settingsSchema; // Dynamic settings schema from JS bridge
+  final List<PluginDomain>? domains; // Available mirror domains from manifest
+  final List<PluginSubProvider>? providers; // Sub-providers (one JS, many feeds)
 
   ExtensionPlugin({
     required this.packageName,
@@ -32,7 +67,8 @@ class ExtensionPlugin {
     this.fileSize,
     this.manifest = const {},
     this.customBaseUrl,
-    this.settingsSchema,
+    this.domains,
+    this.providers,
   });
 
   /// Helper to check if this is a debug/asset plugin
@@ -85,7 +121,16 @@ class ExtensionPlugin {
       fileSize: json['fileSize'] as int?,
       manifest: json,
       customBaseUrl: json['customBaseUrl'] as String?,
-      settingsSchema: json['settingsSchema'] as List<dynamic>?,
+      domains: (json['domains'] as List<dynamic>?)
+          ?.whereType<Map<dynamic, dynamic>>()
+          .map((d) => PluginDomain.fromJson(Map<String, dynamic>.from(d)))
+          .where((d) => d.url.isNotEmpty)
+          .toList(),
+      providers: (json['providers'] as List<dynamic>?)
+          ?.whereType<Map<dynamic, dynamic>>()
+          .map((p) => PluginSubProvider.fromJson(Map<String, dynamic>.from(p)))
+          .where((p) => p.id.isNotEmpty && p.baseUrl.isNotEmpty)
+          .toList(),
     );
   }
 
@@ -105,7 +150,8 @@ class ExtensionPlugin {
       fileSize: fileSize,
       manifest: manifest,
       customBaseUrl: customBaseUrl ?? this.customBaseUrl,
-      settingsSchema: settingsSchema,
+      domains: domains,
+      providers: providers,
     );
   }
 }

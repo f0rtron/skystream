@@ -58,7 +58,8 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
     }
     // Listen for errors
     ref.listen(extensionsControllerProvider, (previous, next) {
-      if (next is ExtensionsError && (previous is! ExtensionsError || previous.message != next.message)) {
+      if (next is ExtensionsError &&
+          (previous is! ExtensionsError || previous.message != next.message)) {
         showDialog<void>(
           context: context,
           builder: (context) => AlertDialog(
@@ -83,68 +84,67 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
           child: switch (state) {
-            ExtensionsLoading(repositories: []) =>
-              const Center(child: CircularProgressIndicator()),
+            ExtensionsLoading(repositories: []) => const Center(
+              child: CircularProgressIndicator(),
+            ),
             ExtensionsState()
                 when state.repositories.isEmpty &&
                     state.installedPlugins.isEmpty =>
-              Center(
-                child: Text(l10n.noReposFound),
-              ),
+              Center(child: Text(l10n.noReposFound)),
             _ => ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.only(bottom: 80), // Fab space
-                itemCount: _calculateItemCount(state),
-                itemBuilder: (context, index) {
-                  final debugPlugins = state.installedPlugins
-                      .where((p) => p.isDebug)
-                      .toList();
-                  final hasDebug = debugPlugins.isNotEmpty;
+              controller: _scrollController,
+              padding: const EdgeInsets.only(bottom: 80), // Fab space
+              itemCount: _calculateItemCount(state),
+              itemBuilder: (context, index) {
+                final debugPlugins = state.installedPlugins
+                    .where((p) => p.isDebug)
+                    .toList();
+                final hasDebug = debugPlugins.isNotEmpty;
 
-                  final allAvailablePackageNames = state.availablePlugins.values
-                      .expand((list) => list)
-                      .map((p) => p.packageName)
-                      .toSet();
-                  final installedOnlyPlugins = state.installedPlugins
-                      .where(
-                        (p) =>
-                            !p.isDebug &&
-                            !allAvailablePackageNames.contains(p.packageName),
-                      )
-                      .toList();
-                  final hasInstalledOnly = installedOnlyPlugins.isNotEmpty;
+                final allAvailablePackageNames = state.availablePlugins.values
+                    .expand((list) => list)
+                    .map((p) => p.packageName)
+                    .toSet();
+                final installedOnlyPlugins = state.installedPlugins
+                    .where(
+                      (p) =>
+                          !p.isDebug &&
+                          !allAvailablePackageNames.contains(p.packageName),
+                    )
+                    .toList();
+                final hasInstalledOnly = installedOnlyPlugins.isNotEmpty;
 
-                  // Render Debug Section
-                  if (hasDebug && index == 0) {
-                    return _buildDebugSection(context, debugPlugins);
-                  }
+                // Render Debug Section
+                if (hasDebug && index == 0) {
+                  return _buildDebugSection(context, debugPlugins);
+                }
 
-                  // Render Installed Extensions section
-                  if (hasInstalledOnly && index == (hasDebug ? 1 : 0)) {
-                    return _buildInstalledOnlySection(
-                      context,
-                      ref,
-                      installedOnlyPlugins,
-                      hasRepos: state.repositories.isNotEmpty,
-                    );
-                  }
-
-                  // Repositories
-                  final repoIndex =
-                      index - (hasDebug ? 1 : 0) - (hasInstalledOnly ? 1 : 0);
-                  final repo = state.repositories[repoIndex];
-                  final plugins = state.availablePlugins[repo.url] ?? [];
-
-                  return _buildRepositoryCard(
+                // Render Installed Extensions section
+                if (hasInstalledOnly && index == (hasDebug ? 1 : 0)) {
+                  return _buildInstalledOnlySection(
                     context,
                     ref,
-                    state,
-                    repo,
-                    plugins,
-                    l10n,
+                    installedOnlyPlugins,
+                    hasRepos: state.repositories.isNotEmpty,
                   );
-                },
-              ),
+                }
+
+                // Repositories
+                final repoIndex =
+                    index - (hasDebug ? 1 : 0) - (hasInstalledOnly ? 1 : 0);
+                final repo = state.repositories[repoIndex];
+                final plugins = state.availablePlugins[repo.url] ?? [];
+
+                return _buildRepositoryCard(
+                  context,
+                  ref,
+                  state,
+                  repo,
+                  plugins,
+                  l10n,
+                );
+              },
+            ),
           },
         ),
       ),
@@ -252,9 +252,7 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
           ],
         ),
         subtitle: Text(
-          hasRepos
-              ? l10n.noLongerInRepo
-              : l10n.addRepoToBrowse,
+          hasRepos ? l10n.noLongerInRepo : l10n.addRepoToBrowse,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -446,7 +444,11 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
     );
   }
 
-  void _confirmDeleteRepo(BuildContext context, WidgetRef ref, dynamic repo) {
+  void _confirmDeleteRepo(
+    BuildContext context,
+    WidgetRef ref,
+    ExtensionRepository repo,
+  ) {
     final l10n = AppLocalizations.of(context)!;
     showDialog<void>(
       context: context,
@@ -642,8 +644,10 @@ class _PluginTile extends ConsumerWidget {
               },
             ),
 
-          // Settings Button
-          if (isInstalled && installedPlugin.settingsSchema != null)
+          // Settings Button (shown when plugin declares domains or providers)
+          if (isInstalled &&
+              ((installedPlugin.domains?.isNotEmpty ?? false) ||
+                  (installedPlugin.providers?.isNotEmpty ?? false)))
             IconButton(
               icon: const Icon(Icons.settings),
               tooltip: l10n.settings,

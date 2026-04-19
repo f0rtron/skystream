@@ -47,21 +47,24 @@ class JsBasedProvider extends SkyStreamProvider {
   final String? _namespace;
   String? get namespace => _namespace; // Expose namespace
   final String? _forcedName;
+  // Scopes JS getPreference/setPreference — sub-providers share parent's namespace
+  final String _jsPackageName;
 
   late Future<void> _initFuture;
   final Map<String, dynamic>? _initialManifest;
   final String? _customBaseUrl;
 
-  // Update constructor
   JsBasedProvider(
     this._jsEngine,
     this._scriptPath, {
     required String packageName,
+    String? jsPackageName,
     String? namespace,
     String? forcedName,
     Map<String, dynamic>? manifest,
     String? customBaseUrl,
   }) : _packageName = packageName,
+       _jsPackageName = jsPackageName ?? packageName,
        _namespace = namespace,
        _forcedName = forcedName,
        _initialManifest = manifest,
@@ -111,21 +114,16 @@ class JsBasedProvider extends SkyStreamProvider {
 
               // Namespaced Storage API Parity
               const getPreference = (key) => {
-                  return sendMessage('get_preference', JSON.stringify({ packageName: '$_packageName', key: key }));
+                  return sendMessage('get_preference', JSON.stringify({ packageName: '$_jsPackageName', key: key }));
               };
 
               const setPreference = (key, value) => {
-                  return sendMessage('set_preference', JSON.stringify({ packageName: '$_packageName', key: key, value: value }));
-              };
-
-              const registerSettings = (schema) => {
-                  return sendMessage('register_settings', JSON.stringify({ packageName: '$_packageName', schema: schema }));
+                  return sendMessage('set_preference', JSON.stringify({ packageName: '$_jsPackageName', key: key, value: value }));
               };
 
               // Export to global scope if needed (backward compatibility)
               globalThis.getPreference = getPreference;
               globalThis.setPreference = setPreference;
-              globalThis.registerSettings = registerSettings;
 
               var exports = (function() {
                   $script
@@ -175,14 +173,14 @@ class JsBasedProvider extends SkyStreamProvider {
   @override
   String get name {
     if (_forcedName != null) return _forcedName;
-    if (_manifest['name'] != null) return _manifest['name'];
+    if (_manifest['name'] != null) return _manifest['name'] as String;
     if (_error != null) return "Err: $_error";
     return "JS Extension";
   }
 
   // ... (rest of simple getters)
   @override
-  String get mainUrl => _customBaseUrl ?? _manifest['baseUrl'] ?? "";
+  String get mainUrl => _customBaseUrl ?? (_manifest['baseUrl'] as String?) ?? "";
 
   @override
   String get version => (_manifest['version'] ?? 0).toString();
@@ -331,8 +329,8 @@ class JsBasedProvider extends SkyStreamProvider {
       if (result is List) {
         return Future.wait(
           result.map((e) async {
-            final map = Map<String, dynamic>.from(e);
-            String finalUrl = map['url'];
+            final map = Map<String, dynamic>.from(e as Map);
+            String finalUrl = map['url'] as String;
 
             // MAGIC M3U8 HANDLING
             if (finalUrl.startsWith("magic_m3u8:")) {
@@ -362,7 +360,7 @@ class JsBasedProvider extends SkyStreamProvider {
                 finalUrl = LocalProxyService.instance.getProxyUrl(
                   realUrl,
                   headers: map['headers'] != null
-                      ? Map<String, String>.from(map['headers'])
+                      ? Map<String, String>.from(map['headers'] as Map)
                       : null,
                 );
               } catch (e) {
@@ -375,18 +373,18 @@ class JsBasedProvider extends SkyStreamProvider {
                 final b64Json = finalUrl.substring("MAGIC_PROXY_v2".length);
                 final jsonBytes = base64Decode(b64Json);
                 final decodedJson = utf8.decode(jsonBytes);
-                final Map<String, dynamic> config = jsonDecode(decodedJson);
+                final Map<String, dynamic> config = jsonDecode(decodedJson) as Map<String, dynamic>;
 
-                final String realUrl = config['url'];
+                final String realUrl = config['url'] as String;
                 final Map<String, String>? sticky = config['headers'] != null
-                    ? Map<String, String>.from(config['headers'])
+                    ? Map<String, String>.from(config['headers'] as Map)
                     : (map['headers'] != null
-                          ? Map<String, String>.from(map['headers'])
+                          ? Map<String, String>.from(map['headers'] as Map)
                           : null);
 
                 ProxyOptions? options;
                 if (config['options'] != null) {
-                  options = ProxyOptions.fromJson(config['options']);
+                  options = ProxyOptions.fromJson(config['options'] as Map<String, dynamic>);
                 }
 
                 finalUrl = LocalProxyService.instance.getProxyUrl(
@@ -403,22 +401,22 @@ class JsBasedProvider extends SkyStreamProvider {
 
             return StreamResult(
               url: finalUrl,
-              source: map['source'] ?? "Auto",
+              source: (map['source'] as String?) ?? "Auto",
               headers: map['headers'] != null
-                  ? Map<String, String>.from(map['headers'])
+                  ? Map<String, String>.from(map['headers'] as Map)
                   : null,
               subtitles: map['subtitles'] != null
                   ? (map['subtitles'] as List)
                         .map(
                           (s) => SubtitleFile.fromJson(
-                            Map<String, dynamic>.from(s),
+                            Map<String, dynamic>.from(s as Map),
                           ),
                         )
                         .toList()
                   : null,
-              drmKid: map['drmKid'],
-              drmKey: map['drmKey'],
-              licenseUrl: map['licenseUrl'],
+              drmKid: map['drmKid'] as String?,
+              drmKey: map['drmKey'] as String?,
+              licenseUrl: map['licenseUrl'] as String?,
             );
           }),
         );

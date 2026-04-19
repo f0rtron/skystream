@@ -10,6 +10,7 @@ import 'providers/js_based_provider.dart';
 import 'services/plugin_storage_service.dart';
 import 'providers.dart';
 import '../storage/settings_repository.dart';
+import '../storage/extension_repository.dart';
 import '../logger/app_logger.dart';
 
 part 'extension_manager.g.dart';
@@ -64,9 +65,12 @@ class ExtensionManager extends _$ExtensionManager {
         final activePlugin = sortedPlugins.firstWhere(
           (p) => p.packageName == activePackageName,
         );
-        final existing = state.any((p) => p.packageName == activePackageName);
+        final existing = _hasLoadedProviders(activePackageName);
         if (!existing) {
-          await _loadPlugin(activePlugin, addToState: true);
+          final loaded = await _loadPlugin(activePlugin);
+          for (final p in loaded) {
+            _addProvider(p);
+          }
         }
       } catch (_) {
         // Active plugin not found in installed list, ignore
@@ -75,36 +79,32 @@ class ExtensionManager extends _$ExtensionManager {
 
     // 2. Process background providers in manageable batches (Pool of 3)
     const batchSize = 3;
-    final List<SkyStreamProvider> allLoaded = [];
 
     for (int i = 0; i < sortedPlugins.length; i += batchSize) {
       final batch = sortedPlugins.skip(i).take(batchSize);
-      final batchLoads = <Future<SkyStreamProvider?>>[];
+      final batchLoads = <Future<List<SkyStreamProvider>>>[];
 
       for (final plugin in batch) {
-        final existingList = state.where((p) => p.packageName == plugin.packageName);
-        final existing = existingList.isNotEmpty ? existingList.first : null;
+        final alreadyLoaded = _hasLoadedProviders(plugin.packageName);
 
-        bool needsLoad = existing == null;
-        if (existing != null) {
-          final newVersion = plugin.version.toString();
-          if (newVersion != existing.version) {
-            state = state.where((p) => p.packageName != plugin.packageName).toList();
+        bool needsLoad = !alreadyLoaded;
+        if (alreadyLoaded) {
+          final existing = _firstLoadedProvider(plugin.packageName);
+          if (existing != null && plugin.version.toString() != existing.version) {
+            _removeProvidersForPackage(plugin.packageName);
             needsLoad = true;
           }
         }
 
         if (needsLoad && plugin.packageName != activePackageName) {
-          batchLoads.add(_loadPlugin(plugin, addToState: false));
+          batchLoads.add(_loadPlugin(plugin));
         }
       }
 
       if (batchLoads.isNotEmpty) {
         final results = await Future.wait(batchLoads);
-        final loadedInBatch = results.whereType<SkyStreamProvider>().toList();
+        final loadedInBatch = results.expand((l) => l).toList();
         if (loadedInBatch.isNotEmpty) {
-          allLoaded.addAll(loadedInBatch);
-          // Batch the state update once per group
           state = [...state, ...loadedInBatch];
         }
       }
@@ -116,7 +116,7 @@ class ExtensionManager extends _$ExtensionManager {
     final providersToRemove = <SkyStreamProvider>[];
 
     for (final provider in state) {
-      if (!installedPackageNames.contains(provider.packageName)) {
+      if (!_belongsToInstalled(provider.packageName, installedPackageNames)) {
         providersToRemove.add(provider);
       }
     }
@@ -148,6 +148,16 @@ class ExtensionManager extends _$ExtensionManager {
     }
   }
 
+  /// Reloads a plugin, picking up preference changes (domain switch, provider toggles).
+  Future<void> reloadPlugin(ExtensionPlugin plugin) async {
+    if (_engine == null || _storageService == null) return;
+    _removeProvidersForPackage(plugin.packageName);
+    final loaded = await _loadPlugin(plugin);
+    for (final p in loaded) {
+      _addProvider(p);
+    }
+  }
+
   /// Trigger garbage collection in the underlying JS engine
   void runGC() {
     _engine?.runGC();
@@ -156,23 +166,19 @@ class ExtensionManager extends _$ExtensionManager {
   Future<void> updateCustomBaseUrl(String packageName, String? url) async {
     final settings = ref.read(settingsRepositoryProvider);
     await settings.setCustomBaseUrl(packageName, url);
-
-    // Reload the provider to apply changes
-    final currentProvider = getProvider(packageName);
-    if (currentProvider != null) {
-      if (kDebugMode) {
-        debugPrint(
-          "ExtensionManager: Custom base URL updated for $packageName. Reload recommended.",
-        );
-      }
-    }
   }
 
-  Future<SkyStreamProvider?> _loadPlugin(
-    ExtensionPlugin plugin, {
-    bool addToState = true,
-  }) async {
-    if (_engine == null || _storageService == null) return null;
+  /// Returns true if the user has enabled this sub-provider (default: true).
+  bool _isSubProviderEnabled(String packageName, String providerId) {
+    final storage = ref.read(extensionRepositoryProvider);
+    return storage.getExtensionData('$packageName:_provider_enabled_$providerId') != 'false';
+  }
+
+  /// Loads a plugin and returns all resulting provider instances.
+  /// For plugins with a `providers` array, fans out one instance per enabled sub-provider.
+  /// For regular plugins, returns a single-element list.
+  Future<List<SkyStreamProvider>> _loadPlugin(ExtensionPlugin plugin) async {
+    if (_engine == null || _storageService == null) return [];
     try {
       final path = await _storageService!.getPluginJsPath(plugin);
       if (kDebugMode) debugPrint("ExtensionManager: Loading JS from: $path");
@@ -180,49 +186,98 @@ class ExtensionManager extends _$ExtensionManager {
 
       if (!path.startsWith('assets/')) {
         if (!await File(path).exists()) {
-          if (kDebugMode) {
-            debugPrint("ExtensionManager: JS File does NOT exist at $path");
-          }
-          return null;
+          if (kDebugMode) debugPrint("ExtensionManager: JS File does NOT exist at $path");
+          return [];
         }
       }
 
-      // Derive namespace from ID to ensure uniqueness
-      final namespace = plugin.packageName.replaceAll(
-        RegExp(r'[^a-zA-Z0-9]'),
-        '_',
-      );
+      final baseNamespace = plugin.packageName.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_');
 
+      // Fan-out: one JS file → multiple provider instances
+      if (plugin.providers != null && plugin.providers!.isNotEmpty) {
+        final results = <SkyStreamProvider>[];
+        for (final sub in plugin.providers!) {
+          if (!_isSubProviderEnabled(plugin.packageName, sub.id)) continue;
+          final subId = sub.id.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_');
+          final provider = JsBasedProvider(
+            _engine!,
+            path,
+            packageName: '${plugin.packageName}::${sub.id}',
+            jsPackageName: plugin.packageName,
+            namespace: '${baseNamespace}__$subId',
+            forcedName: sub.name,
+            manifest: plugin.manifest,
+            customBaseUrl: sub.baseUrl,
+          );
+          await provider.waitForInit;
+          results.add(provider);
+        }
+        if (kDebugMode) debugPrint("ExtensionManager: Loaded ${results.length} sub-providers for ${plugin.packageName}");
+        return results;
+      }
+
+      // Single provider
       final settings = ref.read(settingsRepositoryProvider);
       final customBaseUrl = settings.getCustomBaseUrl(plugin.packageName);
-
       final provider = JsBasedProvider(
         _engine!,
         path,
         packageName: plugin.packageName,
-        namespace: namespace,
+        namespace: baseNamespace,
         manifest: plugin.manifest,
         customBaseUrl: customBaseUrl,
       );
-
-      if (kDebugMode) {
-        debugPrint("ExtensionManager: Waiting for init of $namespace");
-      }
       await provider.waitForInit;
       if (kDebugMode) {
         debugPrint("ExtensionManager: Init complete for ${plugin.packageName}");
         talker.debug("ExtensionManager: Init complete for ${plugin.packageName}");
       }
-
-      if (addToState) {
-        _addProvider(provider);
-      }
-      return provider;
+      return [provider];
     } catch (e) {
       if (kDebugMode) debugPrint("Failed to load plugin ${plugin.name}: $e");
       talker.error("Failed to load plugin ${plugin.name}: $e");
+      return [];
+    }
+  }
+
+  // ── Helper methods ────────────────────────────────────────────────────────
+
+  /// True if any loaded provider belongs to [packageName] (direct or sub-provider).
+  bool _hasLoadedProviders(String packageName) {
+    return state.any((p) =>
+        p.packageName == packageName ||
+        p.packageName.startsWith('$packageName::'));
+  }
+
+  /// First loaded provider belonging to [packageName], or null.
+  SkyStreamProvider? _firstLoadedProvider(String packageName) {
+    try {
+      return state.firstWhere((p) =>
+          p.packageName == packageName ||
+          p.packageName.startsWith('$packageName::'));
+    } catch (_) {
       return null;
     }
+  }
+
+  /// Removes all loaded providers belonging to [packageName] from state.
+  void _removeProvidersForPackage(String packageName) {
+    state = state
+        .where((p) =>
+            p.packageName != packageName &&
+            !p.packageName.startsWith('$packageName::'))
+        .toList();
+  }
+
+  /// True if [providerPackageName] belongs to one of the installed packages.
+  /// Handles synthetic sub-provider names (`parentPkg::subId`).
+  bool _belongsToInstalled(String providerPackageName, Set<String> installedPackageNames) {
+    if (installedPackageNames.contains(providerPackageName)) return true;
+    final sep = providerPackageName.lastIndexOf('::');
+    if (sep > 0) {
+      return installedPackageNames.contains(providerPackageName.substring(0, sep));
+    }
+    return false;
   }
 
   void _addProvider(SkyStreamProvider provider) {

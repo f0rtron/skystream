@@ -15,8 +15,6 @@ import '../../network/cloudflare_bypass.dart';
 import 'package:encrypt/encrypt.dart' as encrypt_lib;
 import 'package:pointycastle/export.dart';
 import 'package:crypto/crypto.dart' as crypto_lib;
-import '../services/plugin_storage_service.dart';
-import '../providers.dart';
 import '../../logger/app_logger.dart';
 
 import '../../network/dio_client_provider.dart';
@@ -36,9 +34,8 @@ class JsPluginException implements Exception {
 
 final jsEngineProvider = Provider.autoDispose<JsEngineService>((ref) {
   final storage = ref.read(extensionRepositoryProvider);
-  final pluginStorage = ref.read(pluginStorageServiceProvider);
   final dio = ref.read(dioClientProvider);
-  final service = JsEngineService(storage, pluginStorage, dio);
+  final service = JsEngineService(storage, dio);
   ref.onDispose(() => service.dispose());
   return service;
 });
@@ -49,7 +46,6 @@ class JsEngineService {
   late final PersistCookieJar _cookieJar;
   bool _cookieJarReady = false;
   final ExtensionRepository _storage;
-  final PluginStorageService _pluginStorage;
 
   // Registration logic is now stateless to support parallel loading
 
@@ -76,7 +72,7 @@ class JsEngineService {
   // to the correct per-invocation CancelToken.
   String? _latestCallbackId;
 
-  JsEngineService(this._storage, this._pluginStorage, this._dio)
+  JsEngineService(this._storage, this._dio)
     : _runtime = getJavascriptRuntime(extraArgs: {
         'stackSize': 2 * 1024 * 1024,
         'memoryLimit': 256 * 1024 * 1024,
@@ -402,25 +398,6 @@ class JsEngineService {
     _runtime.onMessage('dom_dispose', (dynamic args) {
       _domRegistry.remove(args.toString());
       return "OK";
-    });
-
-    // Native SDK Helpers
-    _runtime.onMessage('register_settings', (dynamic args) async {
-      if (kDebugMode) debugPrint("[JS SDK] Settings Registration: $args");
-      talker.debug("[JS SDK] Settings Registration: $args");
-      try {
-        final Map<String, dynamic> data = args is Map
-            ? Map<String, dynamic>.from(args)
-            : jsonDecode(args.toString());
-        final String? packageName = data['packageName'];
-        final dynamic schema = data['schema'];
-
-        if (packageName != null && schema != null) {
-          await _pluginStorage.saveSettingsSchema(packageName, schema);
-        }
-      } catch (e) {
-        if (kDebugMode) debugPrint("Failed to save settings schema: $e");
-      }
     });
 
     _runtime.onMessage('solve_captcha', (dynamic args) {
@@ -845,11 +822,6 @@ class JsEngineService {
       var CloudStream = {
          getLanguage: function() { return "en"; },
          getRegion: function() { return "US"; }
-      };
-
-      // Native SDK Parity Helpers
-      globalThis.registerSettings = function(schema) {
-         sendMessage('register_settings', JSON.stringify(schema));
       };
 
       globalThis.solveCaptcha = function(siteKey, url) {
