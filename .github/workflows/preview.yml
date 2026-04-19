@@ -230,8 +230,14 @@ jobs:
         with:
           ref: ${{ github.event.inputs.branch }}
       - uses: subosito/flutter-action@v2
+        if: ${{ matrix.arch != 'arm64' }}
         with:
           channel: 'stable'
+      - uses: subosito/flutter-action@v2
+        if: ${{ matrix.arch == 'arm64' }}
+        with:
+          channel: 'stable'
+          git-source: https://github.com/flutter/flutter.git
           
       - name: Install Dependencies
         run: |
@@ -291,8 +297,14 @@ jobs:
         with:
           ref: ${{ github.event.inputs.branch }}
       - uses: subosito/flutter-action@v2
+        if: ${{ matrix.arch != 'arm64' }}
         with:
           channel: 'stable'
+      - uses: subosito/flutter-action@v2
+        if: ${{ matrix.arch == 'arm64' }}
+        with:
+          channel: 'stable'
+          git-source: https://github.com/flutter/flutter.git
 
       - name: Install Linux Dependencies
         run: |
