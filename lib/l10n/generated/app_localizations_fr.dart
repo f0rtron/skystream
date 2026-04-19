@@ -21,7 +21,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get search => 'Recherche';
 
   @override
-  String get discover => 'Découvrir';
+  String get explore => 'Explorer';
 
   @override
   String get library => 'Bibliothèque';

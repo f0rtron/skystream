@@ -21,7 +21,7 @@ class AppLocalizationsHr extends AppLocalizations {
   String get search => 'Pretraživanje';
 
   @override
-  String get discover => 'Otkrij';
+  String get explore => 'Istraži';
 
   @override
   String get library => 'Knjižnica';

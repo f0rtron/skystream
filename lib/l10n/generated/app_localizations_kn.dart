@@ -21,7 +21,7 @@ class AppLocalizationsKn extends AppLocalizations {
   String get search => 'ಹುಡುಕಿ';
 
   @override
-  String get discover => 'ಅನ್ವೇಷಿಸಿ';
+  String get explore => 'ಅನ್ವೇಷಿಸಿ';
 
   @override
   String get library => 'ಸಂಗ್ರಹ';

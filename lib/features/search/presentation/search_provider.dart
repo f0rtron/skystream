@@ -6,7 +6,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/extensions/extension_manager.dart';
 import '../../../../core/extensions/base_provider.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
-import '../../discover/data/tmdb_provider.dart';
+import '../../explore/data/explore_tmdb_provider.dart';
 
 part 'search_provider.g.dart';
 

@@ -21,7 +21,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get search => 'Procurar';
 
   @override
-  String get discover => 'Descobrir';
+  String get explore => 'Explorar';
 
   @override
   String get library => 'Biblioteca';
@@ -1228,7 +1228,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get search => 'Pesquisar';
 
   @override
-  String get discover => 'Descobrir';
+  String get explore => 'Explorar';
 
   @override
   String get library => 'Biblioteca';

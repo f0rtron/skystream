@@ -21,7 +21,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get search => 'অনুসন্ধান';
 
   @override
-  String get discover => 'আবিষ্কার';
+  String get explore => 'অন্বেষণ করুন';
 
   @override
   String get library => 'লাইব্রেরি';

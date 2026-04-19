@@ -33,7 +33,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
         return 0;
       case '/search':
         return 1;
-      case '/discover':
+      case '/explore':
         return 2;
       case '/library':
         return 3;
@@ -90,9 +90,9 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
                         label: Text(AppLocalizations.of(context)!.search),
                       ),
                       NavigationRailDestination(
-                        icon: const Icon(Icons.dashboard_outlined),
-                        selectedIcon: const Icon(Icons.dashboard),
-                        label: Text(AppLocalizations.of(context)!.discover),
+                        icon: const Icon(Icons.explore_outlined),
+                        selectedIcon: const Icon(Icons.explore),
+                        label: Text(AppLocalizations.of(context)!.explore),
                       ),
                       NavigationRailDestination(
                         icon: const Icon(Icons.library_books_outlined),

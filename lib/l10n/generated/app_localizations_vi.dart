@@ -21,7 +21,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get search => 'Tìm kiếm';
 
   @override
-  String get discover => 'Khám phá';
+  String get explore => 'Khám phá';
 
   @override
   String get library => 'Thư viện';

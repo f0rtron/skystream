@@ -21,7 +21,7 @@ class AppLocalizationsHe extends AppLocalizations {
   String get search => 'חיפוש';
 
   @override
-  String get discover => 'גילוי';
+  String get explore => 'חקירה';
 
   @override
   String get library => 'ספרייה';

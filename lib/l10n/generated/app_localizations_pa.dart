@@ -21,7 +21,7 @@ class AppLocalizationsPa extends AppLocalizations {
   String get search => 'ਖੋਜ';
 
   @override
-  String get discover => 'ਖੋਜੋ';
+  String get explore => 'ਖੋਜੋ';
 
   @override
   String get library => 'ਲਾਇਬ੍ਰੇਰੀ';

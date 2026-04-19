@@ -9,12 +9,12 @@ import '../../../../shared/widgets/cards_wrapper.dart';
 import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 
-class DiscoverCarousel extends StatefulWidget {
+class ExploreCarousel extends StatefulWidget {
   final List<MultimediaItem> movies;
   final ScrollController? scrollController;
   final void Function(MultimediaItem)? onTap;
 
-  const DiscoverCarousel({
+  const ExploreCarousel({
     super.key,
     required this.movies,
     this.scrollController,
@@ -22,10 +22,10 @@ class DiscoverCarousel extends StatefulWidget {
   });
 
   @override
-  State<DiscoverCarousel> createState() => _DiscoverCarouselState();
+  State<ExploreCarousel> createState() => _ExploreCarouselState();
 }
 
-class _DiscoverCarouselState extends State<DiscoverCarousel> {
+class _ExploreCarouselState extends State<ExploreCarousel> {
   final ValueNotifier<int> _currentIndexNotifier = ValueNotifier<int>(0);
   final CarouselSliderController _carouselController =
       CarouselSliderController();
@@ -58,7 +58,7 @@ class _DiscoverCarouselState extends State<DiscoverCarousel> {
     final size = MediaQuery.sizeOf(context);
     final heroHeight = size.height * 0.60;
     final isDesktop =
-        size.width > LayoutConstants.discoverCarouselDesktopBreakpoint;
+        size.width > LayoutConstants.exploreCarouselDesktopBreakpoint;
 
     return SizedBox(
       height: heroHeight,

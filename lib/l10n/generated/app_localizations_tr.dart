@@ -21,7 +21,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get search => 'Ara';
 
   @override
-  String get discover => 'Keşfet';
+  String get explore => 'Keşfet';
 
   @override
   String get library => 'Kütüphane';

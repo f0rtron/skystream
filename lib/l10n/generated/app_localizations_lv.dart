@@ -21,7 +21,7 @@ class AppLocalizationsLv extends AppLocalizations {
   String get search => 'Meklēt';
 
   @override
-  String get discover => 'Atklāt';
+  String get explore => 'Izpētīt';
 
   @override
   String get library => 'Bibliotēka';

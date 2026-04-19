@@ -1,17 +1,17 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/filter_provider.dart';
+import '../../data/explore_filter_provider.dart';
+import '../../data/explore_tmdb_provider.dart';
 
-class YearSelectorDialog extends ConsumerWidget {
-  const YearSelectorDialog({super.key});
+class GenreSelectorDialog extends ConsumerWidget {
+  const GenreSelectorDialog({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final selectedYear = ref.watch(discoverFilterProvider).selectedYear;
-    final currentYear = DateTime.now().year;
-    final years = List.generate(50, (index) => currentYear - index);
+    final genresAsync = ref.watch(genresProvider);
+    final selectedGenre = ref.watch(exploreFilterProvider).selectedGenre;
 
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -41,13 +41,13 @@ class YearSelectorDialog extends ConsumerWidget {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.calendar_today,
+                      Icons.category_outlined,
                       color: theme.colorScheme.primary,
                       size: 28,
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      "Select Year",
+                      "Select Genre",
                       style: TextStyle(
                         color: theme.colorScheme.onSurface,
                         fontSize: 22,
@@ -55,12 +55,12 @@ class YearSelectorDialog extends ConsumerWidget {
                       ),
                     ),
                     const Spacer(),
-                    if (selectedYear != null)
+                    if (selectedGenre != null)
                       TextButton(
                         onPressed: () {
                           ref
-                              .read(discoverFilterProvider.notifier)
-                              .setYear(null);
+                              .read(exploreFilterProvider.notifier)
+                              .setGenre(null);
                           Navigator.of(context).pop();
                         },
                         child: Text(
@@ -73,40 +73,37 @@ class YearSelectorDialog extends ConsumerWidget {
               ),
               Divider(height: 1, color: theme.dividerColor),
               Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(20),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    childAspectRatio: 2.0,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                  ),
-                  itemCount: years.length,
-                  itemBuilder: (context, index) {
-                    final year = years[index];
-                    final isSelected = year == selectedYear;
-
-                    return InkWell(
-                      onTap: () {
-                        ref.read(discoverFilterProvider.notifier).setYear(year);
-                        Navigator.of(context).pop();
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? theme.colorScheme.primary.withValues(alpha: 0.2)
-                              : theme.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: isSelected
-                                ? theme.colorScheme.primary
-                                : Colors.transparent,
-                          ),
+                child: genresAsync.when(
+                  data: (genres) => ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: genres.length,
+                    itemBuilder: (context, index) {
+                      final genre = genres[index];
+                      final isSelected =
+                          selectedGenre != null && selectedGenre.id == genre.id;
+                      return ListTile(
+                        onTap: () {
+                          ref
+                              .read(exploreFilterProvider.notifier)
+                              .setGenre(genre);
+                          Navigator.of(context).pop();
+                        },
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(
-                          year.toString(),
+                        tileColor: isSelected
+                            ? theme.colorScheme.primary.withValues(alpha: 0.2)
+                            : null,
+                        leading: Icon(
+                          isSelected
+                              ? Icons.check_circle
+                              : Icons.circle_outlined,
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.outline,
+                        ),
+                        title: Text(
+                          genre.name,
                           style: TextStyle(
                             color: isSelected
                                 ? theme.colorScheme.onSurface
@@ -114,12 +111,19 @@ class YearSelectorDialog extends ConsumerWidget {
                             fontWeight: isSelected
                                 ? FontWeight.bold
                                 : FontWeight.normal,
-                            fontSize: 16,
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (_, _) => Center(
+                    child: Text(
+                      "Failed to load genres",
+                      style: TextStyle(color: theme.colorScheme.onSurface),
+                    ),
+                  ),
                 ),
               ),
             ],

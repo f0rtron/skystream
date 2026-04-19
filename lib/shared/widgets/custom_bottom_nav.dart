@@ -47,12 +47,12 @@ class CustomBottomNavBar extends StatelessWidget {
             label: AppLocalizations.of(context)!.search,
           ),
           NavigationDestination(
-            icon: const Icon(Icons.dashboard_outlined),
+            icon: const Icon(Icons.explore_outlined),
             selectedIcon: Icon(
-              Icons.dashboard,
+              Icons.explore,
               color: Theme.of(context).colorScheme.primary,
             ),
-            label: AppLocalizations.of(context)!.discover,
+            label: AppLocalizations.of(context)!.explore,
           ),
           NavigationDestination(
             icon: const Icon(Icons.video_library_outlined),

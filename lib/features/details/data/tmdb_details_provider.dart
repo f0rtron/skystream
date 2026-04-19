@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../discover/data/language_provider.dart';
-import '../../discover/data/tmdb_provider.dart';
+
 import '../../../core/models/tmdb_details.dart';
 import '../../../core/services/tmdb_service.dart';
+import '../../explore/data/explore_language_provider.dart';
+import '../../explore/data/explore_tmdb_provider.dart';
 
 part 'tmdb_details_provider.g.dart';
 
@@ -35,23 +36,25 @@ Future<TmdbDetails?> tmdbDetails(Ref ref, MovieDetailsParams params) async {
     final bool isTv = type == 'tv' || type == 'series' || type == 'tvseries';
 
     if (isTv) {
-      final results = await Future.wait([
-        service.getTvDetails(params.id, language: language),
-        service.getTvExtra(params.id, language: language),
-      ]).timeout(
-        const Duration(seconds: 15),
-        onTimeout: () => throw TimeoutException('Request timed out'),
-      );
+      final results =
+          await Future.wait([
+            service.getTvDetails(params.id, language: language),
+            service.getTvExtra(params.id, language: language),
+          ]).timeout(
+            const Duration(seconds: 15),
+            onTimeout: () => throw TimeoutException('Request timed out'),
+          );
       data = results[0];
       extra = results[1];
     } else {
-      final results = await Future.wait([
-        service.getMovieDetails(params.id, language: language),
-        service.getMovieExtra(params.id, language: language),
-      ]).timeout(
-        const Duration(seconds: 15),
-        onTimeout: () => throw TimeoutException('Request timed out'),
-      );
+      final results =
+          await Future.wait([
+            service.getMovieDetails(params.id, language: language),
+            service.getMovieExtra(params.id, language: language),
+          ]).timeout(
+            const Duration(seconds: 15),
+            onTimeout: () => throw TimeoutException('Request timed out'),
+          );
       data = results[0];
       extra = results[1];
     }

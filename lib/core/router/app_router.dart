@@ -3,14 +3,14 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:skystream/features/home/presentation/home_screen.dart';
 import 'package:skystream/features/search/presentation/search_screen.dart';
-import '../../features/discover/presentation/discover_screen.dart';
+import '../../features/explore/presentation/explore_screen.dart';
 import 'package:skystream/features/library/presentation/library_screen.dart';
 import 'package:skystream/features/settings/presentation/settings_screen.dart';
 import '../../features/extensions/screens/extensions_screen.dart';
 import '../../features/settings/presentation/developer_options_screen.dart';
 import '../../features/details/presentation/details_screen.dart';
 import '../../features/details/presentation/tmdb_movie_details_screen.dart';
-import '../../features/discover/presentation/view_all_screen.dart';
+import '../../features/explore/presentation/view_all_screen.dart';
 import '../../features/player/presentation/player_screen.dart';
 import '../domain/entity/multimedia_item.dart';
 import 'package:skystream/shared/widgets/app_scaffold.dart';
@@ -31,8 +31,8 @@ part 'app_router.g.dart';
     TypedStatefulShellBranch<SearchBranchData>(
       routes: [TypedGoRoute<SearchRoute>(path: '/search')],
     ),
-    TypedStatefulShellBranch<DiscoverBranchData>(
-      routes: [TypedGoRoute<DiscoverRoute>(path: '/discover')],
+    TypedStatefulShellBranch<ExploreBranchData>(
+      routes: [TypedGoRoute<ExploreRoute>(path: '/explore')],
     ),
     TypedStatefulShellBranch<LibraryBranchData>(
       routes: [TypedGoRoute<LibraryRoute>(path: '/library')],
@@ -84,15 +84,15 @@ class SearchRoute extends GoRouteData with $SearchRoute {
       const SearchScreen();
 }
 
-class DiscoverBranchData extends StatefulShellBranchData {
-  const DiscoverBranchData();
+class ExploreBranchData extends StatefulShellBranchData {
+  const ExploreBranchData();
 }
 
-class DiscoverRoute extends GoRouteData with $DiscoverRoute {
-  const DiscoverRoute();
+class ExploreRoute extends GoRouteData with $ExploreRoute {
+  const ExploreRoute();
   @override
   Widget build(BuildContext context, GoRouterState state) =>
-      const DiscoverScreen();
+      const ExploreScreen();
 }
 
 class LibraryBranchData extends StatefulShellBranchData {

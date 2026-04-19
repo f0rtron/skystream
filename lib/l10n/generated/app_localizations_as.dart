@@ -21,7 +21,7 @@ class AppLocalizationsAs extends AppLocalizations {
   String get search => 'সন্ধান কৰক';
 
   @override
-  String get discover => 'আৱিষ্কাৰ';
+  String get explore => 'অণ্বেষণ';
 
   @override
   String get library => 'পুথিভঁৰাল';

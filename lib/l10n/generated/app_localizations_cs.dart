@@ -21,7 +21,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get search => 'Hledat';
 
   @override
-  String get discover => 'Objevovat';
+  String get explore => 'Prozkoumat';
 
   @override
   String get library => 'Knihovna';

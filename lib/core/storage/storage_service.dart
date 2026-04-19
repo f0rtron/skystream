@@ -222,12 +222,12 @@ class StorageService {
     return _settingsBox.get('language', defaultValue: 'en-US');
   }
 
-  Future<void> setDiscoverLanguage(String lang) async {
-    await _settingsBox.put('discover_language', lang);
+  Future<void> setExploreLanguage(String lang) async {
+    await _settingsBox.put('explore_language', lang);
   }
 
-  String getDiscoverLanguage() {
-    return _settingsBox.get('discover_language', defaultValue: 'en-US');
+  String getExploreLanguage() {
+    return _settingsBox.get('explore_language', defaultValue: 'en-US');
   }
 
   // --- Watch History Toggle ---

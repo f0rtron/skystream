@@ -1,15 +1,19 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../discover/data/language_provider.dart';
-import '../../discover/data/tmdb_provider.dart';
+
 import '../../../core/models/tmdb_details.dart';
 import '../../../core/services/tmdb_service.dart';
+import '../../explore/data/explore_language_provider.dart';
+import '../../explore/data/explore_tmdb_provider.dart';
 import './tmdb_details_provider.dart';
 
 part 'lightweight_details_provider.g.dart';
 
 @riverpod
-Future<TmdbDetails?> lightweightDetails(Ref ref, MovieDetailsParams params) async {
+Future<TmdbDetails?> lightweightDetails(
+  Ref ref,
+  MovieDetailsParams params,
+) async {
   final service = ref.watch(tmdbServiceProvider);
   final language = ref.watch(languageProvider);
 

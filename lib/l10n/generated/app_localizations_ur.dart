@@ -21,7 +21,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get search => 'تلاش';
 
   @override
-  String get discover => 'دریافت';
+  String get explore => 'دریافت کریں';
 
   @override
   String get library => 'لائبریری';

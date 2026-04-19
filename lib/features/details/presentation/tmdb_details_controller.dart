@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../discover/data/tmdb_provider.dart';
-import '../../discover/data/language_provider.dart';
+
+import '../../explore/data/explore_language_provider.dart';
+import '../../explore/data/explore_tmdb_provider.dart';
 
 part 'tmdb_details_controller.g.dart';
 

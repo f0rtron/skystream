@@ -2,7 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/models/tmdb_genre.dart';
 
-part 'filter_provider.g.dart';
+part 'explore_filter_provider.g.dart';
 
 class FilterState {
   final TmdbGenre? selectedGenre; // {id: 123, name: 'Action'}
@@ -28,7 +28,7 @@ class FilterState {
 }
 
 @Riverpod(keepAlive: true)
-class DiscoverFilter extends _$DiscoverFilter {
+class ExploreFilter extends _$ExploreFilter {
   @override
   FilterState build() => const FilterState();
 

@@ -58,12 +58,12 @@ class SettingsRepository {
     return _storageService.getLanguage();
   }
 
-  Future<void> setDiscoverLanguage(String lang) async {
-    await _storageService.setDiscoverLanguage(lang);
+  Future<void> setExploreLanguage(String lang) async {
+    await _storageService.setExploreLanguage(lang);
   }
 
-  String getDiscoverLanguage() {
-    return _storageService.getDiscoverLanguage();
+  String getExploreLanguage() {
+    return _storageService.getExploreLanguage();
   }
 
   Future<void> setWatchHistoryEnabled(bool enabled) async {

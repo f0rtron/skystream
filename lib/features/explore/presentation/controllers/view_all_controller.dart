@@ -1,8 +1,8 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
-import '../../data/tmdb_provider.dart';
-import '../../data/language_provider.dart';
-import '../../data/filter_provider.dart';
+import '../../data/explore_tmdb_provider.dart';
+import '../../data/explore_language_provider.dart';
+import '../../data/explore_filter_provider.dart';
 import '../view_all_screen.dart'; // for ViewAllCategory
 
 part 'view_all_controller.g.dart';
@@ -44,7 +44,7 @@ class ViewAllController extends _$ViewAllController {
   @override
   ViewAllState build(ViewAllCategory category) {
     ref.watch(languageProvider);
-    ref.watch(discoverFilterProvider);
+    ref.watch(exploreFilterProvider);
     return ViewAllState(category: category);
   }
 
@@ -62,7 +62,7 @@ class ViewAllController extends _$ViewAllController {
     try {
       final tmdbService = ref.read(tmdbServiceProvider);
       final lang = ref.read(languageProvider);
-      final filters = ref.read(discoverFilterProvider);
+      final filters = ref.read(exploreFilterProvider);
       final bool isEmpty = state.items.isEmpty;
       final nextPage = isEmpty ? 1 : state.page + 1;
       List<MultimediaItem> newItems = [];

@@ -7,10 +7,10 @@ import '../../../../core/utils/layout_constants.dart';
 import '../../../../shared/widgets/shimmer_placeholder.dart';
 import '../../../../shared/widgets/thumbnail_error_placeholder.dart';
 
-import '../controllers/discover_search_controller.dart';
+import '../controllers/explore_search_controller.dart';
 
-class DiscoverSearchDelegate extends SearchDelegate<void> {
-  DiscoverSearchDelegate()
+class ExploreSearchDelegate extends SearchDelegate<void> {
+  ExploreSearchDelegate()
     : super(
         searchFieldLabel: 'Search movies, tv shows...',
         searchFieldStyle: const TextStyle(color: Colors.white70, fontSize: 18),
@@ -94,7 +94,7 @@ class _SearchSuggestionsListState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(discoverSearchControllerProvider.notifier)
+          .read(exploreSearchControllerProvider.notifier)
           .onQueryChanged(widget.query);
     });
   }
@@ -106,7 +106,7 @@ class _SearchSuggestionsListState
       Future.microtask(() {
         if (!context.mounted) return;
         ref
-            .read(discoverSearchControllerProvider.notifier)
+            .read(exploreSearchControllerProvider.notifier)
             .onQueryChanged(widget.query);
       });
     }
@@ -114,7 +114,7 @@ class _SearchSuggestionsListState
 
   @override
   Widget build(BuildContext context) {
-    final searchState = ref.watch(discoverSearchControllerProvider);
+    final searchState = ref.watch(exploreSearchControllerProvider);
     final isLoading = searchState.isLoading;
     final suggestions = searchState.suggestions;
     if (isLoading) {
@@ -201,7 +201,7 @@ class _SearchResultsGridState extends ConsumerState<_SearchResultsGrid> {
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
-          .read(discoverSearchControllerProvider.notifier)
+          .read(exploreSearchControllerProvider.notifier)
           .fetchResults(widget.query);
     });
   }
@@ -213,7 +213,7 @@ class _SearchResultsGridState extends ConsumerState<_SearchResultsGrid> {
       Future.microtask(() {
         if (!context.mounted) return;
         ref
-            .read(discoverSearchControllerProvider.notifier)
+            .read(exploreSearchControllerProvider.notifier)
             .fetchResults(widget.query);
       });
     }
@@ -222,7 +222,7 @@ class _SearchResultsGridState extends ConsumerState<_SearchResultsGrid> {
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      ref.read(discoverSearchControllerProvider.notifier).fetchNextPage();
+      ref.read(exploreSearchControllerProvider.notifier).fetchNextPage();
     }
   }
 
@@ -234,13 +234,13 @@ class _SearchResultsGridState extends ConsumerState<_SearchResultsGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final searchState = ref.watch(discoverSearchControllerProvider);
+    final searchState = ref.watch(exploreSearchControllerProvider);
     final isLoading = searchState.isLoading;
     final results = searchState.results;
     if (isLoading && results.isEmpty) {
       final screenWidth = MediaQuery.sizeOf(context).width;
       final isDesktop =
-          screenWidth > LayoutConstants.discoverCarouselDesktopBreakpoint;
+          screenWidth > LayoutConstants.exploreCarouselDesktopBreakpoint;
       final maxExtent = isDesktop ? 240.0 : 150.0;
       const childAspectRatio = 0.55;
 
@@ -295,7 +295,7 @@ class _SearchResultsGridState extends ConsumerState<_SearchResultsGrid> {
 
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isDesktop =
-        screenWidth > LayoutConstants.discoverCarouselDesktopBreakpoint;
+        screenWidth > LayoutConstants.exploreCarouselDesktopBreakpoint;
     final maxExtent = isDesktop ? 240.0 : 150.0;
     const childAspectRatio = 0.55;
 

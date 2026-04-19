@@ -21,7 +21,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get search => 'Suche';
 
   @override
-  String get discover => 'Entdecken';
+  String get explore => 'Erkunden';
 
   @override
   String get library => 'Bibliothek';

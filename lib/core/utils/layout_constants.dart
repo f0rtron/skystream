@@ -1,5 +1,5 @@
 /// Centralized spacing and layout values for consistent UI.
-/// Use from details_screen, discover_carousel, and other layout code.
+/// Use from details_screen, explore_carousel, and other layout code.
 class LayoutConstants {
   LayoutConstants._();
 
@@ -13,8 +13,8 @@ class LayoutConstants {
   static const double detailsExpandedHeightMobile = 400;
   static const double detailsExpandedHeightDesktop = 300;
 
-  // Discover carousel: use same breakpoint as [ResponsiveBreakpoints.desktopBreakpoint]
-  static const double discoverCarouselDesktopBreakpoint = 900;
+  // Explore carousel: use same breakpoint as [ResponsiveBreakpoints.desktopBreakpoint]
+  static const double exploreCarouselDesktopBreakpoint = 900;
 
   // Carousel hero aspect ratio (e.g. 16/9)
   static const double carouselHeroAspectRatio = 16 / 9;

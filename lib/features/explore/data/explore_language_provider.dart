@@ -1,18 +1,18 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/storage/settings_repository.dart';
 
-part 'language_provider.g.dart';
+part 'explore_language_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 class Language extends _$Language {
   @override
   String build() {
     final settings = ref.read(settingsRepositoryProvider);
-    return settings.getDiscoverLanguage();
+    return settings.getExploreLanguage();
   }
 
   Future<void> setLanguage(String language) async {
-    await ref.read(settingsRepositoryProvider).setDiscoverLanguage(language);
+    await ref.read(settingsRepositoryProvider).setExploreLanguage(language);
     state = language;
   }
 }

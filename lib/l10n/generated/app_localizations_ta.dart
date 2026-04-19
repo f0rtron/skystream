@@ -21,7 +21,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get search => 'தேடல்';
 
   @override
-  String get discover => 'கண்டறிக';
+  String get explore => 'ஆராய்க';
 
   @override
   String get library => 'நூலகம்';

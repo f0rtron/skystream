@@ -1,13 +1,13 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/services/tmdb_service.dart';
-import 'language_provider.dart';
-import 'filter_provider.dart';
+import 'explore_language_provider.dart';
+import 'explore_filter_provider.dart';
 
 import '../../../core/network/dio_client_provider.dart';
 import '../../../core/domain/entity/multimedia_item.dart';
 import '../../../core/models/tmdb_genre.dart';
 
-part 'tmdb_provider.g.dart';
+part 'explore_tmdb_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 TmdbService tmdbService(Ref ref) {
@@ -52,7 +52,7 @@ Future<List<TmdbGenre>> genres(Ref ref) async {
 Future<List<MultimediaItem>> trendingMovies(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
-  final filters = ref.watch(discoverFilterProvider);
+  final filters = ref.watch(exploreFilterProvider);
   return service.getTrending(
     language: lang,
     genreId: filters.selectedGenre?.id,
@@ -65,7 +65,7 @@ Future<List<MultimediaItem>> trendingMovies(Ref ref) async {
 Future<List<MultimediaItem>> popularMovies(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
-  final filters = ref.watch(discoverFilterProvider);
+  final filters = ref.watch(exploreFilterProvider);
   return service.getPopularMovies(
     language: lang,
     genreId: filters.selectedGenre?.id,
@@ -78,7 +78,7 @@ Future<List<MultimediaItem>> popularMovies(Ref ref) async {
 Future<List<MultimediaItem>> nowPlayingMovies(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
-  final filters = ref.watch(discoverFilterProvider);
+  final filters = ref.watch(exploreFilterProvider);
   return service.getNowPlayingMovies(
     language: lang,
     genreId: filters.selectedGenre?.id,
@@ -91,7 +91,7 @@ Future<List<MultimediaItem>> nowPlayingMovies(Ref ref) async {
 Future<List<MultimediaItem>> topRatedMovies(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
-  final filters = ref.watch(discoverFilterProvider);
+  final filters = ref.watch(exploreFilterProvider);
   return service.getTopRated(
     language: lang,
     genreId: filters.selectedGenre?.id,
@@ -104,7 +104,7 @@ Future<List<MultimediaItem>> topRatedMovies(Ref ref) async {
 Future<List<MultimediaItem>> popularTV(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
-  final filters = ref.watch(discoverFilterProvider);
+  final filters = ref.watch(exploreFilterProvider);
   return service.getPopularTV(
     language: lang,
     genreId: filters.selectedGenre?.id,
@@ -117,7 +117,7 @@ Future<List<MultimediaItem>> popularTV(Ref ref) async {
 Future<List<MultimediaItem>> topRatedTV(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
-  final filters = ref.watch(discoverFilterProvider);
+  final filters = ref.watch(exploreFilterProvider);
   return service.getTopRatedTV(
     language: lang,
     genreId: filters.selectedGenre?.id,
@@ -130,7 +130,7 @@ Future<List<MultimediaItem>> topRatedTV(Ref ref) async {
 Future<List<MultimediaItem>> onTheAirTV(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
-  final filters = ref.watch(discoverFilterProvider);
+  final filters = ref.watch(exploreFilterProvider);
   return service.getOnTheAirTV(
     language: lang,
     genreId: filters.selectedGenre?.id,
@@ -143,7 +143,7 @@ Future<List<MultimediaItem>> onTheAirTV(Ref ref) async {
 Future<List<MultimediaItem>> airingTodayTV(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
-  final filters = ref.watch(discoverFilterProvider);
+  final filters = ref.watch(exploreFilterProvider);
   return service.getAiringTodayTV(
     language: lang,
     genreId: filters.selectedGenre?.id,
@@ -153,10 +153,10 @@ Future<List<MultimediaItem>> airingTodayTV(Ref ref) async {
 }
 
 @riverpod
-Future<List<MultimediaItem>> discoverHeroMovie(Ref ref) async {
+Future<List<MultimediaItem>> exploreHeroMovie(Ref ref) async {
   final service = ref.watch(tmdbServiceProvider);
   final lang = ref.watch(languageProvider);
-  final filters = ref.watch(discoverFilterProvider);
+  final filters = ref.watch(exploreFilterProvider);
 
   var trending = await service.getTrendingAllDay(
     language: lang,

@@ -21,7 +21,7 @@ class AppLocalizationsMl extends AppLocalizations {
   String get search => 'തിരയുക';
 
   @override
-  String get discover => 'കണ്ടെത്തുക';
+  String get explore => 'പര്യവേക്ഷണം ചെയ്യുക';
 
   @override
   String get library => 'ലൈബ്രറി';

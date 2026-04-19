@@ -21,7 +21,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get search => 'శోధన';
 
   @override
-  String get discover => 'కనుగొనండి';
+  String get explore => 'అన్వేషించండి';
 
   @override
   String get library => 'లైబ్రరీ';

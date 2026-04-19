@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../data/tmdb_provider.dart';
+import '../../data/explore_tmdb_provider.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 
-part 'discover_search_controller.g.dart';
+part 'explore_search_controller.g.dart';
 
-class DiscoverSearchState {
+class ExploreSearchState {
   final List<MultimediaItem> suggestions;
   final List<MultimediaItem> results;
   final bool isLoading;
@@ -13,7 +13,7 @@ class DiscoverSearchState {
   final int page;
   final bool hasMore;
 
-  const DiscoverSearchState({
+  const ExploreSearchState({
     this.suggestions = const [],
     this.results = const [],
     this.isLoading = false,
@@ -22,7 +22,7 @@ class DiscoverSearchState {
     this.hasMore = true,
   });
 
-  DiscoverSearchState copyWith({
+  ExploreSearchState copyWith({
     List<MultimediaItem>? suggestions,
     List<MultimediaItem>? results,
     bool? isLoading,
@@ -30,7 +30,7 @@ class DiscoverSearchState {
     int? page,
     bool? hasMore,
   }) {
-    return DiscoverSearchState(
+    return ExploreSearchState(
       suggestions: suggestions ?? this.suggestions,
       results: results ?? this.results,
       isLoading: isLoading ?? this.isLoading,
@@ -42,15 +42,15 @@ class DiscoverSearchState {
 }
 
 @riverpod
-class DiscoverSearchController extends _$DiscoverSearchController {
+class ExploreSearchController extends _$ExploreSearchController {
   Timer? _debounce;
 
   @override
-  DiscoverSearchState build() {
+  ExploreSearchState build() {
     ref.onDispose(() {
       _debounce?.cancel();
     });
-    return const DiscoverSearchState();
+    return const ExploreSearchState();
   }
 
   void onQueryChanged(String query) {
@@ -147,6 +147,6 @@ class DiscoverSearchController extends _$DiscoverSearchController {
 
   void clearSearch() {
     _debounce?.cancel();
-    state = const DiscoverSearchState();
+    state = const ExploreSearchState();
   }
 }

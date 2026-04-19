@@ -21,7 +21,7 @@ class AppLocalizationsSv extends AppLocalizations {
   String get search => 'Sök';
 
   @override
-  String get discover => 'Upptäck';
+  String get explore => 'Utforska';
 
   @override
   String get library => 'Bibliotek';

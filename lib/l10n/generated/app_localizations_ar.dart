@@ -21,7 +21,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get search => 'بحث';
 
   @override
-  String get discover => 'اكتشاف';
+  String get explore => 'استكشاف';
 
   @override
   String get library => 'المكتبة';
@@ -1231,7 +1231,7 @@ class AppLocalizationsArApc extends AppLocalizationsAr {
   String get search => 'بحث';
 
   @override
-  String get discover => 'استكشاف';
+  String get explore => 'استكشاف';
 
   @override
   String get library => 'المكتبة';

@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/language_provider.dart';
+import '../../data/explore_language_provider.dart';
 
 class LanguageSelectorDialog extends ConsumerWidget {
   const LanguageSelectorDialog({super.key});

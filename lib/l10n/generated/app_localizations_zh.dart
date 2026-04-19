@@ -21,7 +21,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get search => '搜索';
 
   @override
-  String get discover => '发现';
+  String get explore => '探索';
 
   @override
   String get library => '媒体库';
@@ -1197,7 +1197,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get search => '搜尋';
 
   @override
-  String get discover => '探索';
+  String get explore => '探索';
 
   @override
   String get library => '媒體庫';

@@ -1472,7 +1472,7 @@ class PlayerBottomSheets {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Discovery requires your personal API keys for OpenSubtitles, SubDL, or SubSource.',
+                                      'Explorey requires your personal API keys for OpenSubtitles, SubDL, or SubSource.',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 13,

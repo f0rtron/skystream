@@ -21,7 +21,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get search => 'Cari';
 
   @override
-  String get discover => 'Jelajahi';
+  String get explore => 'Jelajahi';
 
   @override
   String get library => 'Perpustakaan';

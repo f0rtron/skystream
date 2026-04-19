@@ -21,7 +21,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get search => '검색';
 
   @override
-  String get discover => '둘러보기';
+  String get explore => '탐색';
 
   @override
   String get library => '라이브러리';

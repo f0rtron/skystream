@@ -199,11 +199,11 @@ abstract class AppLocalizations {
   /// **'Search'**
   String get search;
 
-  /// No description provided for @discover.
+  /// No description provided for @explore.
   ///
   /// In en, this message translates to:
-  /// **'Discover'**
-  String get discover;
+  /// **'Explore'**
+  String get explore;
 
   /// No description provided for @library.
   ///

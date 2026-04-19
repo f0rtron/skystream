@@ -21,7 +21,7 @@ class AppLocalizationsEl extends AppLocalizations {
   String get search => 'Αναζήτηση';
 
   @override
-  String get discover => 'Ανακάλυψη';
+  String get explore => 'Εξερεύνηση';
 
   @override
   String get library => 'Βιβλιοθήκη';

@@ -2,27 +2,27 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/widgets/cards_wrapper.dart';
-import '../data/tmdb_provider.dart';
+import '../data/explore_tmdb_provider.dart';
 import 'view_all_screen.dart';
-import 'widgets/discover_carousel.dart';
+import 'widgets/explore_carousel.dart';
 import 'widgets/media_horizontal_list.dart';
 import 'widgets/unified_filter_dialog.dart';
-import '../data/filter_provider.dart';
-import 'delegates/discover_search_delegate.dart';
+import '../data/explore_filter_provider.dart';
+import 'delegates/explore_search_delegate.dart';
 import '../../../../core/utils/layout_constants.dart';
 import '../../../../shared/widgets/shimmer_placeholder.dart';
 import '../../../../core/domain/entity/multimedia_item.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import 'dart:async';
 
-class DiscoverScreen extends ConsumerStatefulWidget {
-  const DiscoverScreen({super.key});
+class ExploreScreen extends ConsumerStatefulWidget {
+  const ExploreScreen({super.key});
 
   @override
-  ConsumerState<DiscoverScreen> createState() => _DiscoverScreenState();
+  ConsumerState<ExploreScreen> createState() => _ExploreScreenState();
 }
 
-class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
+class _ExploreScreenState extends ConsumerState<ExploreScreen>
     with AutomaticKeepAliveClientMixin {
   late ScrollController _scrollController;
   final ValueNotifier<bool> _isScrolledNotifier = ValueNotifier<bool>(false);
@@ -94,7 +94,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
               },
             ),
             title: Text(
-              AppLocalizations.of(context)!.discover,
+              AppLocalizations.of(context)!.explore,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 24,
@@ -117,7 +117,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                   child: Consumer(
                     builder: (context, ref, _) {
                       final filters = ref.watch(
-                        discoverFilterProvider,
+                        exploreFilterProvider,
                       ); // Updated
                       // Language exclusion: Only highlight for content filters
                       final hasActiveFilter =
@@ -151,7 +151,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                   onTap: () {
                     unawaited(showSearch<void>(
                       context: context,
-                      delegate: DiscoverSearchDelegate(),
+                      delegate: ExploreSearchDelegate(),
                       useRootNavigator: false,
                       maintainState: true,
                     ));
@@ -179,12 +179,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                 child: Consumer(
                   builder: (context, ref, _) {
                     final heroMoviesAsync = ref.watch(
-                      discoverHeroMovieProvider,
+                      exploreHeroMovieProvider,
                     );
                     return switch (heroMoviesAsync) {
                       AsyncData(:final value) => value.isEmpty
                           ? const SizedBox.shrink()
-                          : DiscoverCarousel(
+                          : ExploreCarousel(
                               movies: value,
                               scrollController: _scrollController,
                             ),
@@ -230,7 +230,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
                                 const SizedBox(height: 8),
                                 TextButton.icon(
                                   onPressed: () =>
-                                      ref.invalidate(discoverHeroMovieProvider),
+                                      ref.invalidate(exploreHeroMovieProvider),
                                   icon: const Icon(Icons.refresh),
                                   label: Text(AppLocalizations.of(context)!.retry),
                                 ),
@@ -327,7 +327,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen>
               title: title,
               mediaList: value,
               category: category,
-              heroTagPrefix: 'discover',
+              heroTagPrefix: 'explore',
             ),
       AsyncLoading() => Padding(
           padding: const EdgeInsets.symmetric(

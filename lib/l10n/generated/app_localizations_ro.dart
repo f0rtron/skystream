@@ -21,7 +21,7 @@ class AppLocalizationsRo extends AppLocalizations {
   String get search => 'Căutare';
 
   @override
-  String get discover => 'Descoperă';
+  String get explore => 'Explorează';
 
   @override
   String get library => 'Bibliotecă';

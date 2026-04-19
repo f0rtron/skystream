@@ -21,7 +21,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get search => 'Поиск';
 
   @override
-  String get discover => 'Обзор';
+  String get explore => 'Обзор';
 
   @override
   String get library => 'Библиотека';

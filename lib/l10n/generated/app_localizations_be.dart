@@ -21,7 +21,7 @@ class AppLocalizationsBe extends AppLocalizations {
   String get search => 'Пошук';
 
   @override
-  String get discover => 'Агляд';
+  String get explore => 'Даследаваць';
 
   @override
   String get library => 'Бібліятэка';

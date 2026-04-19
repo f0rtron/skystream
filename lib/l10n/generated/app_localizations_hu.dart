@@ -21,7 +21,7 @@ class AppLocalizationsHu extends AppLocalizations {
   String get search => 'Keresés';
 
   @override
-  String get discover => 'Felfedezés';
+  String get explore => 'Felfedezés';
 
   @override
   String get library => 'Könyvtár';

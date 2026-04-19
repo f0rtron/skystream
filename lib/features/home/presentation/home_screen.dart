@@ -6,9 +6,9 @@ import 'home_state.dart';
 import 'package:skystream/features/home/presentation/widgets/continue_watching_section.dart';
 import 'package:skystream/features/library/presentation/history_provider.dart';
 import '../../settings/presentation/general_settings_provider.dart';
-import '../../discover/presentation/widgets/discover_carousel.dart';
-import '../../discover/presentation/widgets/media_horizontal_list.dart';
-import '../../discover/presentation/view_all_screen.dart';
+import '../../explore/presentation/widgets/explore_carousel.dart';
+import '../../explore/presentation/widgets/media_horizontal_list.dart';
+import '../../explore/presentation/view_all_screen.dart';
 import '../../../shared/widgets/desktop_scroll_wrapper.dart';
 
 import 'package:flutter/rendering.dart';
@@ -270,7 +270,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             // Carousel
             if (data.containsKey('Trending'))
               SliverToBoxAdapter(
-                child: DiscoverCarousel(
+                child: ExploreCarousel(
                   movies: data['Trending']!.take(7).toList(),
                   scrollController: _scrollController,
                   onTap: (item) {
@@ -282,7 +282,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               )
             else if (data.isNotEmpty)
               SliverToBoxAdapter(
-                child: DiscoverCarousel(
+                child: ExploreCarousel(
                   movies: data.values.first.take(7).toList(),
                   scrollController: _scrollController,
                   onTap: (item) {

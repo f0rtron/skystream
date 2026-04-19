@@ -21,7 +21,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get search => '検索';
 
   @override
-  String get discover => '発見';
+  String get explore => '探索';
 
   @override
   String get library => 'ライブラリ';

@@ -21,7 +21,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get search => 'Zoeken';
 
   @override
-  String get discover => 'Ontdekken';
+  String get explore => 'Ontdekken';
 
   @override
   String get library => 'Bibliotheek';

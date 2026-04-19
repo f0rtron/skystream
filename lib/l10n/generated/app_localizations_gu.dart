@@ -21,7 +21,7 @@ class AppLocalizationsGu extends AppLocalizations {
   String get search => 'શોધ';
 
   @override
-  String get discover => 'શોધો';
+  String get explore => 'અન્વેષણ કરો';
 
   @override
   String get library => 'લાઇબ્રેરી';

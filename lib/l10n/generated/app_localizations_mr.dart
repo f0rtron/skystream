@@ -21,7 +21,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get search => 'शोध';
 
   @override
-  String get discover => 'शोधा';
+  String get explore => 'शोध घ्या';
 
   @override
   String get library => 'ग्रंथालय';
