@@ -90,7 +90,7 @@ class UpdateService {
 
   Future<GithubAsset?> findPlatformAsset(GithubRelease release) async {
     final assets =
-        release.assets.where((a) => !a.name.contains('debug')).toList();
+        release.assets.where((a) => !a.name.toLowerCase().contains('debug')).toList();
 
     if (Platform.isAndroid) {
       final info = await DeviceInfoPlugin().androidInfo;
@@ -99,18 +99,18 @@ class UpdateService {
       // 1. Match specific ABI (arm64-v8a, armeabi-v7a, x86_64)
       for (final abi in abis) {
         final match = assets.firstWhereOrNull(
-            (a) => a.name.contains('android') && a.name.contains(abi));
+            (a) => a.name.toLowerCase().contains('android') && a.name.toLowerCase().contains(abi.toLowerCase()));
         if (match != null) return match;
       }
 
       // 2. Fallback to universal
       final universal = assets.firstWhereOrNull(
-          (a) => a.name.contains('android') && a.name.contains('universal'));
+          (a) => a.name.toLowerCase().contains('android') && a.name.toLowerCase().contains('universal'));
       if (universal != null) return universal;
 
       // 3. Last resort: any APK
       return assets.firstWhereOrNull(
-          (a) => a.name.contains('android') && a.name.endsWith('.apk'));
+          (a) => a.name.toLowerCase().contains('android') && a.name.toLowerCase().endsWith('.apk'));
     } else if (Platform.isWindows) {
       final arch = Platform.environment['PROCESSOR_ARCHITECTURE']
               ?.toLowerCase() ??
@@ -118,76 +118,72 @@ class UpdateService {
       final isArm = arch.contains('arm') || arch.contains('aarch64');
       final archTag = isArm ? 'arm64' : 'x64';
 
-      // 1. Match windows specific build with architecture
-      var match = assets.firstWhereOrNull(
-        (a) => a.name.contains('windows') && a.name.contains(archTag),
-      );
-
+      final windowsAssets = assets.where((a) => a.name.toLowerCase().contains('windows')).toList();
+      var archAssets = windowsAssets.where((a) => a.name.toLowerCase().contains(archTag)).toList();
+      
       // Fallback for x86_64 / amd64 naming
-      if (match == null && !isArm) {
-        match = assets.firstWhereOrNull(
-          (a) => a.name.contains('windows') && a.name.contains('x86_64'),
-        );
+      if (archAssets.isEmpty && !isArm) {
+        archAssets = windowsAssets.where((a) => a.name.toLowerCase().contains('x86_64') || a.name.toLowerCase().contains('amd64')).toList();
       }
-
-      if (match != null) return match;
+      
+      if (archAssets.isNotEmpty) {
+        // Prefer .exe, then .msix, then .zip
+        return archAssets.firstWhereOrNull((a) => a.name.toLowerCase().endsWith('.exe')) ??
+               archAssets.firstWhereOrNull((a) => a.name.toLowerCase().endsWith('.msix')) ??
+               archAssets.firstWhereOrNull((a) => a.name.toLowerCase().endsWith('.zip')) ??
+               archAssets.first;
+      }
 
       // 2. Fallback to any windows installer
-      return assets.firstWhereOrNull(
-        (a) =>
-            a.name.contains('windows') &&
-            (a.name.endsWith('.exe') ||
-                a.name.endsWith('.msix') ||
-                a.name.endsWith('.zip')),
-      );
+      return windowsAssets.firstWhereOrNull((a) => a.name.toLowerCase().endsWith('.exe')) ??
+             windowsAssets.firstWhereOrNull((a) => a.name.toLowerCase().endsWith('.zip'));
+
     } else if (Platform.isMacOS) {
       final info = await DeviceInfoPlugin().macOsInfo;
-      final arch = info.arch; // e.g. "arm64" or "x86_64"
+      final arch = info.arch.toLowerCase(); // e.g. "arm64" or "x86_64"
 
-      // Match architecture in filename if present
-      var match = assets.firstWhereOrNull(
-          (a) => a.name.contains('macos') && a.name.contains(arch));
+      final macosAssets = assets.where((a) => a.name.toLowerCase().contains('macos') || a.name.toLowerCase().contains('mac')).toList();
+      var archAssets = macosAssets.where((a) => a.name.toLowerCase().contains(arch)).toList();
 
       // Fallback for x64 alias
-      if (match == null && arch == 'x86_64') {
-        match = assets.firstWhereOrNull(
-            (a) => a.name.contains('macos') && a.name.contains('x64'));
+      if (archAssets.isEmpty && arch == 'x86_64') {
+        archAssets = macosAssets.where((a) => a.name.toLowerCase().contains('x64')).toList();
       }
 
-      if (match != null) return match;
+      if (archAssets.isNotEmpty) {
+         // Prefer .dmg over .zip
+         return archAssets.firstWhereOrNull((a) => a.name.toLowerCase().endsWith('.dmg')) ??
+                archAssets.firstWhereOrNull((a) => a.name.toLowerCase().endsWith('.zip')) ??
+                archAssets.first;
+      }
 
-      return assets.firstWhereOrNull(
-        (a) =>
-            a.name.contains('macos') &&
-            (a.name.endsWith('.dmg') || a.name.endsWith('.zip')),
-      );
+      return macosAssets.firstWhereOrNull((a) => a.name.toLowerCase().endsWith('.dmg')) ??
+             macosAssets.firstWhereOrNull((a) => a.name.toLowerCase().endsWith('.zip'));
+
     } else if (Platform.isLinux) {
       final version = Platform.version.toLowerCase();
       final isArm = version.contains('arm') || version.contains('aarch64');
       final archTag = isArm ? 'arm64' : 'x64';
 
-      // 1. Try matching architecture
-      var match = assets.firstWhereOrNull(
-        (a) => a.name.contains('linux') && a.name.contains(archTag),
-      );
+      final linuxAssets = assets.where((a) => a.name.toLowerCase().contains('linux')).toList();
+      var archAssets = linuxAssets.where((a) => a.name.toLowerCase().contains(archTag)).toList();
 
       // Fallback for x86_64 alias
-      if (match == null && !isArm) {
-        match = assets.firstWhereOrNull(
-          (a) => a.name.contains('linux') && a.name.contains('x86_64'),
-        );
+      if (archAssets.isEmpty && !isArm) {
+        archAssets = linuxAssets.where((a) => a.name.toLowerCase().contains('x86_64')).toList();
       }
 
-      if (match != null) return match;
+      if (archAssets.isNotEmpty) {
+         return archAssets.firstWhereOrNull((a) => a.name.toLowerCase().endsWith('.appimage')) ??
+                archAssets.firstWhereOrNull((a) => a.name.toLowerCase().endsWith('.deb')) ??
+                archAssets.firstWhereOrNull((a) => a.name.toLowerCase().endsWith('.tar.gz')) ??
+                archAssets.first;
+      }
 
       // 2. Fallback to any Linux installer type
-      return assets.firstWhereOrNull(
-        (a) =>
-            a.name.contains('linux') &&
-            (a.name.endsWith('.AppImage') ||
-                a.name.endsWith('.deb') ||
-                a.name.endsWith('.tar.gz')),
-      );
+      return linuxAssets.firstWhereOrNull((a) => a.name.toLowerCase().endsWith('.appimage')) ??
+             linuxAssets.firstWhereOrNull((a) => a.name.toLowerCase().endsWith('.deb')) ??
+             linuxAssets.firstWhereOrNull((a) => a.name.toLowerCase().endsWith('.tar.gz'));
     }
     return null;
   }

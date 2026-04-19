@@ -320,7 +320,13 @@ jobs:
           Get-ChildItem
           
       - name: Build Windows
-        run: flutter build windows --release --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+        shell: pwsh
+        run: |
+          if ('${{ matrix.arch }}' -eq 'arm64') {
+            flutter build windows --release --target-platform=windows-arm64 --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+          } else {
+            flutter build windows --release --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+          }
 
       - name: Install Inno Setup
         shell: pwsh
