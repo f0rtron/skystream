@@ -294,10 +294,17 @@ jobs:
             torrserver_binary: TorrServer-windows-arm64.exe
     steps:
       - uses: actions/checkout@v4
+      
       - uses: subosito/flutter-action@v2
         if: ${{ matrix.arch != 'arm64' }}
         with:
           channel: 'stable'
+
+      - name: Enforce ARM64 Architecture Native Host
+        if: ${{ matrix.arch == 'arm64' }}
+        shell: pwsh
+        run: echo "PROCESSOR_ARCHITECTURE=ARM64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Setup Flutter (ARM64 Windows)
         if: ${{ matrix.arch == 'arm64' }}
         shell: pwsh
@@ -320,13 +327,7 @@ jobs:
           Get-ChildItem
           
       - name: Build Windows
-        shell: pwsh
-        run: |
-          if ('${{ matrix.arch }}' -eq 'arm64') {
-            flutter build windows --release --target-platform=windows-arm64 --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
-          } else {
-            flutter build windows --release --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
-          }
+        run: flutter build windows --release --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
 
       - name: Install Inno Setup
         shell: pwsh
