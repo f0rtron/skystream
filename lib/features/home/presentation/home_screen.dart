@@ -16,6 +16,10 @@ import '../../../l10n/generated/app_localizations.dart';
 import 'package:skystream/core/extensions/extension_manager.dart';
 import 'package:skystream/core/extensions/base_provider.dart';
 import 'package:skystream/core/router/app_router.dart';
+import 'delegates/home_search_delegate.dart';
+import '../../../shared/widgets/cards_wrapper.dart';
+import '../../../../core/utils/layout_constants.dart';
+import 'dart:async';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -101,6 +105,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           },
         ),
         title: Text(l10n.appTitle),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: LayoutConstants.spacingMd),
+            child: CardsWrapper(
+              onTap: () {
+                unawaited(
+                  showSearch<void>(
+                    context: context,
+                    delegate: HomeSearchDelegate(),
+                    useRootNavigator: false,
+                    maintainState: true,
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(50),
+              child: CircleAvatar(
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.1),
+                radius: 18,
+                child: Icon(
+                  Icons.search,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  size: 18,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: ValueListenableBuilder<bool>(
         valueListenable: _isFabExtended,
@@ -241,7 +274,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   movies: data['Trending']!.take(7).toList(),
                   scrollController: _scrollController,
                   onTap: (item) {
-                    DetailsRoute($extra: DetailsRouteExtra(item: item)).push<void>(context);
+                    DetailsRoute(
+                      $extra: DetailsRouteExtra(item: item),
+                    ).push<void>(context);
                   },
                 ),
               )
@@ -251,7 +286,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   movies: data.values.first.take(7).toList(),
                   scrollController: _scrollController,
                   onTap: (item) {
-                    DetailsRoute($extra: DetailsRouteExtra(item: item)).push<void>(context);
+                    DetailsRoute(
+                      $extra: DetailsRouteExtra(item: item),
+                    ).push<void>(context);
                   },
                 ),
               ),
@@ -267,23 +304,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
             // Category sections — lazily built
             SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final filteredEntries = data.entries
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final filteredEntries = data.entries
+                      .where((e) => e.key != 'Trending')
+                      .toList();
+                  if (index >= filteredEntries.length) return null;
+                  final entry = filteredEntries[index];
+                  return MediaHorizontalList(
+                    title: entry.key,
+                    mediaList: entry.value,
+                    category: ViewAllCategory.trending,
+                    showViewAll: false,
+                    onTap: (item) {
+                      DetailsRoute(
+                        $extra: DetailsRouteExtra(item: item),
+                      ).push<void>(context);
+                    },
+                    heroTagPrefix: 'home',
+                  );
+                },
+                childCount: data.entries
                     .where((e) => e.key != 'Trending')
-                    .toList();
-                if (index >= filteredEntries.length) return null;
-                final entry = filteredEntries[index];
-                return MediaHorizontalList(
-                  title: entry.key,
-                  mediaList: entry.value,
-                  category: ViewAllCategory.trending,
-                  showViewAll: false,
-                  onTap: (item) {
-                    DetailsRoute($extra: DetailsRouteExtra(item: item)).push<void>(context);
-                  },
-                  heroTagPrefix: 'home',
-                );
-              }, childCount: data.entries.where((e) => e.key != 'Trending').length),
+                    .length,
+              ),
             ),
 
             // Bottom padding for FAB
@@ -302,9 +346,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           Icon(
             Icons.extension_off_rounded,
             size: 64,
-            color: Theme.of(
-              context,
-            ).colorScheme.primary.withValues(alpha: 0.5),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
@@ -380,7 +422,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   label: Text(l10n.retry),
                 ),
                 ElevatedButton.icon(
-                    onPressed: () => const LibraryRoute().push<void>(context),
+                  onPressed: () => const LibraryRoute().push<void>(context),
                   icon: const Icon(Icons.download_for_offline_rounded),
                   label: Text(l10n.goToDownloads),
                   style: ElevatedButton.styleFrom(
@@ -454,7 +496,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                       visualDensity: VisualDensity.compact,
                                       materialTapTargetSize:
                                           MaterialTapTargetSize.shrinkWrap,
-                                      label: Text(_getLocalizedType(type, l10n)),
+                                      label: Text(
+                                        _getLocalizedType(type, l10n),
+                                      ),
                                       selected: currentFilter == type,
                                       onSelected: (_) => ref
                                           .read(homeFilterProvider.notifier)
@@ -506,9 +550,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                 leading: const Radio<String?>(value: null),
                                 onTap: () {
                                   ref
-                                      .read(
-                                        activeProviderProvider.notifier,
-                                      )
+                                      .read(activeProviderProvider.notifier)
                                       .set(null);
                                   Navigator.pop(context);
                                   ref.invalidate(homeDataProvider);

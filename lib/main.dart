@@ -181,20 +181,26 @@ class _MyAppState extends ConsumerState<MyApp> {
   Future<void> _checkExtensionsUpdates() async {
     try {
       final controller = ref.read(extensionsControllerProvider.notifier);
-      unawaited(controller.ensureInitialized());
-      await Future<void>.delayed(const Duration(seconds: 2));
+      await controller.ensureInitialized();
       if (!mounted) return;
 
       if (mounted) {
         final count = await controller.checkForUpdates();
-        final navContext = _scaffoldMessengerKey.currentContext;
-        if (mounted && navContext != null && navContext.mounted) {
-          final l10n = AppLocalizations.of(navContext);
-          if (l10n != null && count > 0) {
-            ref
-                .read(notificationServiceProvider)
-                .showSuccess(l10n.extensionsUpdated(count));
-          }
+        if (count > 0 && mounted) {
+          final navContext = ref
+              .read(appRouterProvider)
+              .routerDelegate
+              .navigatorKey
+              .currentContext;
+          final l10n = (navContext != null && navContext.mounted)
+              ? AppLocalizations.of(navContext)
+              : null;
+
+          ref
+              .read(notificationServiceProvider)
+              .showSuccess(
+                l10n?.extensionsUpdated(count) ?? "$count extension(s) updated",
+              );
         }
       }
     } catch (e) {

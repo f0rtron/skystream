@@ -138,22 +138,32 @@ class LanguageSelectorDialog extends ConsumerWidget {
                                   children: [
                                     Text(
                                       lang.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         color: isSelected
-                                            ? theme.colorScheme.onSurface
-                                            : theme
-                                                  .colorScheme
-                                                  .onSurfaceVariant,
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface
+                                            : Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 15,
                                       ),
                                     ),
                                     Text(
                                       lang.nativeName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         color: isSelected
-                                            ? theme.colorScheme.onSurfaceVariant
-                                            : theme.colorScheme.outline,
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant
+                                            : Theme.of(
+                                                context,
+                                              ).colorScheme.outline,
                                         fontSize: 12,
                                       ),
                                     ),

@@ -421,6 +421,8 @@ class _LanguageTab extends ConsumerWidget {
                     children: [
                       Text(
                         lang.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: isSelected
                               ? Theme.of(context).colorScheme.primary
@@ -431,6 +433,8 @@ class _LanguageTab extends ConsumerWidget {
                       ),
                       Text(
                         lang.nativeName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: isSelected
                               ? Theme.of(
