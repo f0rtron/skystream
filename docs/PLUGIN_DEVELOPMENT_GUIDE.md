@@ -64,7 +64,11 @@ When `domains` is present, a **domain selector** appears in the plugin's setting
 
 ### Declaring Sub-Providers (One JS, Many Feeds)
 
-If a single JS file can serve multiple independent sources (e.g., different M3U playlists), declare them as `providers` instead of creating separate plugins:
+If a single JS file can serve multiple independent sources (e.g., different M3U playlists), declare them as `providers` instead of creating separate plugins. The app creates one provider instance per entry and lets users enable/disable each from plugin settings. Cannot be combined with `domains`.
+
+#### Option A — Static URLs (declared in plugin.json)
+
+Use this when the feed URLs are known and stable. Each entry's `baseUrl` is injected as `manifest.baseUrl` — **no JS changes needed**:
 
 ```json
 {
@@ -79,7 +83,55 @@ If a single JS file can serve multiple independent sources (e.g., different M3U 
 }
 ```
 
-The app creates one provider instance per entry and injects each entry's `baseUrl` as `manifest.baseUrl` — again, **no JS changes needed**. Users can enable/disable individual sub-providers from the plugin settings. Cannot be combined with `domains`.
+#### Option B — Dynamic URLs (resolved at runtime via JS)
+
+Use this when feed URLs change dynamically (e.g. fetched from a remote config or Firebase). Omit `baseUrl` from the provider entry — the app injects `manifest.providerId` instead, and your JS fetches the URL at runtime:
+
+```json
+{
+  "packageName": "com.example.mybundle",
+  "name": "My Bundle",
+  "baseUrl": "https://api.example.com",
+  "providers": [
+    { "id": "FeedOne",   "name": "Feed One" },
+    { "id": "FeedTwo",   "name": "Feed Two" },
+    { "id": "FeedThree", "name": "Feed Three" }
+  ]
+}
+```
+
+In your plugin JS, check `manifest.providerId` to know which sub-provider is running and resolve its URL:
+
+```javascript
+async function getHome(cb) {
+    if (manifest.providerId) {
+        // Sub-provider mode: resolve this provider's feed URL dynamically
+        const feedUrl = await fetchFeedUrlForProvider(manifest.providerId);
+        if (!feedUrl) return cb({ success: false, errorCode: 'NOT_FOUND', message: 'Provider not found' });
+
+        const channels = await fetchPlaylist(feedUrl);
+        const data = {};
+        channels.forEach(ch => {
+            if (!data[ch.group]) data[ch.group] = [];
+            data[ch.group].push(new MultimediaItem({ title: ch.title, url: ch.url, posterUrl: ch.poster, type: 'livestream' }));
+        });
+        return cb({ success: true, data });
+    }
+
+    // Root provider mode (no providerId): show overview / live events
+    cb({ success: true, data: { "Live": [ /* ... */ ] } });
+}
+
+// Example: match manifest.providerId against a remote config list by title
+async function fetchFeedUrlForProvider(providerId) {
+    const providers = await fetchRemoteProviders(); // your Firebase / API call
+    const found = providers.find(p => p.title.toLowerCase() === providerId.toLowerCase());
+    return found ? found.feedUrl : null;
+}
+```
+
+> [!TIP]
+> The `id` in plugin.json must match the value your remote API returns as the provider's name/title (case-insensitive). This is the key used for matching — keep it stable.
 
 <details>
 <summary><b>View the Core Function Templates</b></summary>

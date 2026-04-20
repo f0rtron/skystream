@@ -15,19 +15,21 @@ class PluginDomain {
 class PluginSubProvider {
   final String id;
   final String name;
-  final String baseUrl;
+  /// Optional static URL. When null the JS resolves the URL dynamically via manifest.providerId.
+  final String? baseUrl;
 
   const PluginSubProvider({
     required this.id,
     required this.name,
-    required this.baseUrl,
+    this.baseUrl,
   });
 
   factory PluginSubProvider.fromJson(Map<String, dynamic> json) {
+    final rawUrl = json['baseUrl'] as String?;
     return PluginSubProvider(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? json['id'] as String? ?? '',
-      baseUrl: json['baseUrl'] as String? ?? '',
+      baseUrl: (rawUrl != null && rawUrl.isNotEmpty) ? rawUrl : null,
     );
   }
 }
@@ -129,7 +131,7 @@ class ExtensionPlugin {
       providers: (json['providers'] as List<dynamic>?)
           ?.whereType<Map<dynamic, dynamic>>()
           .map((p) => PluginSubProvider.fromJson(Map<String, dynamic>.from(p)))
-          .where((p) => p.id.isNotEmpty && p.baseUrl.isNotEmpty)
+          .where((p) => p.id.isNotEmpty)
           .toList(),
     );
   }

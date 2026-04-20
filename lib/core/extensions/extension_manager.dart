@@ -207,7 +207,10 @@ class ExtensionManager extends _$ExtensionManager {
             namespace: '${baseNamespace}__$subId',
             forcedName: sub.name,
             manifest: plugin.manifest,
+            // Static baseUrl takes priority; otherwise inject providerId so
+            // JS can resolve the URL dynamically (e.g. via Firebase).
             customBaseUrl: sub.baseUrl,
+            providerId: sub.baseUrl == null ? sub.id : null,
           );
           await provider.waitForInit;
           results.add(provider);

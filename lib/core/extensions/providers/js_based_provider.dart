@@ -47,6 +47,7 @@ class JsBasedProvider extends SkyStreamProvider {
   final String? _namespace;
   String? get namespace => _namespace; // Expose namespace
   final String? _forcedName;
+  final String? _providerId;
   // Scopes JS getPreference/setPreference — sub-providers share parent's namespace
   final String _jsPackageName;
 
@@ -63,12 +64,14 @@ class JsBasedProvider extends SkyStreamProvider {
     String? forcedName,
     Map<String, dynamic>? manifest,
     String? customBaseUrl,
+    String? providerId,
   }) : _packageName = packageName,
        _jsPackageName = jsPackageName ?? packageName,
        _namespace = namespace,
        _forcedName = forcedName,
        _initialManifest = manifest,
-       _customBaseUrl = customBaseUrl {
+       _customBaseUrl = customBaseUrl,
+       _providerId = providerId {
     _initFuture = _init();
   }
 
@@ -106,11 +109,15 @@ class JsBasedProvider extends SkyStreamProvider {
 
       // 2. Enforce IIFE wrapping for namespaced execution (Plugin v2 Standard)
       if (_namespace != null) {
+        final providerIdLine = _providerId != null
+            ? "manifest.providerId = ${jsonEncode(_providerId)};"
+            : "";
         script =
             """
           (function() {
               // Standard v2: Every plugin strictly uses the injected manifest.
               const manifest = $manifestJson;
+              $providerIdLine
 
               // Namespaced Storage API Parity
               const getPreference = (key) => {
