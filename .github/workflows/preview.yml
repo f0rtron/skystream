@@ -223,13 +223,11 @@ jobs:
           - os: windows-latest
             arch: amd64
             flutter_arch: x64
-            flutter_target_platform: windows-x64
             app_arch: x64
             torrserver_binary: TorrServer-windows-amd64.exe
-          - os: windows-latest
+          - os: windows-11-arm
             arch: arm64
             flutter_arch: arm64
-            flutter_target_platform: windows-arm64
             app_arch: arm64
             torrserver_binary: TorrServer-windows-arm64.exe
     steps:
@@ -287,7 +285,7 @@ jobs:
           Write-Host "Using downloaded libmpv: $($dll.FullName)"
           
       - name: Build Windows
-        run: flutter build windows --release --target-platform=${{ matrix.flutter_target_platform }} --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+        run: flutter build windows --release --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
 
       - name: Install Inno Setup
         shell: pwsh
