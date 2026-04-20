@@ -294,15 +294,18 @@ jobs:
   windows_arm64:
     name: Windows Build (arm64)
     if: ${{ github.event.inputs.build_windows == 'true' }}
-    runs-on: windows-latest
+    runs-on: windows-11-arm
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.branch }}
 
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
+      - name: Setup Flutter (ARM64 Windows)
+        shell: pwsh
+        run: |
+          $FlutterRoot = Join-Path $env:RUNNER_TOOL_CACHE 'flutter'
+          git clone https://github.com/flutter/flutter.git -b stable $FlutterRoot
+          "$FlutterRoot\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           
       - name: Install Dependencies
         run: |
