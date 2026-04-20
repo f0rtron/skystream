@@ -498,7 +498,7 @@ class ExtensionsController extends _$ExtensionsController {
           final newUpdates = Map<String, ExtensionPlugin>.from(
             state.availableUpdates,
           )..remove(plugin.packageName);
-          state = ExtensionsSuccess(
+          state = ExtensionsLoading(
             installedPlugins: state.installedPlugins,
             repositories: state.repositories,
             availablePlugins: state.availablePlugins,
