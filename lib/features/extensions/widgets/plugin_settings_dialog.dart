@@ -82,91 +82,93 @@ class _PluginSettingsDialogState extends ConsumerState<PluginSettingsDialog> {
     return Dialog(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 400),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.pluginSettings(widget.plugin.name),
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              if (domains.isNotEmpty) ...[
-                const SizedBox(height: 16),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  'Select Domain',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                  l10n.pluginSettings(widget.plugin.name),
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
-                const SizedBox(height: 4),
-                RadioGroup<String>(
-                  groupValue: _selectedDomain,
-                  onChanged: (url) {
-                    if (url != null) _applyDomain(url);
-                  },
-                  child: Column(
-                    children: domains
-                        .map(
-                          (d) => RadioListTile<String>(
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(d.name),
-                            value: d.url,
-                          ),
-                        )
-                        .toList(),
+                if (domains.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Select Domain',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
-              ],
-              if (providers.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  RadioGroup<String>(
+                    groupValue: _selectedDomain,
+                    onChanged: (url) {
+                      if (url != null) _applyDomain(url);
+                    },
+                    child: Column(
+                      children: domains
+                          .map(
+                            (d) => RadioListTile<String>(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(d.name),
+                              value: d.url,
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                ],
+                if (providers.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Select Providers',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ...providers.map(
+                    (sub) => CheckboxListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(sub.name),
+                      value: _providerEnabled[sub.id] ?? true,
+                      onChanged: _reloading
+                          ? null
+                          : (val) => _toggleProvider(sub.id, val ?? true),
+                    ),
+                  ),
+                ],
+                if (_reloading) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Applying…',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 16),
-                Text(
-                  'Select Providers',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                ...providers.map(
-                  (sub) => CheckboxListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(sub.name),
-                    value: _providerEnabled[sub.id] ?? true,
-                    onChanged: _reloading
-                        ? null
-                        : (val) => _toggleProvider(sub.id, val ?? true),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(l10n.close),
                   ),
                 ),
               ],
-              if (_reloading) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Applying…',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(l10n.close),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
