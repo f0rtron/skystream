@@ -10,7 +10,7 @@ DefaultDirName={autopf}\SkyStream
 DefaultGroupName=SkyStream
 DisableProgramGroupPage=yes
 OutputBaseFilename=SkyStream-Windows-{#AppArch}-Setup-{#AppVersion}
-Compression=lzma
+Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=..\..\windows\runner\resources\app_icon.ico
@@ -30,7 +30,14 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "{#AppDir}\skystream.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#AppDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#AppDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "skystream.exe,libmpv-2.dll,data\flutter_assets\packages\flutter_torrent_server\assets\torrserver\*"
+; Keep libmpv separate so installer compression/decompression behavior is explicit.
+Source: "{#AppDir}\libmpv-2.dll"; DestDir: "{app}"; Flags: ignoreversion
+#if AppArch == "x64"
+Source: "{#AppDir}\data\flutter_assets\packages\flutter_torrent_server\assets\torrserver\TorrServer-windows-amd64.exe"; DestDir: "{app}\data\flutter_assets\packages\flutter_torrent_server\assets\torrserver"; Flags: ignoreversion skipifsourcedoesntexist
+#elif AppArch == "arm64"
+Source: "{#AppDir}\data\flutter_assets\packages\flutter_torrent_server\assets\torrserver\TorrServer-windows-arm64.exe"; DestDir: "{app}\data\flutter_assets\packages\flutter_torrent_server\assets\torrserver"; Flags: ignoreversion skipifsourcedoesntexist
+#endif
 
 [Icons]
 Name: "{group}\SkyStream"; Filename: "{app}\skystream.exe"
