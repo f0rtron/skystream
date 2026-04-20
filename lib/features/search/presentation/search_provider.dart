@@ -93,10 +93,9 @@ Stream<SearchAggregateState> searchAllProviders(
       if (io.Platform.isMacOS || io.Platform.isWindows || io.Platform.isLinux) {
         maxSlots = 32;
       } else {
-        // Mobile: (cores * 2) clamp between 4 and 8.
-        // Higher values overload the single-threaded JS pump when HTTP
-        // callbacks arrive in bursts.
-        maxSlots = (cores * 2).clamp(4, 8);
+        // Mobile: keep concurrency at 5. Higher values (8) cause large
+        // simultaneous HTTP-callback bursts that compound WebView/JS stutter.
+        maxSlots = (cores).clamp(3, 6);
       }
     } catch (_) {}
     return maxSlots;
@@ -104,28 +103,51 @@ Stream<SearchAggregateState> searchAllProviders(
 
   final maxSlots = getSemaphoreSize();
   int activeJobs = 0;
-  final queue = List<SkyStreamProvider>.from(providers);
+
+  // Livestream-only providers (large M3U playlists) are deprioritized to the
+  // back of the queue. They still run and IPTV channel searches work; we just
+  // let movie/series providers finish their burst first to reduce peak jank.
+  final sortedProviders = List<SkyStreamProvider>.from(providers)
+    ..sort((a, b) {
+      final aLiveOnly =
+          a.supportedTypes.isNotEmpty &&
+          a.supportedTypes.every((t) => t == ProviderType.livestream);
+      final bLiveOnly =
+          b.supportedTypes.isNotEmpty &&
+          b.supportedTypes.every((t) => t == ProviderType.livestream);
+      if (aLiveOnly == bLiveOnly) return 0;
+      return aLiveOnly ? 1 : -1;
+    });
+  final queue = List<SkyStreamProvider>.from(sortedProviders);
   final List<CancelToken> activeTokens = [];
   bool isCompleted = false;
 
   Timer? throttleTimer;
   bool pendingEmit = false;
+  // Track what was last emitted so we skip rebuilds when nothing new arrived.
+  int lastEmittedResultCount = 0;
 
-  void doEmit() {
+  void doEmit({bool force = false}) {
     if (controller.isClosed || isCancelled()) {
-      debugPrint(
-        '[SEARCH DBG] doEmit SKIPPED — closed=${controller.isClosed}, cancelled=${isCancelled()}',
-      );
       return;
     }
+    final stillLoading = queue.isNotEmpty || activeJobs > 0;
+    // Skip the rebuild if no new results have arrived since the last emit
+    // (e.g. a batch of providers all returned empty). Always emit on the
+    // final event so isLoading flips to false.
+    if (!force && stillLoading && results.length == lastEmittedResultCount) {
+      pendingEmit = false;
+      return;
+    }
+    lastEmittedResultCount = results.length;
     final totalItems = results.fold<int>(0, (sum, r) => sum + r.results.length);
     debugPrint(
-      '[SEARCH DBG] doEmit — ${results.length} providers, $totalItems items, loading=${queue.isNotEmpty || activeJobs > 0}',
+      '[SEARCH DBG] doEmit — ${results.length} providers, $totalItems items, loading=$stillLoading',
     );
     controller.add(
       SearchAggregateState(
         results: List.from(results),
-        isLoading: queue.isNotEmpty || activeJobs > 0,
+        isLoading: stillLoading,
       ),
     );
     pendingEmit = false;
@@ -137,7 +159,7 @@ Stream<SearchAggregateState> searchAllProviders(
     if (force) {
       throttleTimer?.cancel();
       throttleTimer = null;
-      doEmit();
+      doEmit(force: true);
       return;
     }
 
@@ -145,7 +167,7 @@ Stream<SearchAggregateState> searchAllProviders(
     // Mobile gets a wider throttle window to reduce rebuild frequency
     // during high-concurrency search phases (70 providers).
     final throttleDuration = (io.Platform.isAndroid || io.Platform.isIOS)
-        ? const Duration(milliseconds: 350)
+        ? const Duration(milliseconds: 500)
         : const Duration(milliseconds: 150);
     throttleTimer ??= Timer(throttleDuration, () {
       throttleTimer = null;
@@ -224,16 +246,21 @@ Stream<SearchAggregateState> searchAllProviders(
             return;
           }
 
-          results.add(
-            ProviderSearchResult(
-              providerId: provider.packageName,
-              providerName: provider.name,
-              results: filtered,
-            ),
-          );
-          debugPrint(
-            '[SEARCH DBG] ADDED ${provider.packageName} — total results sets=${results.length}',
-          );
+          // Only add to state when there are actual results — empty entries
+          // grow the list, force larger List.from() copies in doEmit, and
+          // cause needless ListView rebuilds for no visual change.
+          if (filtered.isNotEmpty) {
+            results.add(
+              ProviderSearchResult(
+                providerId: provider.packageName,
+                providerName: provider.name,
+                results: filtered,
+              ),
+            );
+            debugPrint(
+              '[SEARCH DBG] ADDED ${provider.packageName} — total results sets=${results.length}',
+            );
+          }
         } catch (e) {
           debugPrint('[SEARCH DBG] ERROR ${provider.packageName}: $e');
           if (isCancelled() || token.isCancelled) {
@@ -243,15 +270,8 @@ Stream<SearchAggregateState> searchAllProviders(
             return;
           }
           if (e is DioException && e.type == DioExceptionType.cancel) return;
-
-          results.add(
-            ProviderSearchResult(
-              providerId: provider.packageName,
-              providerName: provider.name,
-              results: [],
-              error: e.toString(),
-            ),
-          );
+          // Don't add error entries with empty results — they add state size
+          // with no user-visible benefit.
         } finally {
           activeJobs--;
           activeTokens.remove(token);
@@ -269,9 +289,11 @@ Stream<SearchAggregateState> searchAllProviders(
             );
             manager.runGC();
             if (!controller.isClosed) {
-              Future.microtask(() {
-                if (!controller.isClosed) controller.close();
-              });
+              unawaited(
+                Future.microtask(() {
+                  if (!controller.isClosed) controller.close();
+                }),
+              );
             }
           } else if (!isCancelled()) {
             processNext();

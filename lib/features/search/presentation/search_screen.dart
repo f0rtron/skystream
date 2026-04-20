@@ -188,8 +188,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               itemCount: state.results.length,
               itemBuilder: (context, index) {
                 final pResult = state.results[index];
-                if (pResult.results.isEmpty) return const SizedBox.shrink();
-
                 return SearchResultSection(
                   key: ValueKey(pResult.providerId),
                   providerName: pResult.providerName,

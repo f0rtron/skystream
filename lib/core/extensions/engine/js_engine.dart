@@ -227,9 +227,15 @@ class JsEngineService {
             final String? callbackId = data['id'];
             if (callbackId != null) {
               final String jsonResult = jsonEncode(result);
-              _runtime.evaluate(
-                "_resolveDartAsync('$callbackId', $jsonResult, false)",
-              );
+              // Defer JS resumption by one event-loop turn so Flutter can
+              // process pending frame work before QuickJS continues. Without
+              // this, simultaneous HTTP responses all evaluate synchronously
+              // in the same turn, causing multi-frame jank on mobile.
+              Future.delayed(Duration.zero, () {
+                _runtime.evaluate(
+                  "_resolveDartAsync('$callbackId', $jsonResult, false)",
+                );
+              });
             }
           })
           .catchError((Object e) {
@@ -238,9 +244,11 @@ class JsEngineService {
                 : jsonDecode(args.toString());
             final String? callbackId = data['id'];
             if (callbackId != null) {
-              _runtime.evaluate(
-                "_resolveDartAsync('$callbackId', ${jsonEncode(e.toString())}, true)",
-              );
+              Future.delayed(Duration.zero, () {
+                _runtime.evaluate(
+                  "_resolveDartAsync('$callbackId', ${jsonEncode(e.toString())}, true)",
+                );
+              });
             }
           });
       return null;
