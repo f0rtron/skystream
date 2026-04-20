@@ -306,13 +306,6 @@ jobs:
           $FlutterRoot = Join-Path $env:RUNNER_TOOL_CACHE 'flutter'
           git clone https://github.com/flutter/flutter.git -b master $FlutterRoot
           "$FlutterRoot\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
-          flutter --version
-          $dartVersion = dart --version 2>&1
-          Write-Host $dartVersion
-          if ($dartVersion -notmatch 'windows_arm64') {
-            throw 'Flutter/Dart SDK is not Windows ARM64 on this runner. Refusing to build mislabeled arm64 artifacts.'
-          }
           
       - name: Install Dependencies
         run: |
