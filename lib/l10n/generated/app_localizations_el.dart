@@ -912,6 +912,13 @@ class AppLocalizationsEl extends AppLocalizations {
   String get noPluginsInstalled => 'Δεν υπάρχουν εγκατεστημένα πρόσθετα';
 
   @override
+  String get noPluginsMessage =>
+      'Install extensions to browse and stream content.';
+
+  @override
+  String get goToExtensions => 'Go to Extensions';
+
+  @override
   String get availableSources => 'Διαθέσιμες πηγές';
 
   @override

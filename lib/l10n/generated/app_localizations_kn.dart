@@ -918,6 +918,13 @@ class AppLocalizationsKn extends AppLocalizations {
   String get noPluginsInstalled => 'ಯಾವುದೇ ಪ್ಲಗಿನ್‌ಗಳನ್ನು ಸ್ಥಾಪಿಸಲಾಗಿಲ್ಲ';
 
   @override
+  String get noPluginsMessage =>
+      'Install extensions to browse and stream content.';
+
+  @override
+  String get goToExtensions => 'Go to Extensions';
+
+  @override
   String get availableSources => 'ಲಭ್ಯವಿರುವ ಮೂಲಗಳು';
 
   @override

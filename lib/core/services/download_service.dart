@@ -20,7 +20,12 @@ part 'download_service.g.dart';
 
 @Riverpod(keepAlive: true)
 DownloadService downloadService(Ref ref) {
-  return DownloadService(ref);
+  final service = DownloadService(ref);
+  // Cancel the FileDownloader stream subscription when the ProviderScope is
+  // disposed (e.g. on app restart). Without this the subscription outlives the
+  // scope and the next DownloadService.init() throws "Stream already listened".
+  ref.onDispose(service.dispose);
+  return service;
 }
 
 class DownloadProgressData {
@@ -107,6 +112,12 @@ class ActiveDownloadsNotifier extends _$ActiveDownloadsNotifier {
 }
 
 class DownloadService {
+  // FileDownloader().updates is a single-subscription stream that rejects
+  // re-subscription even after cancel. Subscribe once as a static bridge so
+  // each DownloadService instance can listen via the broadcast proxy instead.
+  static StreamSubscription<TaskUpdate>? _fdSubscription;
+  static final _sharedEvents = StreamController<TaskUpdate>.broadcast();
+
   final Ref _ref;
   final Dio _dio;
   final Set<String> _cancellingUrls = {};
@@ -121,6 +132,8 @@ class DownloadService {
   void dispose() {
     _updatesSubscription?.cancel();
     _updatesController.close();
+    // Do NOT cancel _fdSubscription — it matches FileDownloader()'s singleton
+    // lifetime and cannot be re-subscribed after cancellation.
   }
 
   Future<void> init() async {
@@ -179,9 +192,10 @@ class DownloadService {
       await FileDownloader().permissions.request(PermissionType.notifications);
     }
 
-    // 4. Listen to updates and process (Reactive Pattern)
-    await _updatesSubscription?.cancel();
-    _updatesSubscription = FileDownloader().updates.listen((update) {
+    // 4. Bridge FileDownloader updates into a shared broadcast stream (once),
+    //    then let this instance listen to that broadcast proxy.
+    _fdSubscription ??= FileDownloader().updates.listen(_sharedEvents.add);
+    _updatesSubscription = _sharedEvents.stream.listen((update) {
       _updatesController.add(update);
       final trackingUrl = update.task.metaData.isNotEmpty
           ? update.task.metaData

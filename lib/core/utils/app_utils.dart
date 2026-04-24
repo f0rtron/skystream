@@ -1,18 +1,38 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:app_restarter/app_restarter.dart';
 
 class AppUtils {
-  static Future<void> restartApp(BuildContext context) async {
-    try {
-      // Use app_restarter package for cross-platform restart
-      await AppRestarter.restartApp(context);
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint("AppRestarter failed: $e. Falling back to main().");
-      }
+  // Registered by main() before first runApp call.
+  static void Function()? _restartImpl;
+
+  static void setRestartFunction(void Function() fn) {
+    _restartImpl = fn;
+  }
+
+  /// Two-phase restart:
+  /// Phase 1 — replace the widget tree with an empty widget so Flutter
+  ///            disposes the old ProviderScope, GoRouter GlobalKey, and all
+  ///            stream subscriptions in the current frame.
+  /// Phase 2 — after one addPostFrameCallback (disposal frame complete),
+  ///            call the registered rebuild function to mount a fresh tree.
+  static Future<void> restartApp(BuildContext? context) async {
+    final fn = _restartImpl;
+    if (fn == null) {
+      if (kDebugMode) debugPrint("AppUtils.restartApp: no restart function registered");
+      return;
     }
+
+    // Phase 1: clear the entire widget tree.
+    runApp(const SizedBox.shrink());
+
+    // Phase 2: wait for the disposal frame to complete, then rebuild.
+    final completer = Completer<void>();
+    WidgetsBinding.instance.addPostFrameCallback((_) => completer.complete());
+    await completer.future;
+
+    fn();
   }
 
   static bool isLocalFile(String path) {

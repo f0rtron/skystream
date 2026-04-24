@@ -449,6 +449,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final providers = List<SkyStreamProvider>.from(extManager.getAllProviders())
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
+    if (providers.isEmpty) {
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.noPluginsInstalled),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.extension_off_rounded,
+                size: 56,
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.noPluginsMessage,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.close),
+            ),
+            FilledButton.icon(
+              icon: const Icon(Icons.extension, size: 18),
+              label: Text(l10n.goToExtensions),
+              onPressed: () {
+                Navigator.pop(context);
+                const ExtensionsRoute().push<void>(context);
+              },
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final scrollController = ScrollController();
     final chipsScrollController = ScrollController();
 

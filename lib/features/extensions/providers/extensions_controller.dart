@@ -234,7 +234,9 @@ class ExtensionsController extends _$ExtensionsController {
     }
   }
 
-  Future<int> checkForUpdates() async {
+  /// Auto-updates all stale plugins and returns the display names of every
+  /// plugin that was successfully updated (empty list = nothing to update).
+  Future<List<String>> checkForUpdates() async {
     final updates = <String, ExtensionPlugin>{};
     final onlineMap = <String, ExtensionPlugin>{};
 
@@ -246,14 +248,12 @@ class ExtensionsController extends _$ExtensionsController {
 
     for (final installed in state.installedPlugins) {
       final online = onlineMap[installed.packageName];
-      if (online != null) {
-        if (online.version > installed.version) {
-          updates[installed.packageName] = online;
-        }
+      if (online != null && online.version > installed.version) {
+        updates[installed.packageName] = online;
       }
     }
 
-    int installedCount = 0;
+    final updatedNames = <String>[];
     if (updates.isNotEmpty) {
       state = ExtensionsSuccess(
         installedPlugins: state.installedPlugins,
@@ -262,11 +262,11 @@ class ExtensionsController extends _$ExtensionsController {
         availableUpdates: updates,
       );
 
-      // Auto-update immediately
       for (final plugin in updates.values) {
         await installPlugin(plugin);
-        installedCount++;
+        updatedNames.add(plugin.name);
       }
+
       state = ExtensionsSuccess(
         installedPlugins: state.installedPlugins,
         repositories: state.repositories,
@@ -274,7 +274,7 @@ class ExtensionsController extends _$ExtensionsController {
         availableUpdates: const {},
       );
     }
-    return installedCount;
+    return updatedNames;
   }
 
   Future<void> addRepository(String url, {Set<String>? visitedUrls}) async {

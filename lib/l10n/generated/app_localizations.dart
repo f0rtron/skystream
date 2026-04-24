@@ -1801,6 +1801,18 @@ abstract class AppLocalizations {
   /// **'No plugins installed'**
   String get noPluginsInstalled;
 
+  /// No description provided for @noPluginsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Install extensions to browse and stream content.'**
+  String get noPluginsMessage;
+
+  /// No description provided for @goToExtensions.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Extensions'**
+  String get goToExtensions;
+
   /// No description provided for @availableSources.
   ///
   /// In en, this message translates to:

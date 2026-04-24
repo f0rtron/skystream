@@ -917,6 +917,13 @@ class AppLocalizationsTe extends AppLocalizations {
   String get noPluginsInstalled => 'ప్లగిన్లు ఏమీ ఇన్‌స్టాల్ చేయబడలేదు';
 
   @override
+  String get noPluginsMessage =>
+      'Install extensions to browse and stream content.';
+
+  @override
+  String get goToExtensions => 'Go to Extensions';
+
+  @override
   String get availableSources => 'అందుబాటులో ఉన్న మూలాలు';
 
   @override

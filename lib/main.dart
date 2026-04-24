@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:app_restarter/app_restarter.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart'; // For kReleaseMode
@@ -56,7 +55,8 @@ void main() async {
     );
   }
 
-  runApp(const AppRestarter(child: AppRoot()));
+  AppUtils.setRestartFunction(() => runApp(const AppRoot()));
+  runApp(const AppRoot());
 }
 
 class AppRoot extends StatefulWidget {
@@ -184,28 +184,31 @@ class _MyAppState extends ConsumerState<MyApp> {
       await controller.ensureInitialized();
       if (!mounted) return;
 
-      if (mounted) {
-        final count = await controller.checkForUpdates();
-        if (count > 0 && mounted) {
-          final navContext = ref
-              .read(appRouterProvider)
-              .routerDelegate
-              .navigatorKey
-              .currentContext;
-          final l10n = (navContext != null && navContext.mounted)
-              ? AppLocalizations.of(navContext)
-              : null;
-
-          ref
-              .read(notificationServiceProvider)
-              .showSuccess(
-                l10n?.extensionsUpdated(count) ?? "$count extension(s) updated",
-              );
-        }
+      final updated = await controller.checkForUpdates();
+      if (updated.isNotEmpty && mounted) {
+        ref.read(notificationServiceProvider).showSuccess(
+          _buildUpdateMessage(updated),
+        );
       }
     } catch (e) {
       if (kDebugMode) debugPrint("Auto-update failed: $e");
     }
+  }
+
+  /// Builds a human-readable update toast message that lists plugin names.
+  /// Shows up to 5 names; any remainder is shown as "-- N more".
+  /// Examples:
+  ///   "Updated: SuperStream"
+  ///   "Updated 3 extensions: SuperStream, AniStream, StreamFlix"
+  ///   "Updated 7 extensions: A, B, C, D, E -- 2 more"
+  static String _buildUpdateMessage(List<String> names) {
+    final count = names.length;
+    if (count == 1) return 'Updated: ${names.first}';
+    const maxShown = 5;
+    final shown = names.take(maxShown).join(', ');
+    final rest = count - maxShown;
+    final namesPart = rest > 0 ? '$shown -- $rest more' : shown;
+    return 'Updated $count extensions: $namesPart';
   }
 
   @override
@@ -321,9 +324,7 @@ class LaunchErrorApp extends StatelessWidget {
                     ElevatedButton.icon(
                       icon: const Icon(Icons.refresh),
                       label: Text(l10n?.retry ?? 'Retry'),
-                      onPressed: () {
-                        main();
-                      },
+                      onPressed: () => AppUtils.restartApp(context),
                     ),
                     const SizedBox(height: 16),
                     OutlinedButton.icon(

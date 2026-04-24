@@ -897,6 +897,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get noPluginsInstalled => 'Sem extensões instaladas';
 
   @override
+  String get noPluginsMessage =>
+      'Install extensions to browse and stream content.';
+
+  @override
+  String get goToExtensions => 'Go to Extensions';
+
+  @override
   String get availableSources => 'Fontes Disponíveis';
 
   @override

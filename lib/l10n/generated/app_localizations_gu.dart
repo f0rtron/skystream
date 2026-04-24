@@ -906,6 +906,13 @@ class AppLocalizationsGu extends AppLocalizations {
   String get noPluginsInstalled => 'કોઈ પ્લગઈન્સ ઇન્સ્ટોલ કરેલા નથી';
 
   @override
+  String get noPluginsMessage =>
+      'Install extensions to browse and stream content.';
+
+  @override
+  String get goToExtensions => 'Go to Extensions';
+
+  @override
   String get availableSources => 'ઉપલબ્ધ સ્રોતો';
 
   @override

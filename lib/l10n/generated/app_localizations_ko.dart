@@ -886,6 +886,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get noPluginsInstalled => '설치된 플러그인 없음';
 
   @override
+  String get noPluginsMessage =>
+      'Install extensions to browse and stream content.';
+
+  @override
+  String get goToExtensions => 'Go to Extensions';
+
+  @override
   String get availableSources => '이용 가능한 소스';
 
   @override

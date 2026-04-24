@@ -294,7 +294,7 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.5),
-        ), // Orange border for debug
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
@@ -356,6 +356,16 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
     List<ExtensionPlugin> plugins,
     AppLocalizations l10n,
   ) {
+    // True when every plugin in this repo is already installed (non-debug).
+    final allInstalled = plugins.isNotEmpty &&
+        plugins.every(
+          (p) => state.installedPlugins.any(
+            (i) => !i.isDebug && i.packageName == p.packageName,
+          ),
+        );
+
+    final isLoading = state is ExtensionsLoading;
+
     return Card(
       margin: const EdgeInsets.only(
         bottom: LayoutConstants.spacingMd,
@@ -372,25 +382,47 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
       child: ExpansionTile(
         shape: const Border(),
         collapsedShape: const Border(),
-        initiallyExpanded: true,
+        // Start collapsed — repos can be individually expanded.
+        initiallyExpanded: false,
         backgroundColor: Colors.transparent,
         collapsedBackgroundColor: Colors.transparent,
         tilePadding: const EdgeInsets.symmetric(
           horizontal: LayoutConstants.spacingMd,
           vertical: LayoutConstants.spacingXs,
         ),
+        // Embed description directly in the title so the buttons stay
+        // vertically centred with the whole block and there is no extra
+        // gap that the ExpansionTile subtitle property introduces.
         title: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
-              child: Text(
-                repo.name,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    repo.name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (repo.description?.isNotEmpty ?? false) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      repo.description!,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
               ),
             ),
-            if (state is ExtensionsLoading)
+            if (isLoading)
               const Padding(
                 padding: EdgeInsets.all(12),
                 child: SizedBox(
@@ -400,16 +432,34 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
                 ),
               )
             else ...[
-              IconButton(
-                icon: const Icon(Icons.download),
-                onPressed: () {
-                  ref
-                      .read(extensionsControllerProvider.notifier)
-                      .installPlugins(plugins);
-                },
-                tooltip: l10n.downloadAllProviders,
+              // Download-all / all-installed indicator.
+              Semantics(
+                button: true,
+                label: l10n.downloadAllProviders,
+                child: IconButton(
+                  focusColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                  icon: Icon(
+                    allInstalled
+                        ? Icons.check_circle_outline
+                        : Icons.download,
+                    color: allInstalled
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+                  ),
+                  onPressed: allInstalled || plugins.isEmpty
+                      ? null
+                      : () {
+                          ref
+                              .read(extensionsControllerProvider.notifier)
+                              .installPlugins(plugins);
+                        },
+                  tooltip: allInstalled
+                      ? 'All installed'
+                      : l10n.downloadAllProviders,
+                ),
               ),
               IconButton(
+                focusColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.15),
                 icon: Icon(
                   Icons.delete_outline,
                   color: Theme.of(context).colorScheme.error,
@@ -485,12 +535,12 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        surfaceTintColor: Colors.transparent, // Remove M3 tint
+        surfaceTintColor: Colors.transparent,
         title: Text(l10n.addRepository),
         content: CustomTextField(
           controller: controller,
           hintText: l10n.repoUrlOrShortcode,
-          autofocus: false, // Don't trap focus - start on Add button
+          autofocus: false,
           textInputAction: TextInputAction.done,
         ),
         actions: [
@@ -525,6 +575,10 @@ class _ExtensionsScreenState extends ConsumerState<ExtensionsScreen> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Plugin tile
+// ---------------------------------------------------------------------------
+
 class _PluginTile extends ConsumerWidget {
   final ExtensionPlugin plugin;
   final bool isDebugSection;
@@ -534,15 +588,16 @@ class _PluginTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    // If this IS a debug tile, just show basic info
+
     if (isDebugSection) {
       return ListTile(
         leading: Container(
           padding: const EdgeInsets.all(LayoutConstants.spacingXs),
           decoration: BoxDecoration(
-            color: Theme.of(
-              context,
-            ).colorScheme.tertiary.withValues(alpha: 0.1),
+            color: Theme.of(context)
+                .colorScheme
+                .tertiary
+                .withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -568,7 +623,7 @@ class _PluginTile extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                AppLocalizations.of(context)!.debug,
+                l10n.debug,
                 style: const TextStyle(
                   fontSize: 10,
                   color: Colors.white,
@@ -582,25 +637,21 @@ class _PluginTile extends ConsumerWidget {
           "v${plugin.version} • ${l10n.assetPlugin}",
           style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
         ),
-        // No actions for debug plugins
       );
     }
 
     final state = ref.watch(extensionsControllerProvider);
 
-    // Find if installed (STRICT Package Name match, ignoring debug versions)
-    // We explicitly exclude any installed plugin that ends with .debug matching this online plugin
     final installedPlugin = state.installedPlugins
         .cast<ExtensionPlugin?>()
-        .firstWhere((p) {
-          if (p == null) return false;
-          // If the installed plugin is a debug one, NEVER match it to an online plugin
-          if (p.isDebug) {
-            return false;
-          }
-
-          return p.packageName == plugin.packageName;
-        }, orElse: () => null);
+        .firstWhere(
+          (p) {
+            if (p == null) return false;
+            if (p.isDebug) return false;
+            return p.packageName == plugin.packageName;
+          },
+          orElse: () => null,
+        );
 
     final isInstalled = installedPlugin != null;
     final updateAvailable = state.availableUpdates[plugin.packageName];
@@ -609,7 +660,8 @@ class _PluginTile extends ConsumerWidget {
       leading: Container(
         padding: const EdgeInsets.all(LayoutConstants.spacingXs),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+          color:
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
@@ -623,16 +675,11 @@ class _PluginTile extends ConsumerWidget {
         style: const TextStyle(fontWeight: FontWeight.w500),
         overflow: TextOverflow.ellipsis,
       ),
-      subtitle: Text(
-        isInstalled
-            ? "v${installedPlugin.version} • ${l10n.installed}"
-            : "v${plugin.version} • ${plugin.description ?? ''}",
-        style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color),
-      ),
+      subtitle: _buildSubtitle(context, isInstalled, installedPlugin),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Update Button
+          // Update button
           if (isInstalled && updateAvailable != null)
             IconButton(
               icon: const Icon(Icons.download, color: Colors.green),
@@ -644,7 +691,7 @@ class _PluginTile extends ConsumerWidget {
               },
             ),
 
-          // Settings Button (shown when plugin declares domains or providers)
+          // Settings button (shown when plugin declares domains or providers)
           if (isInstalled &&
               ((installedPlugin.domains?.isNotEmpty ?? false) ||
                   (installedPlugin.providers?.isNotEmpty ?? false)))
@@ -660,13 +707,14 @@ class _PluginTile extends ConsumerWidget {
               },
             ),
 
-          // Install / Delete Button
+          // Install / delete button
           if (isInstalled)
             IconButton(
               icon: Icon(
                 Icons.delete,
                 color: Theme.of(context).colorScheme.error,
               ),
+              tooltip: l10n.delete,
               onPressed: () {
                 ref
                     .read(extensionsControllerProvider.notifier)
@@ -685,6 +733,87 @@ class _PluginTile extends ConsumerWidget {
             ),
         ],
       ),
+    );
+  }
+
+  /// Subtitle widget: description · version/authors line · language chips.
+  Widget _buildSubtitle(
+    BuildContext context,
+    bool isInstalled,
+    ExtensionPlugin? installedPlugin,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    // Description uses bodyMedium so it's comfortably readable.
+    final descStyle = textTheme.bodyMedium?.copyWith(
+      color: colorScheme.onSurfaceVariant,
+    );
+    // Version + authors line uses bodySmall.
+    final metaStyle = textTheme.bodySmall?.copyWith(
+      color: colorScheme.onSurfaceVariant,
+    );
+
+    // Version from installed copy if present, otherwise from the catalog.
+    final version = 'v${isInstalled ? installedPlugin!.version : plugin.version}';
+
+    // Authors: up to 2, prefixed with "By".
+    final authors = plugin.authors.take(2).join(', ');
+
+    final metaParts = [
+      version,
+      if (authors.isNotEmpty) 'By $authors',
+    ];
+    final metaLine = metaParts.join(' • ');
+
+    final desc = plugin.description;
+    final hasDesc = desc != null && desc.isNotEmpty;
+    final hasLanguages = plugin.languages.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (hasDesc)
+          Text(
+            desc,
+            style: descStyle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        const SizedBox(height: 2),
+        Text(
+          metaLine,
+          style: metaStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        if (hasLanguages) ...[
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: plugin.languages.take(5).map((lang) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: colorScheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  lang.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.onSecondaryContainer,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
     );
   }
 }

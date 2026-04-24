@@ -884,6 +884,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noPluginsInstalled => '未安装插件';
 
   @override
+  String get noPluginsMessage =>
+      'Install extensions to browse and stream content.';
+
+  @override
+  String get goToExtensions => 'Go to Extensions';
+
+  @override
   String get availableSources => '可用来源';
 
   @override

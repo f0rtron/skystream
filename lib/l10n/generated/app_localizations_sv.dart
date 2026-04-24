@@ -900,6 +900,13 @@ class AppLocalizationsSv extends AppLocalizations {
   String get noPluginsInstalled => 'Inga insticksfiler installerade';
 
   @override
+  String get noPluginsMessage =>
+      'Install extensions to browse and stream content.';
+
+  @override
+  String get goToExtensions => 'Go to Extensions';
+
+  @override
   String get availableSources => 'Tillgängliga källor';
 
   @override

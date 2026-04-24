@@ -457,6 +457,8 @@
   "tmdb": "TMDB",
   "selectSourceForPlayer": "Select Source for {playerName}",
   "noPluginsInstalled": "No plugins installed",
+  "noPluginsMessage": "Install extensions to browse and stream content.",
+  "goToExtensions": "Go to Extensions",
   "availableSources": "Available Sources",
   "seasons": "Seasons",
   "episodes": "Episodes",

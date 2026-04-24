@@ -910,6 +910,13 @@ class AppLocalizationsBn extends AppLocalizations {
   String get noPluginsInstalled => 'কোনো প্লাগইন ইনস্টল করা নেই';
 
   @override
+  String get noPluginsMessage =>
+      'Install extensions to browse and stream content.';
+
+  @override
+  String get goToExtensions => 'Go to Extensions';
+
+  @override
   String get availableSources => 'উপলব্ধ উৎস';
 
   @override

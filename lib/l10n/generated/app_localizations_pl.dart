@@ -893,6 +893,13 @@ class AppLocalizationsPl extends AppLocalizations {
   String get noPluginsInstalled => 'Brak zainstalowanych wtyczek';
 
   @override
+  String get noPluginsMessage =>
+      'Install extensions to browse and stream content.';
+
+  @override
+  String get goToExtensions => 'Go to Extensions';
+
+  @override
   String get availableSources => 'Dostępne źródła';
 
   @override

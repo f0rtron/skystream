@@ -906,6 +906,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get noPluginsInstalled => 'Tidak ada plugin terinstal';
 
   @override
+  String get noPluginsMessage =>
+      'Install extensions to browse and stream content.';
+
+  @override
+  String get goToExtensions => 'Go to Extensions';
+
+  @override
   String get availableSources => 'Sumber Tersedia';
 
   @override

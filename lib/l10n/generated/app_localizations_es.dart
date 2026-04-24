@@ -914,6 +914,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get noPluginsInstalled => 'No hay plugins instalados';
 
   @override
+  String get noPluginsMessage =>
+      'Install extensions to browse and stream content.';
+
+  @override
+  String get goToExtensions => 'Go to Extensions';
+
+  @override
   String get availableSources => 'Fuentes disponibles';
 
   @override

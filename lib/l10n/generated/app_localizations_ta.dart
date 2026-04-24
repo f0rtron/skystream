@@ -920,6 +920,13 @@ class AppLocalizationsTa extends AppLocalizations {
   String get noPluginsInstalled => 'செருகுநிரல்கள் எதுவும் நிறுவப்படவில்லை';
 
   @override
+  String get noPluginsMessage =>
+      'Install extensions to browse and stream content.';
+
+  @override
+  String get goToExtensions => 'Go to Extensions';
+
+  @override
   String get availableSources => 'கிடைக்கும் மூலங்கள்';
 
   @override

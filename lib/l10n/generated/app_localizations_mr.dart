@@ -906,6 +906,13 @@ class AppLocalizationsMr extends AppLocalizations {
   String get noPluginsInstalled => 'कोणतेही प्लगइन्स स्थापित नाहीत';
 
   @override
+  String get noPluginsMessage =>
+      'Install extensions to browse and stream content.';
+
+  @override
+  String get goToExtensions => 'Go to Extensions';
+
+  @override
   String get availableSources => 'उपलब्ध स्रोत';
 
   @override
