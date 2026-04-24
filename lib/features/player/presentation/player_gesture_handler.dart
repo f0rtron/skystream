@@ -26,23 +26,25 @@ class PlayerGestureState {
     this.swipeSeekValue,
   });
 
+  static const Object _keep = Object();
+
   PlayerGestureState copyWith({
     PlayerGesture? currentGesture,
     bool? showOSD,
     IconData? osdIcon,
-    double? osdValue,
+    Object? osdValue = _keep,
     String? osdLabel,
     Alignment? osdAlignment,
-    Duration? swipeSeekValue,
+    Object? swipeSeekValue = _keep,
   }) {
     return PlayerGestureState(
       currentGesture: currentGesture ?? this.currentGesture,
       showOSD: showOSD ?? this.showOSD,
       osdIcon: osdIcon ?? this.osdIcon,
-      osdValue: osdValue ?? this.osdValue,
+      osdValue: identical(osdValue, _keep) ? this.osdValue : osdValue as double?,
       osdLabel: osdLabel ?? this.osdLabel,
       osdAlignment: osdAlignment ?? this.osdAlignment,
-      swipeSeekValue: swipeSeekValue ?? this.swipeSeekValue,
+      swipeSeekValue: identical(swipeSeekValue, _keep) ? this.swipeSeekValue : swipeSeekValue as Duration?,
     );
   }
 }

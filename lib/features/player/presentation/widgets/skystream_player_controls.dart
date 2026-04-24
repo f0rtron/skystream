@@ -432,7 +432,7 @@ class SkyStreamPlayerControlsState
 
   void _startHideTimer() {
     _hideTimer?.cancel();
-    _hideTimer = Timer(const Duration(seconds: 4), () {
+    _hideTimer = Timer(const Duration(seconds: 3), () {
       if (mounted && _isPlaying) {
         setState(() {
           _isVisible = false;
@@ -752,9 +752,9 @@ class SkyStreamPlayerControlsState
         _startHideTimer();
       },
       onExit: (_) {
-        // When mouse leaves, ensure cursor will be visible when it returns
-        // Cancel hide timer to prevent cursor hiding while mouse is outside
-        _hideTimer?.cancel();
+        // Mouse left the player area (e.g. moved to another window).
+        // Start the hide timer so controls auto-hide after the timeout.
+        if (_isPlaying) _startHideTimer();
       },
       child: GestureDetector(
         onVerticalDragStart: _handleDragStart,

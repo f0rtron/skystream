@@ -125,10 +125,13 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen>
           : _player.state.playing;
       _playerController.saveProgress();
       _playerController.pause();
-    } else if (state == AppLifecycleState.resumed &&
-        _wasPlayingBeforeBackground) {
-      _wasPlayingBeforeBackground = false;
-      _playerController.play();
+    } else if (state == AppLifecycleState.resumed) {
+      // Re-acquire wakelock — the OS may release it while the app is paused.
+      WakelockPlus.enable();
+      if (_wasPlayingBeforeBackground) {
+        _wasPlayingBeforeBackground = false;
+        _playerController.play();
+      }
     }
   }
 

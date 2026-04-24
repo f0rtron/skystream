@@ -49,27 +49,44 @@ class ExtensionManager extends _$ExtensionManager {
         .read(settingsRepositoryProvider)
         .getActiveProviderId();
 
+    // For subproviders the stored ID is "parentPkg::SubId"; extract the parent
+    // package name so sorting and priority loading target the right plugin.
+    final String? activeParentPackageName = activePackageName == null
+        ? null
+        : (activePackageName.contains('::')
+            ? activePackageName.substring(0, activePackageName.indexOf('::'))
+            : activePackageName);
+
     // Sort plugins: Active first
     final sortedPlugins = List<ExtensionPlugin>.from(installed);
-    if (activePackageName != null) {
+    if (activeParentPackageName != null) {
       sortedPlugins.sort((a, b) {
-        if (a.packageName == activePackageName) return -1;
-        if (b.packageName == activePackageName) return 1;
+        if (a.packageName == activeParentPackageName) return -1;
+        if (b.packageName == activeParentPackageName) return 1;
         return 0;
       });
     }
 
     // 1. Priority Load: Active Provider (if needs loading)
-    if (activePackageName != null) {
+    if (activeParentPackageName != null) {
       try {
         final activePlugin = sortedPlugins.firstWhere(
-          (p) => p.packageName == activePackageName,
+          (p) => p.packageName == activeParentPackageName,
         );
-        final existing = _hasLoadedProviders(activePackageName);
+        final existing = _hasLoadedProviders(activeParentPackageName);
         if (!existing) {
           final loaded = await _loadPlugin(activePlugin);
-          for (final p in loaded) {
-            _addProvider(p);
+          // Insert all subproviders in one state update so the ActiveProvider
+          // listener sees them all at once — adding one-at-a-time would fire
+          // the listener before the target subprovider is present.
+          if (loaded.isNotEmpty) {
+            final newState = [...state];
+            for (final p in loaded) {
+              if (!newState.any((e) => e.packageName == p.packageName)) {
+                newState.add(p);
+              }
+            }
+            state = newState;
           }
         }
       } catch (_) {
@@ -96,7 +113,7 @@ class ExtensionManager extends _$ExtensionManager {
           }
         }
 
-        if (needsLoad && plugin.packageName != activePackageName) {
+        if (needsLoad && plugin.packageName != activeParentPackageName) {
           batchLoads.add(_loadPlugin(plugin));
         }
       }
@@ -342,6 +359,25 @@ class ActiveProvider extends _$ActiveProvider {
 
   @override
   SkyStreamProvider? build() {
+    // Safety net: when sync finishes but no further extensionManager state
+    // change fires, check one final time for the target provider.
+    ref.listen(pluginSyncCompleteProvider, (_, complete) {
+      if (!complete || _targetProviderId == null || state != null) return;
+      final p = ref
+          .read(extensionManagerProvider.notifier)
+          .getProvider(_targetProviderId!);
+      if (p != null) {
+        state = p;
+        _targetProviderId = null;
+        ref.read(providerResolutionLoadingProvider.notifier).set(false);
+      } else {
+        // Full sync finished and provider is truly gone — clear stale setting.
+        _targetProviderId = null;
+        ref.read(settingsRepositoryProvider).setActiveProviderId(null);
+        ref.read(providerResolutionLoadingProvider.notifier).set(false);
+      }
+    });
+
     ref.listen(extensionManagerProvider, (previous, next) {
       // On first listen invocation, perform the initial load from storage
       if (!_initialLoadDone) {
@@ -358,14 +394,14 @@ class ActiveProvider extends _$ActiveProvider {
           state = p;
           _targetProviderId = null;
           ref.read(providerResolutionLoadingProvider.notifier).set(false);
-        } else if (next.isNotEmpty || ref.read(pluginSyncCompleteProvider)) {
-          // Plugins have loaded (or sync completed with zero plugins)
-          // but the target provider is missing (removed/uninstalled).
-          // Clear the stale setting.
+        } else if (ref.read(pluginSyncCompleteProvider)) {
+          // Full sync is done and the provider is still missing — it was
+          // removed/uninstalled. Clear the stale setting.
           _targetProviderId = null;
           ref.read(settingsRepositoryProvider).setActiveProviderId(null);
           ref.read(providerResolutionLoadingProvider.notifier).set(false);
         }
+        // Otherwise sync is still in progress — keep waiting.
       } else if (state != null) {
         final currentPackageName = state!.packageName;
         final found = next.where((p) => p.packageName == currentPackageName);
