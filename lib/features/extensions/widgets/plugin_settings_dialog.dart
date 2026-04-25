@@ -108,16 +108,15 @@ class _PluginSettingsDialogState extends ConsumerState<PluginSettingsDialog> {
                       if (url != null) _applyDomain(url);
                     },
                     child: Column(
-                      children: domains
-                          .map(
-                            (d) => RadioListTile<String>(
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(d.name),
-                              value: d.url,
-                            ),
-                          )
-                          .toList(),
+                      children: domains.map((d) {
+                        return ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(d.name),
+                          leading: Radio<String>(value: d.url),
+                          onTap: _reloading ? null : () => _applyDomain(d.url),
+                        );
+                      }).toList(),
                     ),
                   ),
                 ],

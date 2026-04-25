@@ -86,9 +86,13 @@ void showDefaultHomeScreenDialog(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: options.map((opt) {
-              return RadioListTile<String>(
+              return ListTile(
                 title: Text(opt['label']!),
-                value: opt['route']!,
+                leading: Radio<String>(value: opt['route']!),
+                onTap: () {
+                  ref.read(generalSettingsProvider.notifier).setDefaultHomeScreen(opt['route']!);
+                  Navigator.pop<void>(context);
+                },
               );
             }).toList(),
           ),
@@ -98,9 +102,13 @@ void showDefaultHomeScreenDialog(
   );
 }
 
-/// Helper to create a theme-option RadioListTile.
-Widget buildThemeOption(String title, ThemeMode value) {
-  return RadioListTile<ThemeMode>(title: Text(title), value: value);
+// Must be used inside a RadioGroup<ThemeMode> ancestor.
+Widget _buildThemeOption(String title, ThemeMode value, VoidCallback onSelect) {
+  return ListTile(
+    title: Text(title),
+    leading: Radio<ThemeMode>(value: value),
+    onTap: onSelect,
+  );
 }
 
 /// Formats seek duration for display (e.g. "10 sec", "2 min").
@@ -180,7 +188,18 @@ void showGestureDialog(
             mainAxisSize: MainAxisSize.min,
             children: PlayerGesture.values.map((g) {
               final String label = getGestureLabel(g, l10n);
-              return RadioListTile<PlayerGesture>(title: Text(label), value: g);
+              return ListTile(
+                title: Text(label),
+                leading: Radio<PlayerGesture>(value: g),
+                onTap: () {
+                  if (isLeft) {
+                    ref.read(playerSettingsProvider.notifier).setLeftGesture(g);
+                  } else {
+                    ref.read(playerSettingsProvider.notifier).setRightGesture(g);
+                  }
+                  Navigator.pop<void>(context);
+                },
+              );
             }).toList(),
           ),
         ),
@@ -210,9 +229,13 @@ void showDurationDialog(BuildContext context, WidgetRef ref, int current) {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: options.map((sec) {
-              return RadioListTile<int>(
+              return ListTile(
                 title: Text(formatSeekDuration(sec, l10n)),
-                value: sec,
+                leading: Radio<int>(value: sec),
+                onTap: () {
+                  ref.read(playerSettingsProvider.notifier).setSeekDuration(sec);
+                  Navigator.pop<void>(context);
+                },
               );
             }).toList(),
           ),
@@ -245,14 +268,16 @@ void showResizeDialog(BuildContext context, WidgetRef ref, String current) {
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: options
-                .map(
-                  (e) => RadioListTile<String>(
-                    title: Text(e['label']!),
-                    value: e['value']!,
-                  ),
-                )
-                .toList(),
+            children: options.map((e) {
+              return ListTile(
+                title: Text(e['label']!),
+                leading: Radio<String>(value: e['value']!),
+                onTap: () {
+                  ref.read(playerSettingsProvider.notifier).setDefaultResizeMode(e['value']!);
+                  Navigator.pop<void>(ctx);
+                },
+              );
+            }).toList(),
           ),
         ),
       ),
@@ -282,9 +307,13 @@ void showReadaheadDialog(BuildContext context, WidgetRef ref, int current) {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: options.map((sec) {
-              return RadioListTile<int>(
+              return ListTile(
                 title: Text(formatReadahead(sec, l10n)),
-                value: sec,
+                leading: Radio<int>(value: sec),
+                onTap: () {
+                  ref.read(playerSettingsProvider.notifier).setReadaheadSeconds(sec);
+                  Navigator.pop<void>(context);
+                },
               );
             }).toList(),
           ),
@@ -386,18 +415,26 @@ void showDefaultPlayerDialog(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              RadioListTile<String?>(
+              ListTile(
                 title: Text(l10n.internalPlayer),
                 subtitle: Text(l10n.builtInPlayer),
-                secondary: const Icon(Icons.play_circle_filled_rounded),
-                value: null,
+                leading: Radio<String?>(value: null),
+                trailing: const Icon(Icons.play_circle_filled_rounded),
+                onTap: () {
+                  ref.read(playerSettingsProvider.notifier).setPreferredPlayer(null);
+                  Navigator.pop<void>(context);
+                },
               ),
               const Divider(),
               ...platformPlayers.map((player) {
-                return RadioListTile<String?>(
+                return ListTile(
                   title: Text(player.displayName),
-                  secondary: Icon(player.icon),
-                  value: player.id,
+                  leading: Radio<String?>(value: player.id),
+                  trailing: Icon(player.icon),
+                  onTap: () {
+                    ref.read(playerSettingsProvider.notifier).setPreferredPlayer(player.id);
+                    Navigator.pop<void>(context);
+                  },
                 );
               }),
             ],
@@ -453,69 +490,77 @@ void showDohProviderDialog(BuildContext context, WidgetRef ref) {
                 }
               },
               child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RadioListTile<DohProvider>(
-                    title: Text(l10n.cloudflare),
-                    subtitle: const Text('1.1.1.1'),
-                    value: DohProvider.cloudflare,
-                  ),
-                  RadioListTile<DohProvider>(
-                    title: Text(l10n.google),
-                    subtitle: const Text('8.8.8.8'),
-                    value: DohProvider.google,
-                  ),
-                  RadioListTile<DohProvider>(
-                    title: Text(l10n.adguard),
-                    subtitle: const Text('dns.adguard.com'),
-                    value: DohProvider.adguard,
-                  ),
-                  RadioListTile<DohProvider>(
-                    title: Text(l10n.dnsWatch),
-                    subtitle: const Text('resolver2.dns.watch'),
-                    value: DohProvider.dnsWatch,
-                  ),
-                  RadioListTile<DohProvider>(
-                    title: Text(l10n.quad9),
-                    subtitle: const Text('9.9.9.9'),
-                    value: DohProvider.quad9,
-                  ),
-                  RadioListTile<DohProvider>(
-                    title: Text(l10n.dnsSb),
-                    subtitle: const Text('doh.dns.sb'),
-                    value: DohProvider.dnsSb,
-                  ),
-                  RadioListTile<DohProvider>(
-                    title: Text(l10n.canadianShield),
-                    subtitle: const Text('private.canadianshield.cira.ca'),
-                    value: DohProvider.canadianShield,
-                  ),
-                  RadioListTile<DohProvider>(
-                    title: Text(l10n.custom),
-                    subtitle: Text(l10n.enterCustomDohUrl),
-                    value: DohProvider.custom,
-                  ),
-                  if (currentProvider == DohProvider.custom)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 8.0,
-                      ),
-                      child: CustomTextField(
-                        controller: controller,
-                        autofocus: true,
-                        decoration: InputDecoration(
-                          labelText: l10n.customDohUrlLabel,
-                          hintText: 'https://...',
-                          prefixIcon: const Icon(Icons.link_rounded, size: 20),
-                        ),
-                        keyboardType: TextInputType.url,
-                      ),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      title: Text(l10n.cloudflare),
+                      subtitle: const Text('1.1.1.1'),
+                      leading: Radio<DohProvider>(value: DohProvider.cloudflare),
+                      onTap: () => setState(() { currentProvider = DohProvider.cloudflare; }),
                     ),
-                ],
+                    ListTile(
+                      title: Text(l10n.google),
+                      subtitle: const Text('8.8.8.8'),
+                      leading: Radio<DohProvider>(value: DohProvider.google),
+                      onTap: () => setState(() { currentProvider = DohProvider.google; }),
+                    ),
+                    ListTile(
+                      title: Text(l10n.adguard),
+                      subtitle: const Text('dns.adguard.com'),
+                      leading: Radio<DohProvider>(value: DohProvider.adguard),
+                      onTap: () => setState(() { currentProvider = DohProvider.adguard; }),
+                    ),
+                    ListTile(
+                      title: Text(l10n.dnsWatch),
+                      subtitle: const Text('resolver2.dns.watch'),
+                      leading: Radio<DohProvider>(value: DohProvider.dnsWatch),
+                      onTap: () => setState(() { currentProvider = DohProvider.dnsWatch; }),
+                    ),
+                    ListTile(
+                      title: Text(l10n.quad9),
+                      subtitle: const Text('9.9.9.9'),
+                      leading: Radio<DohProvider>(value: DohProvider.quad9),
+                      onTap: () => setState(() { currentProvider = DohProvider.quad9; }),
+                    ),
+                    ListTile(
+                      title: Text(l10n.dnsSb),
+                      subtitle: const Text('doh.dns.sb'),
+                      leading: Radio<DohProvider>(value: DohProvider.dnsSb),
+                      onTap: () => setState(() { currentProvider = DohProvider.dnsSb; }),
+                    ),
+                    ListTile(
+                      title: Text(l10n.canadianShield),
+                      subtitle: const Text('private.canadianshield.cira.ca'),
+                      leading: Radio<DohProvider>(value: DohProvider.canadianShield),
+                      onTap: () => setState(() { currentProvider = DohProvider.canadianShield; }),
+                    ),
+                    ListTile(
+                      title: Text(l10n.custom),
+                      subtitle: Text(l10n.enterCustomDohUrl),
+                      leading: Radio<DohProvider>(value: DohProvider.custom),
+                      onTap: () => setState(() { currentProvider = DohProvider.custom; }),
+                    ),
+                    if (currentProvider == DohProvider.custom)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
+                        child: CustomTextField(
+                          controller: controller,
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            labelText: l10n.customDohUrlLabel,
+                            hintText: 'https://...',
+                            prefixIcon: const Icon(Icons.link_rounded, size: 20),
+                          ),
+                          keyboardType: TextInputType.url,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop<void>(ctx),
@@ -571,9 +616,18 @@ void showThemeDialog(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              buildThemeOption(l10n.system, ThemeMode.system),
-              buildThemeOption(l10n.dark, ThemeMode.dark),
-              buildThemeOption(l10n.light, ThemeMode.light),
+              _buildThemeOption(l10n.system, ThemeMode.system, () {
+                ref.read(appThemeModeProvider.notifier).setThemeMode(ThemeMode.system);
+                Navigator.pop<void>(context);
+              }),
+              _buildThemeOption(l10n.dark, ThemeMode.dark, () {
+                ref.read(appThemeModeProvider.notifier).setThemeMode(ThemeMode.dark);
+                Navigator.pop<void>(context);
+              }),
+              _buildThemeOption(l10n.light, ThemeMode.light, () {
+                ref.read(appThemeModeProvider.notifier).setThemeMode(ThemeMode.light);
+                Navigator.pop<void>(context);
+              }),
             ],
           ),
         ),
@@ -718,9 +772,13 @@ void showLanguageDialog(
                 mainAxisSize: MainAxisSize.min,
                 children: options.map((opt) {
                   final locale = opt['locale'] as Locale;
-                  return RadioListTile<Locale>(
+                  return ListTile(
                     title: Text(opt['label'] as String),
-                    value: locale,
+                    leading: Radio<Locale>(value: locale),
+                    onTap: () {
+                      ref.read(localeProvider.notifier).setLocale(locale);
+                      Navigator.pop<void>(context);
+                    },
                   );
                 }).toList(),
               ),
@@ -922,17 +980,19 @@ void showQualityDialog(
               },
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: options
-                    .map(
-                      (q) => RadioListTile<QualityPreference>(
-                        title: Text(qualityPreferenceLabel(q, l10n)),
-                        subtitle: q == QualityPreference.any
-                            ? Text(l10n.keepSourcesOriginalOrder)
-                            : null,
-                        value: q,
-                      ),
-                    )
-                    .toList(),
+                children: options.map((q) {
+                  return ListTile(
+                    title: Text(qualityPreferenceLabel(q, l10n)),
+                    subtitle: q == QualityPreference.any
+                        ? Text(l10n.keepSourcesOriginalOrder)
+                        : null,
+                    leading: Radio<QualityPreference>(value: q),
+                    onTap: () {
+                      onChanged(q);
+                      Navigator.pop<void>(ctx);
+                    },
+                  );
+                }).toList(),
               ),
             ),
             const Divider(height: 24),
@@ -1008,6 +1068,8 @@ void showOpenSubtitlesAuthDialog(
                 const SizedBox(height: 16),
                 CustomTextField(
                   controller: userController,
+                  autofocus: true,
+                  textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                     labelText: l10n.username,
                     prefixIcon: const Icon(Icons.person_outline, size: 20),
@@ -1020,12 +1082,14 @@ void showOpenSubtitlesAuthDialog(
                   decoration: InputDecoration(
                     labelText: l10n.password,
                     prefixIcon: const Icon(Icons.lock_outline, size: 20),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        isObscure ? Icons.visibility_off : Icons.visibility,
-                        size: 20,
+                    suffixIcon: ExcludeFocus(
+                      child: IconButton(
+                        icon: Icon(
+                          isObscure ? Icons.visibility_off : Icons.visibility,
+                          size: 20,
+                        ),
+                        onPressed: () => setState(() => isObscure = !isObscure),
                       ),
-                      onPressed: () => setState(() => isObscure = !isObscure),
                     ),
                   ),
                 ),
@@ -1199,6 +1263,8 @@ void showSubDlAuthDialog(
                 const SizedBox(height: 16),
                 CustomTextField(
                   controller: apiKeyController,
+                  autofocus: true,
+                  textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                     labelText: l10n.apiKey,
                     prefixIcon: const Icon(Icons.key_rounded, size: 20),
@@ -1227,6 +1293,7 @@ void showSubDlAuthDialog(
                 const SizedBox(height: 16),
                 CustomTextField(
                   controller: emailController,
+                  textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                     labelText: l10n.email,
                     prefixIcon: const Icon(Icons.email_outlined, size: 20),
@@ -1239,12 +1306,14 @@ void showSubDlAuthDialog(
                   decoration: InputDecoration(
                     labelText: l10n.password,
                     prefixIcon: const Icon(Icons.lock_outline, size: 20),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        isObscure ? Icons.visibility_off : Icons.visibility,
-                        size: 20,
+                    suffixIcon: ExcludeFocus(
+                      child: IconButton(
+                        icon: Icon(
+                          isObscure ? Icons.visibility_off : Icons.visibility,
+                          size: 20,
+                        ),
+                        onPressed: () => setState(() => isObscure = !isObscure),
                       ),
-                      onPressed: () => setState(() => isObscure = !isObscure),
                     ),
                   ),
                 ),
@@ -1470,6 +1539,7 @@ void showSubSourceAuthDialog(
                 const SizedBox(height: 16),
                 CustomTextField(
                   controller: keyController,
+                  autofocus: true,
                   decoration: InputDecoration(
                     labelText: l10n.apiKeyOptionalOverride,
                     prefixIcon: const Icon(Icons.key_rounded, size: 20),
