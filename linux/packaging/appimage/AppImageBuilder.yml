@@ -1,0 +1,40 @@
+version: 1
+
+AppDir:
+  path: ./AppDir
+  app_info:
+    id: com.skystream.app
+    name: skystream
+    icon: skystream
+    version: !ENV ${APP_VERSION}
+    exec: skystream
+    exec_args: $@
+
+  apt:
+    arch: x86_64
+    repositories:
+      - keyring: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+        url: http://archive.ubuntu.com/ubuntu/
+        components: [main, universe]
+        suite: jammy
+    include:
+      - libgtk-3-0
+      - liblzma5
+      - libmpv-dev
+      - libasound2
+      - libfuse2
+    exclude:
+      - libgcc_s.so.1
+      - libstdc++.so.6
+      - libm.so.6
+      - libc.so.6
+
+  runtime:
+    env:
+      PATH: '${APPDIR}/usr/bin:${PATH}'
+      LD_LIBRARY_PATH: '${APPDIR}/usr/lib:${APPDIR}/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}'
+
+AppImage:
+  update_information: guess
+  sign_key: None
+  arch: x86_64

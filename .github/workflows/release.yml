@@ -412,25 +412,37 @@ jobs:
           find . -type f ! -name "${{ matrix.torrserver_binary }}" -delete
           ls -la
           
-      - name: Build Linux Packages
+          # Build .deb
+          fastforge package --platform linux --targets deb --build-dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+          mv dist/*/*.deb "skystream-linux-${{ matrix.arch }}-${VERSION}.deb"
+          
+          # Prepare AppDir for AppImage (Manual Step like LocalSend)
+          mkdir -p AppDir/usr/bin
+          cp -r build/linux/x64/release/bundle/* AppDir/usr/bin/
+          cp ios/Runner/Assets.xcassets/AppIcon.appiconset/AppIcon~ios-marketing.png AppDir/skystream.png
+          cat <<EOF > AppDir/skystream.desktop
+          [Desktop Entry]
+          Name=SkyStream
+          Exec=skystream
+          Icon=skystream
+          Type=Application
+          Categories=Video;AudioVideo;Player;
+          EOF
+          
+      - name: Create AppImage
+        uses: AppImageCrafters/build-appimage@v2
+        env:
+          APP_VERSION: ${{ needs.version.outputs.version }}
+        with:
+          recipe: linux/packaging/appimage/AppImageBuilder.yml
+
+      - name: Rename and Prepare Final Assets
         run: |
           VERSION="${{ needs.version.outputs.version }}"
-          export PATH="$PATH:$HOME/.pub-cache/bin"
-          dart pub global activate fastforge
+          # Find and rename the AppImage (usually named by the builder)
+          mv *.AppImage "skystream-linux-${{ matrix.arch }}-${VERSION}.AppImage"
           
-          # Build .deb and AppImage
-          # Tactical fix: AppImage bundling in fastforge has a race condition that fails with 'File exists' during parallel copies.
-          # We temporarily alias cp to cp -f via a wrapper to allow overwriting.
-          sudo cp /usr/bin/cp /usr/bin/cp.orig
-          echo -e '#!/bin/bash\n/usr/bin/cp.orig -f "$@"' | sudo tee /usr/bin/cp
-          sudo chmod +x /usr/bin/cp
-          
-          fastforge package --platform linux --targets deb,appimage --build-dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
-          
-          # Restore original cp
-          sudo mv /usr/bin/cp.orig /usr/bin/cp
-          
-          # Generate the standard .tar.gz bundle as well
+          # Generate the standard .tar.gz bundle
           flutter build linux --release --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
           cd build/linux/${{ matrix.arch }}/release/bundle
           tar -czvf "../../../../../skystream-linux-${{ matrix.arch }}-${VERSION}.tar.gz" .
@@ -443,6 +455,6 @@ jobs:
           replacesArtifacts: true
           artifacts: |
             skystream-linux-${{ matrix.arch }}-${{ needs.version.outputs.version }}.tar.gz
-            dist/*/*.deb
-            dist/*/*.AppImage
+            skystream-linux-${{ matrix.arch }}-${{ needs.version.outputs.version }}.deb
+            skystream-linux-${{ matrix.arch }}-${{ needs.version.outputs.version }}.AppImage
           token: ${{ secrets.GITHUB_TOKEN }}
