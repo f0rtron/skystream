@@ -153,9 +153,7 @@ String getDohProviderLabel(
     case DohProvider.canadianShield:
       return l10n.canadianShield;
     case DohProvider.custom:
-      return customUrl.isNotEmpty
-          ? Uri.tryParse(customUrl)?.host ?? customUrl
-          : l10n.customNotSet;
+      return customUrl.isNotEmpty ? customUrl : l10n.customNotSet;
   }
 }
 
@@ -467,78 +465,82 @@ void showDohProviderDialog(BuildContext context, WidgetRef ref) {
 
   showDialog<void>(
     context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (context, setState) {
-        return AlertDialog(
-          surfaceTintColor: Colors.transparent,
-          title: Text(l10n.dohProvider),
-          content: SingleChildScrollView(
-            child: RadioGroup<DohProvider>(
-              groupValue: currentProvider,
-              onChanged: (val) {
-                if (val == null) return;
+    builder: (ctx) {
+      void saveAndClose(DohProvider p, [String? customUrl]) {
+        ref.read(dohSettingsProvider.notifier).setProvider(p);
+        if (p == DohProvider.custom && customUrl != null) {
+          ref.read(dohSettingsProvider.notifier).setCustomUrl(customUrl);
+        }
+        ref.read(dohSettingsProvider.notifier).clearCache();
+        Navigator.pop<void>(ctx);
+      }
 
-                setState(() {
-                  currentProvider = val;
-                });
-
-                // Auto-save and close if it's a preset provider
-                if (val != DohProvider.custom) {
-                  ref.read(dohSettingsProvider.notifier).setProvider(val);
-                  ref.read(dohSettingsProvider.notifier).clearCache();
-                  Navigator.pop<void>(ctx);
-                }
-              },
-              child: Column(
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            surfaceTintColor: Colors.transparent,
+            title: Text(l10n.dohProvider),
+            content: SingleChildScrollView(
+              child: RadioGroup<DohProvider>(
+                groupValue: currentProvider,
+                onChanged: (val) {
+                  if (val == null) return;
+                  if (val == DohProvider.custom) {
+                    setState(() => currentProvider = val);
+                  } else {
+                    saveAndClose(val);
+                  }
+                },
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ListTile(
                       title: Text(l10n.cloudflare),
                       subtitle: const Text('1.1.1.1'),
                       leading: Radio<DohProvider>(value: DohProvider.cloudflare),
-                      onTap: () => setState(() { currentProvider = DohProvider.cloudflare; }),
+                      onTap: () => saveAndClose(DohProvider.cloudflare),
                     ),
                     ListTile(
                       title: Text(l10n.google),
                       subtitle: const Text('8.8.8.8'),
                       leading: Radio<DohProvider>(value: DohProvider.google),
-                      onTap: () => setState(() { currentProvider = DohProvider.google; }),
+                      onTap: () => saveAndClose(DohProvider.google),
                     ),
                     ListTile(
                       title: Text(l10n.adguard),
                       subtitle: const Text('dns.adguard.com'),
                       leading: Radio<DohProvider>(value: DohProvider.adguard),
-                      onTap: () => setState(() { currentProvider = DohProvider.adguard; }),
+                      onTap: () => saveAndClose(DohProvider.adguard),
                     ),
                     ListTile(
                       title: Text(l10n.dnsWatch),
                       subtitle: const Text('resolver2.dns.watch'),
                       leading: Radio<DohProvider>(value: DohProvider.dnsWatch),
-                      onTap: () => setState(() { currentProvider = DohProvider.dnsWatch; }),
+                      onTap: () => saveAndClose(DohProvider.dnsWatch),
                     ),
                     ListTile(
                       title: Text(l10n.quad9),
                       subtitle: const Text('9.9.9.9'),
                       leading: Radio<DohProvider>(value: DohProvider.quad9),
-                      onTap: () => setState(() { currentProvider = DohProvider.quad9; }),
+                      onTap: () => saveAndClose(DohProvider.quad9),
                     ),
                     ListTile(
                       title: Text(l10n.dnsSb),
                       subtitle: const Text('doh.dns.sb'),
                       leading: Radio<DohProvider>(value: DohProvider.dnsSb),
-                      onTap: () => setState(() { currentProvider = DohProvider.dnsSb; }),
+                      onTap: () => saveAndClose(DohProvider.dnsSb),
                     ),
                     ListTile(
                       title: Text(l10n.canadianShield),
                       subtitle: const Text('private.canadianshield.cira.ca'),
                       leading: Radio<DohProvider>(value: DohProvider.canadianShield),
-                      onTap: () => setState(() { currentProvider = DohProvider.canadianShield; }),
+                      onTap: () => saveAndClose(DohProvider.canadianShield),
                     ),
                     ListTile(
                       title: Text(l10n.custom),
                       subtitle: Text(l10n.enterCustomDohUrl),
                       leading: Radio<DohProvider>(value: DohProvider.custom),
-                      onTap: () => setState(() { currentProvider = DohProvider.custom; }),
+                      onTap: () => setState(() => currentProvider = DohProvider.custom),
                     ),
                     if (currentProvider == DohProvider.custom)
                       Padding(
@@ -561,35 +563,32 @@ void showDohProviderDialog(BuildContext context, WidgetRef ref) {
                 ),
               ),
             ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop<void>(ctx),
-              child: Text(
-                l10n.cancel,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop<void>(ctx),
+                child: Text(
+                  l10n.cancel,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
-            ),
-            if (currentProvider == DohProvider.custom)
-              TextButton(
-                onPressed: () {
-                  final url = controller.text.trim();
-                  if (url.isNotEmpty) {
-                    ref
-                        .read(dohSettingsProvider.notifier)
-                        .setProvider(DohProvider.custom);
-                    ref.read(dohSettingsProvider.notifier).setCustomUrl(url);
-                    ref.read(dohSettingsProvider.notifier).clearCache();
-                    Navigator.pop<void>(ctx);
-                  }
-                },
-                child: Text(l10n.save),
-              ),
-          ],
-        );
-      },
-    ),
+              if (currentProvider == DohProvider.custom)
+                CustomButton(
+                  isPrimary: true,
+                  onPressed: () {
+                    final url = controller.text.trim();
+                    if (url.isNotEmpty) {
+                      saveAndClose(DohProvider.custom, url);
+                    }
+                  },
+                  child: Text(l10n.save),
+                ),
+            ],
+          );
+        },
+      );
+    },
   );
 }
 
