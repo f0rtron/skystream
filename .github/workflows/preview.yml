@@ -358,7 +358,7 @@ jobs:
           EOF
           
       - name: Create AppImage
-        uses: AppImageCrafters/build-appimage@v2
+        uses: AppImageCrafters/build-appimage@master
         env:
           APP_VERSION: preview
         with:
