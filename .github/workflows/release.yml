@@ -59,7 +59,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ needs.version.outputs.version }}
-          name: Release ${{ needs.version.outputs.version }}
+          name: ${{ needs.version.outputs.version }}
           bodyFile: "CHANGELOG.md"
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
