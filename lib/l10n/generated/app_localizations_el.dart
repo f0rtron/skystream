@@ -127,13 +127,13 @@ class AppLocalizationsEl extends AppLocalizations {
   String get discord => 'Discord';
 
   @override
-  String get discordSubtitle => 'Join our server';
+  String get discordSubtitle => 'Μπείτε στον διακομιστή μας';
 
   @override
   String get telegram => 'Telegram';
 
   @override
-  String get telegramSubtitle => 'Join our channel';
+  String get telegramSubtitle => 'Μπείτε στο κανάλι μας';
 
   @override
   String developedBy(String name) {
@@ -1132,16 +1132,16 @@ class AppLocalizationsEl extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Προτίμηση ποιότητας Wi-Fi';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'Προτίμηση ποιότητας κινητής';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'Καμία προτίμηση';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'Λογαριασμοί υποτίτλων';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1158,13 +1158,13 @@ class AppLocalizationsEl extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'Δοκιμή σύνδεσης';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'Επιτυχής σύνδεση';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'Αποτυχία σύνδεσης';
 
   @override
   String get username => 'Username';
@@ -1176,7 +1176,7 @@ class AppLocalizationsEl extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'Κλειδί API';
 
   @override
   String get email => 'Email';
@@ -1225,11 +1225,12 @@ class AppLocalizationsEl extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'Διαγνωστικά';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'Προβολή αρχείων καταγραφής';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle =>
+      'Προβολή δραστηριότητας και σφαλμάτων εφαρμογής';
 }

@@ -126,13 +126,13 @@ class AppLocalizationsBe extends AppLocalizations {
   String get discord => 'Discord';
 
   @override
-  String get discordSubtitle => 'Join our server';
+  String get discordSubtitle => 'Далучайцеся да нашага сервера';
 
   @override
   String get telegram => 'Telegram';
 
   @override
-  String get telegramSubtitle => 'Join our channel';
+  String get telegramSubtitle => 'Далучайцеся да нашага канала';
 
   @override
   String developedBy(String name) {
@@ -1128,16 +1128,16 @@ class AppLocalizationsBe extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Перавага якасці Wi-Fi';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'Перавага якасці мабільнай сувязі';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'Любая (без пераваг)';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'Уліковыя запісы субцітраў';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1154,13 +1154,13 @@ class AppLocalizationsBe extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'Праверыць злучэнне';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'Злучэнне паспяхова ўстаноўлена';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'Злучэнне не атрымалася';
 
   @override
   String get username => 'Username';
@@ -1172,7 +1172,7 @@ class AppLocalizationsBe extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'Ключ API';
 
   @override
   String get email => 'Email';
@@ -1221,11 +1221,11 @@ class AppLocalizationsBe extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'Дыягностыка';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'Прагляд логаў';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'Праглядзець актыўнасць праграмы і памылкі';
 }

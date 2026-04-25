@@ -1125,16 +1125,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Preferensi kualitas Wi-Fi';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'Preferensi kualitas seluler';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'Tanpa preferensi';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'Akun subtitle';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1151,13 +1151,13 @@ class AppLocalizationsId extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'Tes koneksi';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'Berhasil terhubung';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'Koneksi gagal';
 
   @override
   String get username => 'Username';
@@ -1169,7 +1169,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'Kunci API';
 
   @override
   String get email => 'Email';
@@ -1218,11 +1218,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'Diagnostik';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'Lihat log';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'Lihat aktivitas aplikasi & kesalahan';
 }

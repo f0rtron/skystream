@@ -1107,16 +1107,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Ưu tiên chất lượng Wi-Fi';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'Ưu tiên chất lượng di động';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'Bất kỳ (không ưu tiên)';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'Tài khoản phụ đề';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1133,13 +1133,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'Kiểm tra kết nối';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'Kết nối thành công';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'Kết nối thất bại';
 
   @override
   String get username => 'Username';
@@ -1151,7 +1151,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'Mã API';
 
   @override
   String get email => 'Email';
@@ -1200,11 +1200,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'Chẩn đoán';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'Xem nhật ký';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'Xem hoạt động và lỗi ứng dụng';
 }

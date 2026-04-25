@@ -1130,16 +1130,16 @@ class AppLocalizationsTe extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Wi-Fi నాణ్యత ప్రాధాన్యత';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'మొబైల్ నాణ్యత ప్రాధాన్యత';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'ఎటువంటి ప్రాధాನ್ಯత లేదు';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'సబ్‌టైటిల్ ఖాతాలు';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1156,13 +1156,13 @@ class AppLocalizationsTe extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'కనెక్షన్‌ని పరీక్షించండి';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'విజయవంతంగా కనెక్ట్ అయింది';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'కనెక్షన్ విఫలమైంది';
 
   @override
   String get username => 'Username';
@@ -1174,7 +1174,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API కీ';
 
   @override
   String get email => 'Email';
@@ -1223,11 +1223,11 @@ class AppLocalizationsTe extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'డయాగ్నోస్టిక్స్';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'లాగ్‌లను చూడండి';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'అప్లి케షన్ కార్యకలాపాలు మరియు లోపాలను చూడండి';
 }

@@ -126,17 +126,17 @@ class AppLocalizationsGu extends AppLocalizations {
   String get discord => 'Discord';
 
   @override
-  String get discordSubtitle => 'Join our server';
+  String get discordSubtitle => 'અમારા સર્વરમાં જોડાઓ';
 
   @override
   String get telegram => 'Telegram';
 
   @override
-  String get telegramSubtitle => 'Join our channel';
+  String get telegramSubtitle => 'અમારી ચેનલમાં જોડાઓ';
 
   @override
   String developedBy(String name) {
-    return 'Developed by $name';
+    return '$name દ્વારા વિકસિત';
   }
 
   @override
@@ -1126,104 +1126,106 @@ class AppLocalizationsGu extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Wi-Fi ગુણવત્તા પસંદગી';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'મોબાઇલ ડેટા ગુણવત્તા પસંદગી';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'કોઈપણ (કોઈ પસંદગી નથી)';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'સબટાઈટલ એકાઉન્ટ્સ';
 
   @override
-  String get notLoggedIn => 'Not logged in';
+  String get notLoggedIn => 'લોગ ઇન નથી';
 
   @override
   String loggedInAs(String username) {
-    return 'Logged in as $username';
+    return '$username તરીકે લોગ ઇન છો';
   }
 
   @override
-  String get apiKeyConfigured => 'API Key configured';
+  String get apiKeyConfigured => 'API કી કન્ફિગર કરેલી છે';
 
   @override
-  String get keyNotSet => 'Key not set';
+  String get keyNotSet => 'કી સેટ નથી';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'કનેક્શન ટેસ્ટ કરો';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'સફળતાપૂર્વક કનેક્ટ થયું';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'કનેક્શન નિષ્ફળ રહ્યું';
 
   @override
-  String get username => 'Username';
+  String get username => 'યુઝરનેમ';
 
   @override
-  String get password => 'Password';
+  String get password => 'પાસવર્ડ';
 
   @override
-  String get noAccountRegister => 'Don\'t have an account? Register here';
+  String get noAccountRegister => 'એકાઉન્ટ નથી? અહીં રજીસ્ટર કરો';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API કી';
 
   @override
-  String get email => 'Email';
+  String get email => 'ઈમેલ';
 
   @override
-  String get fetchMyApiKey => 'Fetch My API Key';
+  String get fetchMyApiKey => 'મારી API કી મેળવો';
 
   @override
-  String get keyVerified => 'Key Verified';
+  String get keyVerified => 'કી વેરિફાઈ થઈ';
 
   @override
-  String get invalidApiKey => 'Invalid API Key';
+  String get invalidApiKey => 'અમાન્ય API કી';
 
   @override
   String get openSubtitlesAuthSubtitle =>
-      'Enter your account credentials for higher limits and ad-free subtitles.';
+      'વધુ સીમાઓ અને જાહેરાત મુક્ત સબટાઈટલ માટે તમારા એકાઉન્ટની વિગતો દાખલ કરો.';
 
   @override
   String get subDlAuthSubtitle =>
-      'Enter your SubDL API Key directly, or fetch it using your account credentials below.';
+      'તમારી SubDL API કી સીધી દાખલ કરો, અથવા નીચે તમારા એકાઉન્ટની વિગતોનો ઉપયોગ કરીને મેળવો.';
 
   @override
-  String get orFetchViaAccount => 'OR FETCH VIA ACCOUNT';
+  String get orFetchViaAccount => 'અથવા એકાઉન્ટ દ્વારા મેળવો';
 
   @override
   String get subSourceAuthSubtitle =>
-      'SubSource works out-of-the-box, but you can add a personal official API key to override the default for better reliability.';
+      'SubSource તરત જ કામ કરે છે, પરંતુ વધુ સારી વિશ્વસનીયતા માટે તમે વ્યક્તિગત API કી ઉમેરી શકો છો.';
 
   @override
-  String get apiKeyOptionalOverride => 'API Key (Optional Override)';
+  String get apiKeyOptionalOverride => 'API કી (વૈકલ્પિક)';
 
   @override
-  String get enterKeyToOverrideDefault => 'Enter key to override default';
+  String get enterKeyToOverrideDefault =>
+      'ડિફૉલ્ટને ઓવરરાઈડ કરવા માટે કી દાખલ કરો';
 
   @override
-  String get getApiKeyFromProfile => 'Get your API Key from SubSource Profile';
+  String get getApiKeyFromProfile =>
+      'તમારી API કી SubSource પ્રોફાઇલમાંથી મેળવો';
 
   @override
   String get qualityNotGuaranteed =>
-      'Quality is not guaranteed. Sources are sorted by preference, but playback depends on what the provider actually offers.';
+      'ગુણવત્તાની ગેરંટી નથી. સ્રોતો પસંદગી મુજબ ગોઠવવામાં આવે છે, પરંતુ પ્લેબેક પ્રદાતાની ઉપલબ્ધતા પર આધાર રાખે છે.';
 
   @override
-  String get keepSourcesOriginalOrder => 'Keep sources in original order';
+  String get keepSourcesOriginalOrder => 'સ્રોતોને મૂળ ક્રમમાં રાખો';
 
   @override
-  String get openLink => 'Open link';
+  String get openLink => 'લિંક ખોલો';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'નિદાન (Diagnostics)';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'લોગ જુઓ';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'એપ્લિકેશન પ્રવૃત્તિ અને ભૂલો જુઓ';
 }

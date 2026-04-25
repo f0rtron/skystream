@@ -1100,39 +1100,39 @@ class AppLocalizationsKo extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Wi-Fi 화질 설정';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => '모바일 데이터 화질 설정';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => '선택 안 함';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => '자막 계정';
 
   @override
-  String get notLoggedIn => 'Not logged in';
+  String get notLoggedIn => '로그인되지 않음';
 
   @override
   String loggedInAs(String username) {
-    return 'Logged in as $username';
+    return '$username(으)로 로그인됨';
   }
 
   @override
-  String get apiKeyConfigured => 'API Key configured';
+  String get apiKeyConfigured => 'API 키 설정됨';
 
   @override
-  String get keyNotSet => 'Key not set';
+  String get keyNotSet => '키가 설정되지 않음';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => '연결 테스트';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => '연결 성공';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => '연결 실패';
 
   @override
   String get username => 'Username';
@@ -1141,63 +1141,62 @@ class AppLocalizationsKo extends AppLocalizations {
   String get password => 'Password';
 
   @override
-  String get noAccountRegister => 'Don\'t have an account? Register here';
+  String get noAccountRegister => '계정이 없으신가요? 여기서 등록하세요';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API 키';
 
   @override
   String get email => 'Email';
 
   @override
-  String get fetchMyApiKey => 'Fetch My API Key';
+  String get fetchMyApiKey => '내 API 키 가져오기';
 
   @override
-  String get keyVerified => 'Key Verified';
+  String get keyVerified => '키 확인됨';
 
   @override
-  String get invalidApiKey => 'Invalid API Key';
+  String get invalidApiKey => '유효하지 않은 API 키';
 
   @override
   String get openSubtitlesAuthSubtitle =>
-      'Enter your account credentials for higher limits and ad-free subtitles.';
+      '더 높은 제한과 광고 없는 자막을 이용하려면 계정 정보를 입력하세요.';
 
   @override
-  String get subDlAuthSubtitle =>
-      'Enter your SubDL API Key directly, or fetch it using your account credentials below.';
+  String get subDlAuthSubtitle => 'SubDL API 키를 직접 입력하거나 아래 계정 정보를 사용하여 가져오세요.';
 
   @override
-  String get orFetchViaAccount => 'OR FETCH VIA ACCOUNT';
+  String get orFetchViaAccount => '또는 계정을 통해 가져오기';
 
   @override
   String get subSourceAuthSubtitle =>
-      'SubSource works out-of-the-box, but you can add a personal official API key to override the default for better reliability.';
+      'SubSource는 즉시 작동하지만, 더 나은 안정성을 위해 개인 API 키를 추가할 수 있습니다.';
 
   @override
-  String get apiKeyOptionalOverride => 'API Key (Optional Override)';
+  String get apiKeyOptionalOverride => 'API 키 (선택 사항)';
 
   @override
-  String get enterKeyToOverrideDefault => 'Enter key to override default';
+  String get enterKeyToOverrideDefault => '기본값을 무시할 키 입력';
 
   @override
-  String get getApiKeyFromProfile => 'Get your API Key from SubSource Profile';
+  String get getApiKeyFromProfile => 'SubSource 프로필에서 API 키 가져오기';
 
   @override
   String get qualityNotGuaranteed =>
-      'Quality is not guaranteed. Sources are sorted by preference, but playback depends on what the provider actually offers.';
+      '화질은 보장되지 않습니다. 소스는 기본 설정에 따라 정렬되지만 재생은 공급자에 따라 달라집니다.';
 
   @override
-  String get keepSourcesOriginalOrder => 'Keep sources in original order';
+  String get keepSourcesOriginalOrder => '소스의 원래 순서 유지';
 
   @override
-  String get openLink => 'Open link';
+  String get openLink => '링크 열기';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => '진단';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => '로그 보기';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => '앱 활동 및 오류 보기';
 }

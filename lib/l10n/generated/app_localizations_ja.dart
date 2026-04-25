@@ -1095,39 +1095,39 @@ class AppLocalizationsJa extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Wi-Fi 画質設定';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'モバイルデータ通信 画質設定';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => '指定なし';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => '字幕アカウント';
 
   @override
-  String get notLoggedIn => 'Not logged in';
+  String get notLoggedIn => 'ログインしていません';
 
   @override
   String loggedInAs(String username) {
-    return 'Logged in as $username';
+    return '$username としてログイン中';
   }
 
   @override
-  String get apiKeyConfigured => 'API Key configured';
+  String get apiKeyConfigured => 'API キー設定済み';
 
   @override
-  String get keyNotSet => 'Key not set';
+  String get keyNotSet => 'キーが設定されていません';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => '接続テスト';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => '接続に成功しました';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => '接続に失敗しました';
 
   @override
   String get username => 'Username';
@@ -1136,63 +1136,63 @@ class AppLocalizationsJa extends AppLocalizations {
   String get password => 'Password';
 
   @override
-  String get noAccountRegister => 'Don\'t have an account? Register here';
+  String get noAccountRegister => 'アカウントをお持ちでないですか？ こちらで登録';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API キー';
 
   @override
   String get email => 'Email';
 
   @override
-  String get fetchMyApiKey => 'Fetch My API Key';
+  String get fetchMyApiKey => 'API キーを取得';
 
   @override
-  String get keyVerified => 'Key Verified';
+  String get keyVerified => 'キーを確認しました';
 
   @override
-  String get invalidApiKey => 'Invalid API Key';
+  String get invalidApiKey => '無効な API キー';
 
   @override
   String get openSubtitlesAuthSubtitle =>
-      'Enter your account credentials for higher limits and ad-free subtitles.';
+      'より高い制限と広告なしの字幕を利用するには、アカウント情報を入力してください。';
 
   @override
   String get subDlAuthSubtitle =>
-      'Enter your SubDL API Key directly, or fetch it using your account credentials below.';
+      'SubDL API キーを直接入力するか、以下のアカウント情報を使用して取得してください。';
 
   @override
-  String get orFetchViaAccount => 'OR FETCH VIA ACCOUNT';
+  String get orFetchViaAccount => 'またはアカウント経由で取得';
 
   @override
   String get subSourceAuthSubtitle =>
-      'SubSource works out-of-the-box, but you can add a personal official API key to override the default for better reliability.';
+      'SubSource は設定なしで使用できますが、信頼性を高めるために個人の API キーを追加できます。';
 
   @override
-  String get apiKeyOptionalOverride => 'API Key (Optional Override)';
+  String get apiKeyOptionalOverride => 'API キー (オプション)';
 
   @override
-  String get enterKeyToOverrideDefault => 'Enter key to override default';
+  String get enterKeyToOverrideDefault => 'デフォルトを上書きするキーを入力';
 
   @override
-  String get getApiKeyFromProfile => 'Get your API Key from SubSource Profile';
+  String get getApiKeyFromProfile => 'SubSource プロフィールから API キーを取得';
 
   @override
   String get qualityNotGuaranteed =>
-      'Quality is not guaranteed. Sources are sorted by preference, but playback depends on what the provider actually offers.';
+      '画質は保証されません。ソースは好み順に並べられますが、再生はプロバイダーの提供状況によります。';
 
   @override
-  String get keepSourcesOriginalOrder => 'Keep sources in original order';
+  String get keepSourcesOriginalOrder => 'ソースの元の順序を維持する';
 
   @override
-  String get openLink => 'Open link';
+  String get openLink => 'リンクを開く';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => '診断';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'ログを表示';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'アプリのアクティビティとエラーを表示';
 }

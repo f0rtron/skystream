@@ -1118,16 +1118,16 @@ class AppLocalizationsMr extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'वाय-फाय गुणवत्ता प्राधान्य';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'मोबाईल गुणवत्ता प्राधान्य';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'काहीही प्राधान्य नाही';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'उपशीर्षक खाती';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1144,13 +1144,13 @@ class AppLocalizationsMr extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'कनेक्शन तपासा';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'यशस्वीरित्या जोडले गेले';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'कनेक्शन अयशस्वी';
 
   @override
   String get username => 'Username';
@@ -1162,7 +1162,7 @@ class AppLocalizationsMr extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API की';
 
   @override
   String get email => 'Email';
@@ -1211,11 +1211,11 @@ class AppLocalizationsMr extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'निदान (Diagnostics)';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'लॉग पहा';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'अनुप्रयोग क्रियाकलाप आणि त्रुटी पहा';
 }

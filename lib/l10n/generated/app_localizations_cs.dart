@@ -126,13 +126,13 @@ class AppLocalizationsCs extends AppLocalizations {
   String get discord => 'Discord';
 
   @override
-  String get discordSubtitle => 'Join our server';
+  String get discordSubtitle => 'Připojte se k našemu serveru';
 
   @override
   String get telegram => 'Telegram';
 
   @override
-  String get telegramSubtitle => 'Join our channel';
+  String get telegramSubtitle => 'Připojte se k našemu kanálu';
 
   @override
   String developedBy(String name) {
@@ -1115,16 +1115,16 @@ class AppLocalizationsCs extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Preference kvality Wi-Fi';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'Preference kvality mobilních dat';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'Žádná preference';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'Účty titulků';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1141,13 +1141,13 @@ class AppLocalizationsCs extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'Testovat připojení';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'Připojeno úspěšně';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'Připojení selhalo';
 
   @override
   String get username => 'Username';
@@ -1159,7 +1159,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API klíč';
 
   @override
   String get email => 'Email';
@@ -1208,11 +1208,11 @@ class AppLocalizationsCs extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'Diagnostika';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'Zobrazit logy';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'Zobrazit aktivitu aplikace a chyby';
 }

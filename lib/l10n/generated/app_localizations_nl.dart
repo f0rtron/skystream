@@ -127,17 +127,17 @@ class AppLocalizationsNl extends AppLocalizations {
   String get discord => 'Discord';
 
   @override
-  String get discordSubtitle => 'Join our server';
+  String get discordSubtitle => 'Word lid van onze server';
 
   @override
   String get telegram => 'Telegram';
 
   @override
-  String get telegramSubtitle => 'Join our channel';
+  String get telegramSubtitle => 'Word lid van ons kanaal';
 
   @override
   String developedBy(String name) {
-    return 'Developed by $name';
+    return 'Ontwikkeld door $name';
   }
 
   @override
@@ -1119,39 +1119,40 @@ class AppLocalizationsNl extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Kwaliteitsvoorkeur voor wifi';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference =>
+      'Kwaliteitsvoorkeur voor mobiel netwerk';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'Geen voorkeur';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'Ondertitelaccounts';
 
   @override
-  String get notLoggedIn => 'Not logged in';
+  String get notLoggedIn => 'Niet ingelogd';
 
   @override
   String loggedInAs(String username) {
-    return 'Logged in as $username';
+    return 'Ingelogd als $username';
   }
 
   @override
-  String get apiKeyConfigured => 'API Key configured';
+  String get apiKeyConfigured => 'API-sleutel geconfigureerd';
 
   @override
-  String get keyNotSet => 'Key not set';
+  String get keyNotSet => 'Sleutel niet ingesteld';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'Verbinding testen';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'Verbinding geslaagd';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'Verbinding mislukt';
 
   @override
   String get username => 'Username';
@@ -1160,63 +1161,65 @@ class AppLocalizationsNl extends AppLocalizations {
   String get password => 'Password';
 
   @override
-  String get noAccountRegister => 'Don\'t have an account? Register here';
+  String get noAccountRegister => 'Geen account? Registreer hier';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API-sleutel';
 
   @override
   String get email => 'Email';
 
   @override
-  String get fetchMyApiKey => 'Fetch My API Key';
+  String get fetchMyApiKey => 'Mijn API-sleutel ophalen';
 
   @override
-  String get keyVerified => 'Key Verified';
+  String get keyVerified => 'Sleutel geverifieerd';
 
   @override
-  String get invalidApiKey => 'Invalid API Key';
+  String get invalidApiKey => 'Ongeldige API-sleutel';
 
   @override
   String get openSubtitlesAuthSubtitle =>
-      'Enter your account credentials for higher limits and ad-free subtitles.';
+      'Voer uw inloggegevens in voor hogere limieten en reclamevrije ondertitels.';
 
   @override
   String get subDlAuthSubtitle =>
-      'Enter your SubDL API Key directly, or fetch it using your account credentials below.';
+      'Voer uw SubDL API-sleutel rechtstreeks in, of haal deze op met uw inloggegevens hieronder.';
 
   @override
-  String get orFetchViaAccount => 'OR FETCH VIA ACCOUNT';
+  String get orFetchViaAccount => 'OF OPHALEN VIA ACCOUNT';
 
   @override
   String get subSourceAuthSubtitle =>
-      'SubSource works out-of-the-box, but you can add a personal official API key to override the default for better reliability.';
+      'SubSource werkt direct, maar u kunt een persoonlijke API-sleutel toevoegen voor betere betrouwbaarheid.';
 
   @override
-  String get apiKeyOptionalOverride => 'API Key (Optional Override)';
+  String get apiKeyOptionalOverride => 'API-sleutel (optioneel)';
 
   @override
-  String get enterKeyToOverrideDefault => 'Enter key to override default';
+  String get enterKeyToOverrideDefault =>
+      'Sleutel invoeren om standaard te overschrijven';
 
   @override
-  String get getApiKeyFromProfile => 'Get your API Key from SubSource Profile';
+  String get getApiKeyFromProfile =>
+      'Haal uw API-sleutel uit uw SubSource-profiel';
 
   @override
   String get qualityNotGuaranteed =>
-      'Quality is not guaranteed. Sources are sorted by preference, but playback depends on what the provider actually offers.';
+      'Kwaliteit is niet gegarandeerd. Bronnen worden gesorteerd op voorkeur, maar weergave hangt af van het aanbod van de provider.';
 
   @override
-  String get keepSourcesOriginalOrder => 'Keep sources in original order';
+  String get keepSourcesOriginalOrder => 'Bronnen in originele volgorde houden';
 
   @override
-  String get openLink => 'Open link';
+  String get openLink => 'Link openen';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'Diagnostiek';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'Logs bekijken';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'Bekijk applicatie-activiteit en fouten';
 }

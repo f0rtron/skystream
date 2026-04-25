@@ -1129,16 +1129,16 @@ class AppLocalizationsMl extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'വൈ-ഫൈ ഗുണനിലവാര മുൻഗണന';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'മൊബൈൽ ഗുണനിലവാര മുൻഗണന';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'മുൻഗണനയില്ല';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'സബ്‌ടൈറ്റിൽ അക്കൗണ്ടുകൾ';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1155,13 +1155,13 @@ class AppLocalizationsMl extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'കണക്ഷൻ പരിശോധിക്കുക';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'വിജയകരമായി ബന്ധിപ്പിച്ചു';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'കണക്ഷൻ പരാജയപ്പെട്ടു';
 
   @override
   String get username => 'Username';
@@ -1173,7 +1173,7 @@ class AppLocalizationsMl extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API കീ';
 
   @override
   String get email => 'Email';
@@ -1222,11 +1222,11 @@ class AppLocalizationsMl extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'ഡയഗ്നോസ്റ്റിക്സ്';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'ലോഗുകൾ കാണുക';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'ആപ്ലിക്കേഷൻ പ്രവർത്തനങ്ങളും പിശകുകളും കാണുക';
 }

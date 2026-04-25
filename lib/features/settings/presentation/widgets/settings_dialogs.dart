@@ -82,7 +82,7 @@ void showDefaultHomeScreenDialog(
           ref.read(generalSettingsProvider.notifier).setDefaultHomeScreen(val);
           Navigator.pop<void>(context);
         },
-        child: _tvFocusShortcuts(
+        child: Container(
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1335,8 +1335,8 @@ void showSubDlAuthDialog(
                                   ? l10n.keyVerified
                                   : l10n.invalidApiKey),
                           style: TextStyle(
-                            color: fetchError != null ||
-                                    verifyKeyResult == false
+                            color:
+                                fetchError != null || verifyKeyResult == false
                                 ? Colors.red
                                 : Colors.green,
                             fontSize: 13,

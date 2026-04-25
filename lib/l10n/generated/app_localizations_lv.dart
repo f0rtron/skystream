@@ -127,13 +127,13 @@ class AppLocalizationsLv extends AppLocalizations {
   String get discord => 'Discord';
 
   @override
-  String get discordSubtitle => 'Join our server';
+  String get discordSubtitle => 'Pievienojieties mūsu serverim';
 
   @override
   String get telegram => 'Telegram';
 
   @override
-  String get telegramSubtitle => 'Join our channel';
+  String get telegramSubtitle => 'Pievienojieties mūsu kanālam';
 
   @override
   String developedBy(String name) {
@@ -1118,16 +1118,16 @@ class AppLocalizationsLv extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Wi-Fi kvalitātes preference';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'Mobilo datu kvalitātes preference';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'Jebkura (bez preferences)';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'Subtitru konti';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1144,13 +1144,13 @@ class AppLocalizationsLv extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'Pārbaudīt savienojumu';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'Savienojums veiksmīgs';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'Savienojums neizdevās';
 
   @override
   String get username => 'Username';
@@ -1162,7 +1162,7 @@ class AppLocalizationsLv extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API atslēga';
 
   @override
   String get email => 'Email';
@@ -1211,11 +1211,11 @@ class AppLocalizationsLv extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'Diagnostika';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'Skatīt žurnālus';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'Skatīt lietotnes darbību un kļūdas';
 }

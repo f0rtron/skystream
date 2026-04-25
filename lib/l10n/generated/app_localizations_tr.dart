@@ -1126,16 +1126,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Wi-Fi kalite tercihi';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'Mobil kalite tercihi';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'Fark etmez';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'Altyazı hesapları';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1152,13 +1152,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'Bağlantıyı test et';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'Bağlantı başarılı';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'Bağlantı başarısız';
 
   @override
   String get username => 'Username';
@@ -1170,7 +1170,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API anahtarı';
 
   @override
   String get email => 'Email';
@@ -1219,11 +1219,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'Tanılama';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'Günlükleri görüntüle';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'Uygulama etkinliğini ve hataları görüntüle';
 }

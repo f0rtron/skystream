@@ -126,13 +126,13 @@ class AppLocalizationsAs extends AppLocalizations {
   String get discord => 'Discord';
 
   @override
-  String get discordSubtitle => 'Join our server';
+  String get discordSubtitle => 'আমাৰ ছাৰ্ভাৰত যোগদান কৰক';
 
   @override
   String get telegram => 'Telegram';
 
   @override
-  String get telegramSubtitle => 'Join our channel';
+  String get telegramSubtitle => 'আমাৰ চেনেলত যোগদান কৰক';
 
   @override
   String developedBy(String name) {
@@ -1125,16 +1125,16 @@ class AppLocalizationsAs extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Wi-Fi গুণগত অগ্ৰাধিকাৰ';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'মবাইল গুণগত অগ্ৰাধিকাৰ';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'যিকোনো (কোনো অগ্ৰাধিকাৰ নাই)';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'চাবটাইটল একাউণ্ট';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1151,13 +1151,13 @@ class AppLocalizationsAs extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'সংযোগ পৰীক্ষা কৰক';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'সফলতাৰে সংযোগ কৰা হ\'ল';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'সংযোগ ব্যৰ্থ হ\'ল';
 
   @override
   String get username => 'Username';
@@ -1169,7 +1169,7 @@ class AppLocalizationsAs extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API কী';
 
   @override
   String get email => 'Email';
@@ -1218,11 +1218,11 @@ class AppLocalizationsAs extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'নিদান';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'লগ চাওক';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'এপ্লিকেচনৰ কাৰ্যকলাপ আৰু ত্ৰুটি চাওক';
 }

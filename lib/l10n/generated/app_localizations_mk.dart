@@ -126,13 +126,13 @@ class AppLocalizationsMk extends AppLocalizations {
   String get discord => 'Discord';
 
   @override
-  String get discordSubtitle => 'Join our server';
+  String get discordSubtitle => 'Приклучете се на нашиот сервер';
 
   @override
   String get telegram => 'Telegram';
 
   @override
-  String get telegramSubtitle => 'Join our channel';
+  String get telegramSubtitle => 'Приклучете се на нашиот канал';
 
   @override
   String developedBy(String name) {
@@ -1118,16 +1118,16 @@ class AppLocalizationsMk extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Преференца за Wi-Fi квалитет';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'Преференца за мобилен квалитет';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'Било кој (без преференца)';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'Сметки за превод';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1144,13 +1144,13 @@ class AppLocalizationsMk extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'Тестирај ја врската';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'Успешно поврзано';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'Поврзувањето не успеа';
 
   @override
   String get username => 'Username';
@@ -1162,7 +1162,7 @@ class AppLocalizationsMk extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API клуч';
 
   @override
   String get email => 'Email';
@@ -1211,11 +1211,11 @@ class AppLocalizationsMk extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'Дијагностика';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'Види дневници';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'Види активност на апликацијата и грешки';
 }

@@ -126,13 +126,13 @@ class AppLocalizationsPl extends AppLocalizations {
   String get discord => 'Discord';
 
   @override
-  String get discordSubtitle => 'Join our server';
+  String get discordSubtitle => 'Dołącz do naszego serwera';
 
   @override
   String get telegram => 'Telegram';
 
   @override
-  String get telegramSubtitle => 'Join our channel';
+  String get telegramSubtitle => 'Dołącz do naszego kanału';
 
   @override
   String developedBy(String name) {
@@ -1114,16 +1114,16 @@ class AppLocalizationsPl extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Preferencja jakości Wi-Fi';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'Preferencja jakości mobilnej';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'Bez preferencji';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'Konta napisów';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1140,13 +1140,13 @@ class AppLocalizationsPl extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'Testuj połączenie';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'Połączono pomyślnie';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'Połączenie nieudane';
 
   @override
   String get username => 'Username';
@@ -1158,7 +1158,7 @@ class AppLocalizationsPl extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'Klucz API';
 
   @override
   String get email => 'Email';
@@ -1207,11 +1207,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'Diagnostyka';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'Zobacz logi';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'Zobacz aktywność aplikacji i błędy';
 }

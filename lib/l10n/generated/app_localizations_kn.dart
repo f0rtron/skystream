@@ -1227,11 +1227,11 @@ class AppLocalizationsKn extends AppLocalizations {
   String get openLink => 'ಲಿಂಕ್ ತೆರೆಯಿರಿ';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'ಡಯಾಗ್ನೋಸ್ಟಿಕ್ಸ್';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'ಲಾಗ್‌ಗಳನ್ನು ನೋಡಿ';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'ಅಪ್ಲಿಕೇಶನ್ ಚಟುವಟಿಕೆ ಮತ್ತು ದೋಷಗಳನ್ನು ನೋಡಿ';
 }

@@ -1133,16 +1133,16 @@ class AppLocalizationsTa extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Wi-Fi தர விருப்பம்';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'மொபைல் தர விருப்பம்';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'விருப்பம் ஏதுமில்லை';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'துணைத்தலைப்பு கணக்குகள்';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1159,13 +1159,13 @@ class AppLocalizationsTa extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'இணைப்பைச் சோதிக்கவும்';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'வெற்றிகரமாக இணைக்கப்பட்டது';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'இணைப்பு தோல்வியடைந்தது';
 
   @override
   String get username => 'Username';
@@ -1177,7 +1177,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API விசை';
 
   @override
   String get email => 'Email';
@@ -1226,11 +1226,12 @@ class AppLocalizationsTa extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'கண்டறிதல் (Diagnostics)';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'பதிவுகளைப் பார்க்கவும்';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle =>
+      'செயலி செயல்பாடு மற்றும் பிழைகளைப் பார்க்கவும்';
 }

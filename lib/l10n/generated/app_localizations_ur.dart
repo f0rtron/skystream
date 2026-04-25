@@ -1130,16 +1130,16 @@ class AppLocalizationsUr extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'وائی فائی معیار کی ترجیح';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'موبائل ڈیٹا معیار کی ترجیح';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'کوئی بھی (کوئی ترجیح نہیں)';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'سب ٹائٹل اکاؤنٹس';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1156,13 +1156,13 @@ class AppLocalizationsUr extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'کنکشن ٹیسٹ کریں';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'کامیابی سے منسلک ہو گیا';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'کنکشن ناکام رہا';
 
   @override
   String get username => 'Username';
@@ -1174,7 +1174,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API کلید';
 
   @override
   String get email => 'Email';
@@ -1223,11 +1223,11 @@ class AppLocalizationsUr extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'تشخیص';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'لاگز دیکھیں';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'ایپلیکیشن کی سرگرمی اور غلطیاں دیکھیں';
 }

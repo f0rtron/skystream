@@ -126,13 +126,13 @@ class AppLocalizationsPa extends AppLocalizations {
   String get discord => 'Discord';
 
   @override
-  String get discordSubtitle => 'Join our server';
+  String get discordSubtitle => 'ਸਾਡੇ ਸਰਵਰ ਨਾਲ ਜੁੜੋ';
 
   @override
   String get telegram => 'Telegram';
 
   @override
-  String get telegramSubtitle => 'Join our channel';
+  String get telegramSubtitle => 'ਸਾਡੇ ਚੈਨਲ ਨਾਲ ਜੁੜੋ';
 
   @override
   String developedBy(String name) {
@@ -1129,16 +1129,16 @@ class AppLocalizationsPa extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Wi-Fi ਕੁਆਲਿਟੀ ਤਰਜੀਹ';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'ਮੋਬਾਈਲ ਕੁਆਲਿਟੀ ਤਰਜੀਹ';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'ਕੋਈ ਤਰਜੀਹ ਨਹੀਂ';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'ਸਬਟਾਈਟਲ ਖਾਤੇ';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1155,13 +1155,13 @@ class AppLocalizationsPa extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'ਕਨੈਕਸ਼ਨ ਟੈਸਟ ਕਰੋ';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'ਸਫਲਤਾਪੂਰਵਕ ਜੁੜਿਆ';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'ਕਨੈਕਸ਼ਨ ਅਸਫਲ ਰਿਹਾ';
 
   @override
   String get username => 'Username';
@@ -1173,7 +1173,7 @@ class AppLocalizationsPa extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API ਕੁੰਜੀ';
 
   @override
   String get email => 'Email';
@@ -1222,11 +1222,11 @@ class AppLocalizationsPa extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'ਡਾਇਗਨੌਸਟਿਕਸ';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'ਲੌਗ ਦੇਖੋ';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'ਐਪਲੀਕੇਸ਼ਨ ਗਤੀਵਿਧੀ ਅਤੇ ਗਲਤੀਆਂ ਦੇਖੋ';
 }

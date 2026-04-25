@@ -126,13 +126,13 @@ class AppLocalizationsHr extends AppLocalizations {
   String get discord => 'Discord';
 
   @override
-  String get discordSubtitle => 'Join our server';
+  String get discordSubtitle => 'Pridružite se našem poslužitelju';
 
   @override
   String get telegram => 'Telegram';
 
   @override
-  String get telegramSubtitle => 'Join our channel';
+  String get telegramSubtitle => 'Pridružite se našem kanalu';
 
   @override
   String developedBy(String name) {
@@ -1112,16 +1112,16 @@ class AppLocalizationsHr extends AppLocalizations {
   String get subSource => 'SubSource';
 
   @override
-  String get wifiQualityPreference => 'Wi-Fi Quality Preference';
+  String get wifiQualityPreference => 'Kvaliteta na Wi-Fi mreži';
 
   @override
-  String get mobileQualityPreference => 'Mobile Quality Preference';
+  String get mobileQualityPreference => 'Kvaliteta na mobilnoj mreži';
 
   @override
-  String get anyNoPreference => 'Any (no preference)';
+  String get anyNoPreference => 'Bez preferencije';
 
   @override
-  String get subtitleAccounts => 'Subtitle Accounts';
+  String get subtitleAccounts => 'Računi za titlove';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -1138,13 +1138,13 @@ class AppLocalizationsHr extends AppLocalizations {
   String get keyNotSet => 'Key not set';
 
   @override
-  String get testConnection => 'Test Connection';
+  String get testConnection => 'Testiraj vezu';
 
   @override
-  String get connectedSuccessfully => 'Connected Successfully';
+  String get connectedSuccessfully => 'Uspješno povezano';
 
   @override
-  String get connectionFailed => 'Connection Failed';
+  String get connectionFailed => 'Povezivanje neuspješno';
 
   @override
   String get username => 'Username';
@@ -1156,7 +1156,7 @@ class AppLocalizationsHr extends AppLocalizations {
   String get noAccountRegister => 'Don\'t have an account? Register here';
 
   @override
-  String get apiKey => 'API Key';
+  String get apiKey => 'API ključ';
 
   @override
   String get email => 'Email';
@@ -1205,11 +1205,11 @@ class AppLocalizationsHr extends AppLocalizations {
   String get openLink => 'Open link';
 
   @override
-  String get diagnostics => 'Diagnostics';
+  String get diagnostics => 'Dijagnostika';
 
   @override
-  String get viewLogs => 'View Logs';
+  String get viewLogs => 'Vidi zapisnike';
 
   @override
-  String get viewLogsSubtitle => 'View application activity & errors';
+  String get viewLogsSubtitle => 'Vidi aktivnost aplikacije i pogreške';
 }
