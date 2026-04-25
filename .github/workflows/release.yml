@@ -418,11 +418,8 @@ jobs:
           export PATH="$PATH:$HOME/.pub-cache/bin"
           dart pub global activate fastforge
           
-          # Build .deb
-          fastforge package --platform linux --targets deb --build-dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
-          
-          # Build AppImage
-          fastforge package --platform linux --targets appimage --build-dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+          # Build .deb and AppImage
+          fastforge package --platform linux --targets deb,appimage --build-dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
           
           # Generate the standard .tar.gz bundle as well
           flutter build linux --release --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
