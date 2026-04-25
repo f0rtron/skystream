@@ -395,7 +395,7 @@ jobs:
       - name: Install Linux Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libmpv-dev libasound2-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libmpv-dev libasound2-dev libfuse2
           
       - name: Install Flutter Dependencies
         run: |
@@ -418,8 +418,17 @@ jobs:
           export PATH="$PATH:$HOME/.pub-cache/bin"
           dart pub global activate fastforge
           
-          # Build .deb (AppImage is currently disabled due to tool-level file collision bugs)
-          fastforge package --platform linux --targets deb --build-dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+          # Build .deb and AppImage
+          # Tactical fix: AppImage bundling in fastforge has a race condition that fails with 'File exists' during parallel copies.
+          # We temporarily alias cp to cp -f via a wrapper to allow overwriting.
+          sudo cp /usr/bin/cp /usr/bin/cp.orig
+          echo -e '#!/bin/bash\n/usr/bin/cp.orig -f "$@"' | sudo tee /usr/bin/cp
+          sudo chmod +x /usr/bin/cp
+          
+          fastforge package --platform linux --targets deb,appimage --build-dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+          
+          # Restore original cp
+          sudo mv /usr/bin/cp.orig /usr/bin/cp
           
           # Generate the standard .tar.gz bundle as well
           flutter build linux --release --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
