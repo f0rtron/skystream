@@ -11,6 +11,7 @@ depends:
   - liblzma5
   - libmpv-dev
   - libasound2
+installed_size: 0
 icon: ios/Runner/Assets.xcassets/AppIcon.appiconset/AppIcon~ios-marketing.png
 categories:
   - Video
