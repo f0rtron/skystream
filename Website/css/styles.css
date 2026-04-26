@@ -308,7 +308,7 @@ code {
 }
 .hero-links a:hover { color: var(--text-2); }
 
-/* Free-bleed hero visual — no container, no border box */
+/* Free-bleed hero visual, no container, no border box */
 .hero-visual {
   position: absolute;
   top: 0; right: 0; bottom: 0;
@@ -382,7 +382,7 @@ code {
 }
 
 /* ══════════════════════════════════
-   FEATURES — EDITORIAL ROWS
+   FEATURES - EDITORIAL ROWS
 ══════════════════════════════════ */
 .features-wrap {
   border: 1px solid var(--border);
@@ -748,7 +748,7 @@ footer {
   .wrap { padding: 0 16px; }
   .nav-outer { padding: 0 12px; top: 12px; }
   .nav-pill { padding: 5px 7px 5px 10px; }
-  /* Hide all nav links + separator + github pill on mobile — hamburger takes over */
+  /* Hide all nav links + separator + github pill on mobile, hamburger takes over */
   .nav-sep, .nav-link, .nav-gh { display: none; }
   .nav-hamburger { display: inline-flex; }
   .mob-drawer { display: block; }

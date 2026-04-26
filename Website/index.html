@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- ── Charset & Viewport  ── -->
+  <!-- ── Charset & Viewport ── -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
   <!-- ── Primary Meta ── -->
-  <title>SkyStream — Free Open Source Media Streaming App</title>
-  <meta name="description" content="SkyStream is a free, open-source media streaming app for Android, iOS, Windows, macOS, and Linux. Powered by a JavaScript extension engine. No ads, no subscriptions, no content included — install extensions to unlock any source." />
+  <title>SkyStream: Free Open Source Media Streaming App</title>
+  <meta name="description" content="SkyStream is a free, open-source media streaming app for Android, Android TV, iOS, tvOS, Windows, macOS, and Linux. Powered by a JavaScript extension engine. No ads, no subscriptions, no content included. Install extensions to unlock any source." />
   <meta name="keywords" content="skystream, open source streaming app, cloudstream alternative, media player, android streaming, ios streaming, free streaming app, javascript extensions, flutter media player" />
   <meta name="author" content="akashdh11" />
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
@@ -17,19 +17,19 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="SkyStream" />
   <meta property="og:url" content="https://skystream.app/" />
-  <meta property="og:title" content="SkyStream — Free Open Source Media Streaming App" />
-  <meta property="og:description" content="A free, cross-platform media streaming client for Android, iOS, Windows, macOS, and Linux. Powered by a custom JavaScript extension engine. No ads, no subscriptions." />
+  <meta property="og:title" content="SkyStream: Free Open Source Media Streaming App" />
+  <meta property="og:description" content="A free, cross-platform media streaming client for Android, Android TV, iOS, tvOS, Windows, macOS, and Linux. Powered by a custom JavaScript extension engine. No ads, no subscriptions." />
   <meta property="og:image" content="https://skystream.app/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="SkyStream — Free Open Source Media Streaming" />
+  <meta property="og:image:alt" content="SkyStream: Free Open Source Media Streaming" />
   <meta property="og:locale" content="en_US" />
 
   <!-- ── Twitter / X Card ── -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@skystream_app" />
-  <meta name="twitter:title" content="SkyStream — Free Open Source Media Streaming App" />
-  <meta name="twitter:description" content="Free, cross-platform media streaming for Android, iOS, Windows, macOS & Linux. JavaScript extension engine. No ads, no subscriptions." />
+  <meta name="twitter:title" content="SkyStream: Free Open Source Media Streaming App" />
+  <meta name="twitter:description" content="Free, cross-platform media streaming for Android, Android TV, iOS, tvOS, Windows, macOS & Linux. JavaScript extension engine. No ads, no subscriptions." />
   <meta name="twitter:image" content="https://skystream.app/og-image.png" />
   <meta name="twitter:image:alt" content="SkyStream app screenshot" />
 
@@ -47,10 +47,10 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "SkyStream",
-    "description": "A free, open-source, cross-platform media streaming client powered by a custom JavaScript extension engine. Available for Android, iOS, Windows, macOS, and Linux.",
+    "description": "A free, open-source, cross-platform media streaming client powered by a custom JavaScript extension engine. Available for Android, Android TV, iOS, tvOS, Windows, macOS, and Linux.",
     "url": "https://skystream.app/",
     "applicationCategory": "MultimediaApplication",
-    "operatingSystem": "Android, iOS, Windows, macOS, Linux",
+    "operatingSystem": "Android, Android TV, iOS, tvOS, Windows, macOS, Linux",
     "offers": {
       "@type": "Offer",
       "price": "0",
@@ -72,13 +72,12 @@
   <!-- ── Performance: Font Preconnect ── -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preload" href="css/styles.css" as="style" />
-  <link rel="preload" href="js/main.js" as="script" />
 
   <!-- ── Fonts ── -->
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <!-- ── Styles ── -->
+</head>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -155,7 +154,7 @@
         Stream anything.<br><span class="hl">Own&nbsp;everything.</span>
       </h1>
       <p class="hero-p">
-        SkyStream is a modern, cross-platform media client inspired by CloudStream — rebuilt from scratch with Flutter. Install JavaScript extensions to unlock any source. No ads. No subscriptions. No strings.
+        SkyStream is a modern, cross-platform media client inspired by CloudStream, rebuilt from scratch with Flutter. Runs on Android, Android TV, iOS, tvOS, Windows, macOS, and Linux. Install JavaScript extensions to unlock any source. No ads. No subscriptions. No strings.
       </p>
       <div class="hero-warning" role="note">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -166,10 +165,12 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Android
         </a>
+        <a href="#install" class="btn btn-ghost btn-lg" onclick="document.querySelectorAll('.tab-btn')[0].click()">Android TV</a>
         <a href="#install" class="btn btn-ghost btn-lg" onclick="document.querySelectorAll('.tab-btn')[1].click()">iOS</a>
-        <a href="#install" class="btn btn-ghost btn-lg" onclick="document.querySelectorAll('.tab-btn')[2].click()">Windows</a>
-        <a href="#install" class="btn btn-ghost btn-lg" onclick="document.querySelectorAll('.tab-btn')[3].click()">macOS</a>
-        <a href="#install" class="btn btn-ghost btn-lg" onclick="document.querySelectorAll('.tab-btn')[4].click()">Linux</a>
+        <a href="#install" class="btn btn-ghost btn-lg" onclick="document.querySelectorAll('.tab-btn')[2].click()">tvOS</a>
+        <a href="#install" class="btn btn-ghost btn-lg" onclick="document.querySelectorAll('.tab-btn')[3].click()">Windows</a>
+        <a href="#install" class="btn btn-ghost btn-lg" onclick="document.querySelectorAll('.tab-btn')[4].click()">macOS</a>
+        <a href="#install" class="btn btn-ghost btn-lg" onclick="document.querySelectorAll('.tab-btn')[5].click()">Linux</a>
       </div>
       <div class="hero-links">
         <a href="https://github.com/akashdh11/skystream/blob/main/docs/CONTRIBUTING.md">Contributor Guide</a>
@@ -190,13 +191,13 @@
     </div>
     <div class="stat" role="listitem">
       <div class="stat-label">Extensions</div>
-      <div class="stat-value">70+</div>
+      <div class="stat-value">50+</div>
       <div class="stat-sub">community plugins</div>
     </div>
     <div class="stat" role="listitem">
       <div class="stat-label">Platforms</div>
-      <div class="stat-value">6</div>
-      <div class="stat-sub">Android · iOS · Win · Mac · Linux · TV</div>
+      <div class="stat-value">7</div>
+      <div class="stat-sub">Android · Android TV · iOS · tvOS · Win · Mac · Linux</div>
     </div>
     <div class="stat" role="listitem">
       <div class="stat-label">Price</div>
@@ -221,7 +222,7 @@
           <h3>Extension System</h3>
         </div>
         <div class="feat-right">
-          <p>Install custom <code>.sky</code> or <code>.js</code> JavaScript plugins from any repository URL. Add via <strong>Settings › Extensions › Add Repository</strong>. Supports shortcodes for quick install. The same engine runs on every platform — no per-platform rebuilds.</p>
+          <p>Install custom <code>.sky</code> or <code>.js</code> JavaScript plugins from any repository URL. Add via <strong>Settings › Extensions › Add Repository</strong>. Supports shortcodes for quick install. The same engine runs on every platform, no per-platform rebuilds.</p>
         </div>
       </div>
 
@@ -233,7 +234,7 @@
           <h3>Direct Playback</h3>
         </div>
         <div class="feat-right">
-          <p>Zero-copy instant playback for local <code>MP4</code> and <code>MKV</code> files straight from your device storage. Paste any <strong>magnet link or torrent file</strong> and it begins streaming immediately — no separate torrent client required.</p>
+          <p>Zero-copy instant playback for local <code>MP4</code> and <code>MKV</code> files straight from your device storage. Paste any <strong>magnet link or torrent file</strong> and it begins streaming immediately, no separate torrent client required.</p>
         </div>
       </div>
 
@@ -245,7 +246,7 @@
           <h3>Network Streams</h3>
         </div>
         <div class="feat-right">
-          <p>Paste any arbitrary video URL — <code>M3U8</code>, <code>MP4</code>, <code>HLS</code> — directly in Settings and start watching. No extension needed for URLs you already have. Great for IPTV, personal media servers, and direct links.</p>
+          <p>Paste any arbitrary video URL like <code>M3U8</code>, <code>MP4</code>, <code>HLS</code> directly in Settings and start watching. No extension needed for URLs you already have. Great for IPTV, personal media servers, and direct links.</p>
         </div>
       </div>
 
@@ -257,7 +258,7 @@
           <h3>Smart History</h3>
         </div>
         <div class="feat-right">
-          <p>A unified "Continue Watching" list tracks progress across local files, streams, and extension content with <strong>robust timestamp tracking</strong>. Resume exactly where you left off — across sessions and app restarts.</p>
+          <p>A unified "Continue Watching" list tracks progress across local files, streams, and extension content with <strong>robust timestamp tracking</strong>. Resume exactly where you left off, across sessions and app restarts.</p>
         </div>
       </div>
 
@@ -281,7 +282,7 @@
           <h3>Subtitles &amp; Languages</h3>
         </div>
         <div class="feat-right">
-          <p>External <code>SRT</code> and <code>VTT</code> file support. Online subtitle search via <strong>OpenSubtitles</strong>, SubDL, and SubSource. Manual sync controls. UI fully translated into 40+ languages including Hindi, Spanish, French, German, Arabic, and more — all community-driven.</p>
+          <p>External <code>SRT</code> and <code>VTT</code> file support. Online subtitle search via <strong>OpenSubtitles</strong>, SubDL, and SubSource. Manual sync controls. UI fully translated into 40+ languages including Hindi, Spanish, French, German, Arabic, and more, all community-driven.</p>
         </div>
       </div>
 
@@ -293,7 +294,7 @@
           <h3>Material 3 UI</h3>
         </div>
         <div class="feat-right">
-          <p>Material You with dynamic colour extraction from wallpapers on supported Android versions. Responsive layouts adapt automatically between phones, tablets, and large-screen desktop. Light and dark themes included.</p>
+          <p>Material You with dynamic colour extraction from wallpapers on supported Android versions. Responsive layouts adapt automatically between phones, tablets, Android TV, and large-screen desktop. Light and dark themes included.</p>
         </div>
       </div>
 
@@ -323,12 +324,17 @@
         <tr>
           <td>Android TV</td>
           <td><span class="status-full">Full support</span></td>
-          <td>D-pad navigation, leanback UI, large screen layouts</td>
+          <td>Same APK as Android. Built with seamless responsiveness for both mobile and TV. <a href="#install" style="color:var(--accent);text-decoration:none;" onclick="document.querySelectorAll('.tab-btn')[0].click()">See Android install guide.</a></td>
         </tr>
         <tr>
           <td>iOS</td>
           <td><span class="status-partial">Sideloading required</span></td>
           <td>Not on App Store · Use Impactor or Sideloadly (both free)</td>
+        </tr>
+        <tr>
+          <td>tvOS</td>
+          <td><span class="status-partial">Sideloading required</span></td>
+          <td>Apple TV big-screen experience · Same sideloading process as iOS</td>
         </tr>
         <tr>
           <td>Windows</td>
@@ -338,12 +344,12 @@
         <tr>
           <td>macOS</td>
           <td><span class="status-full">Full support</span></td>
-          <td>Right-click › Open to bypass "Warning" on first launch</td>
+          <td>Right-click › Open to bypass Gatekeeper on first launch</td>
         </tr>
         <tr>
           <td>Linux</td>
           <td><span class="status-full">Full support</span></td>
-          <td>Requires <code>libmpv</code> — install via <code>apt install libmpv1</code></td>
+          <td>Requires <code>libmpv</code>. Install via <code>apt install libmpv1</code></td>
         </tr>
       </tbody>
     </table>
@@ -355,11 +361,12 @@
   <section class="section reveal" id="install" aria-labelledby="install-heading">
     <div class="sec-eyebrow">Getting started</div>
     <h2 class="sec-h" id="install-heading">Up and running in minutes.</h2>
-    <p class="sec-sub">Pick your platform below. No account required, no subscription, no telemetry.</p>
+    <p class="sec-sub">Pick your platform below. Android TV users: use the Android tab. No account required, no subscription, no telemetry.</p>
 
     <div class="tabs-row" role="tablist" aria-label="Platform install tabs">
       <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-android" onclick="switchTab(this,'android')">Android</button>
       <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-ios" onclick="switchTab(this,'ios')">iOS</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-tvos" onclick="switchTab(this,'tvos')">tvOS</button>
       <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-windows" onclick="switchTab(this,'windows')">Windows</button>
       <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-macos" onclick="switchTab(this,'macos')">macOS</button>
       <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-linux" onclick="switchTab(this,'linux')">Linux</button>
@@ -400,7 +407,7 @@
           <div class="step-n">1</div>
           <div class="step-body">
             <h4>Download the IPA</h4>
-            <p>Get <code>skystream-ios-unsigned-v2.2.1.ipa</code> from the <a href="https://github.com/akashdh11/skystream/releases/latest" target="_blank" rel="noopener">Releases page</a>. SkyStream is not on the App Store — sideloading is required.</p>
+            <p>Get <code>skystream-ios-unsigned-v2.2.1.ipa</code> from the <a href="https://github.com/akashdh11/skystream/releases/latest" target="_blank" rel="noopener">Releases page</a>. SkyStream is not on the App Store. Sideloading is required.</p>
           </div>
         </div>
         <div class="step">
@@ -419,6 +426,34 @@
         </div>
       </div>
       <a href="https://github.com/akashdh11/skystream/releases/latest" class="btn btn-solid btn-md" target="_blank" rel="noopener">Download IPA →</a>
+    </div>
+
+    <!-- tvOS -->
+    <div id="tab-tvos" class="tab-panel install-card" role="tabpanel">
+      <div class="step-list">
+        <div class="step">
+          <div class="step-n">1</div>
+          <div class="step-body">
+            <h4>Download the tvOS IPA</h4>
+            <p>Get <code>skystream-tvos-unsigned-v2.2.1.ipa</code> from the <a href="https://github.com/akashdh11/skystream/releases/latest" target="_blank" rel="noopener">Releases page</a>. SkyStream is now available on Apple TV for a seamless big-screen experience. Sideloading is required as it is not on the App Store.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-n">2</div>
+          <div class="step-body">
+            <h4>Sideload with Sideloadly</h4>
+            <p>Install <a href="https://sideloadly.io/" target="_blank" rel="noopener">Sideloadly</a> on your Mac or Windows PC. Connect your Apple TV via USB-C, select your device in Sideloadly, drag in the IPA, enter your Apple ID, and click Start.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-n">3</div>
+          <div class="step-body">
+            <h4>Trust the developer profile</h4>
+            <p>On your Apple TV: <strong>Settings › Users and Accounts › [your account] › Trust</strong>. SkyStream will now launch. Use the Siri Remote to navigate and add extensions via <strong>Settings › Extensions › Add Repository</strong>.</p>
+          </div>
+        </div>
+      </div>
+      <a href="https://github.com/akashdh11/skystream/releases/latest" class="btn btn-solid btn-md" target="_blank" rel="noopener">Download for tvOS →</a>
     </div>
 
     <!-- Windows -->
@@ -599,7 +634,7 @@
   <div class="cta-block reveal" role="complementary" aria-label="Contribute to SkyStream">
     <div>
       <h2>Build SkyStream with us.</h2>
-      <p>Contributions of all kinds are welcome — squash a bug, ship a feature, write a translation, or build an extension plugin for the community.</p>
+      <p>Contributions of all kinds are welcome: squash a bug, ship a feature, write a translation, or build an extension plugin for the community.</p>
       <div class="ways">
         <span class="way-tag">Bug fixes</span>
         <span class="way-tag">New features</span>
@@ -634,7 +669,7 @@
           <h3>Trakt &amp; Simkl Sync</h3>
         </div>
         <div class="feat-right">
-          <p>Connect your <strong>Trakt</strong> or <strong>Simkl</strong> account to sync your watch history, ratings, and watchlists across devices and services. Your progress in SkyStream will automatically reflect on your profile — no manual logging required.</p>
+          <p>Connect your <strong>Trakt</strong> or <strong>Simkl</strong> account to sync your watch history, ratings, and watchlists across devices and services. Your progress in SkyStream will automatically reflect on your profile. No manual logging required.</p>
         </div>
       </div>
 
@@ -646,7 +681,7 @@
           <h3>Full D-Pad / Leanback (Android TV)</h3>
         </div>
         <div class="feat-right">
-          <p>Complete D-Pad navigation and a dedicated <strong>leanback UI</strong> optimised for the 10-foot Android TV experience. Every screen, menu, and player control will be fully navigable with just a remote — no touch required.</p>
+          <p>Complete D-Pad navigation and a dedicated <strong>leanback UI</strong> optimised for the 10-foot Android TV experience. Every screen, menu, and player control will be fully navigable with just a remote. No touch required.</p>
         </div>
       </div>
 
@@ -688,7 +723,7 @@
             <svg width="9" height="9" viewBox="0 0 9 9"><line x1="4.5" y1="1" x2="4.5" y2="8" stroke="currentColor" stroke-width="1.5"/><line x1="1" y1="4.5" x2="8" y2="4.5" stroke="currentColor" stroke-width="1.5"/></svg>
           </div>
         </button>
-        <div class="faq-a" role="region">SkyStream is a streaming client only — it does not host, store, or distribute any media content. Everything is streamed directly from the third-party sources provided by extensions you install.</div>
+        <div class="faq-a" role="region">SkyStream is a streaming client only. It does not host, store, or distribute any media content. Everything is streamed directly from the third-party sources provided by extensions you install.</div>
       </div>
 
       <div class="faq-item" role="listitem">
@@ -698,7 +733,7 @@
             <svg width="9" height="9" viewBox="0 0 9 9"><line x1="4.5" y1="1" x2="4.5" y2="8" stroke="currentColor" stroke-width="1.5"/><line x1="1" y1="4.5" x2="8" y2="4.5" stroke="currentColor" stroke-width="1.5"/></svg>
           </div>
         </button>
-        <div class="faq-a" role="region">No. SkyStream is an independent application built entirely from scratch in Flutter. While it draws architectural inspiration from CloudStream and supports similar extension formats, it uses a custom cross-platform JavaScript engine — making it a simplified, modern re-imagining, not a fork or direct clone.</div>
+        <div class="faq-a" role="region">No. SkyStream is an independent application built entirely from scratch in Flutter. While it draws architectural inspiration from CloudStream and supports similar extension formats, it uses a custom cross-platform JavaScript engine, making it a simplified, modern re-imagining, not a fork or direct clone.</div>
       </div>
 
       <div class="faq-item" role="listitem">
@@ -718,7 +753,7 @@
             <svg width="9" height="9" viewBox="0 0 9 9"><line x1="4.5" y1="1" x2="4.5" y2="8" stroke="currentColor" stroke-width="1.5"/><line x1="1" y1="4.5" x2="8" y2="4.5" stroke="currentColor" stroke-width="1.5"/></svg>
           </div>
         </button>
-        <div class="faq-a" role="region">Extensions are JavaScript files. The full specification and API reference is in the <a href="https://github.com/akashdh11/skystream/blob/main/docs/PLUGIN_DEVELOPMENT_GUIDE.md" target="_blank" rel="noopener" style="color:var(--accent);">Plugin Development Guide</a>. Please do not build extensions that provide access to copyrighted material without authorisation — SkyStream does not condone copyright infringement.</div>
+        <div class="faq-a" role="region">Extensions are JavaScript files. The full specification and API reference is in the <a href="https://github.com/akashdh11/skystream/blob/main/docs/PLUGIN_DEVELOPMENT_GUIDE.md" target="_blank" rel="noopener" style="color:var(--accent);">Plugin Development Guide</a>. Please do not build extensions that provide access to copyrighted material without authorisation. SkyStream does not condone copyright infringement.</div>
       </div>
 
     </div>
@@ -750,6 +785,6 @@
   </div>
 </footer>
 
-<script src="js/main.js" defer></script>
+  <script src="js/main.js" defer></script>
 </body>
 </html>
